@@ -34,14 +34,6 @@ Database migrations run when the backend starts. Populate or refresh the local p
 
 Stop the containers with `docker compose down`. To also remove the local database volume, use `docker compose down -v`.
 
-## Run tests
-
-Requirements: Python 3.12 and `uv`.
-
-```sh
-uv sync --group dev
-uv run pytest
-```
 
 ## Current scope and limitations
 
