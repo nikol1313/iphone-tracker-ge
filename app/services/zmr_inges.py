@@ -1,5 +1,5 @@
 import asyncio
-from collections.abc import Iterable, Mapping
+from collections.abc import Awaitable, Callable, Iterable, Mapping
 from dataclasses import asdict, dataclass
 from decimal import Decimal, InvalidOperation
 
@@ -16,6 +16,11 @@ from app.db.crud import (
 )
 from app.db.db_schemas import ProductCreate, ProductListingCreate, StoreCreate
 from app.db.sess import SESSION
+from app.scraper.scrape_alta import (
+    ALTA_IPHONE_URL,
+    BASE_URL as ALTA_BASE_URL,
+    scrape_alta,
+)
 from app.scraper.scrape_zoommer import BASE_URL, scrape_zoommer
 from app.services.alert_service import check_and_send_alert_notifications
 from app.services.errors import RefreshInProgressError
@@ -29,6 +34,7 @@ class IngestionSummary:
     listings_created: int = 0
     listings_updated: int = 0
     prices_recorded: int = 0
+    crawl_run_ids: tuple[int, ...] = ()
 
 
 def _required_text(item: Mapping[str, object], key: str) -> str:
@@ -77,22 +83,21 @@ def _product_create(item: Mapping[str, object]) -> ProductCreate:
     )
 
 
-async def ingest_zoommer(
+async def _ingest_store(
     session: AsyncSession,
+    *,
+    store_title: str,
+    store_url: str,
     scraped_products: Iterable[Mapping[str, object]] | None = None,
 ) -> IngestionSummary:
-    products = (
-        list(scraped_products)
-        if scraped_products is not None
-        else await scrape_zoommer()
-    )
+    products = list(scraped_products) if scraped_products is not None else []
 
     if not products:
         return IngestionSummary(scraped=0, ingested=0)
 
     store = await get_or_create_store(
         session,
-        StoreCreate(title="Zoommer", web_url=BASE_URL),
+        StoreCreate(title=store_title, web_url=store_url),
     )
 
     listings_created = 0
@@ -137,29 +142,72 @@ async def ingest_zoommer(
     )
 
 
-async def run_zoommer_ingestion() -> IngestionSummary:
+async def ingest_zoommer(
+    session: AsyncSession,
+    scraped_products: Iterable[Mapping[str, object]] | None = None,
+) -> IngestionSummary:
+    products = (
+        list(scraped_products)
+        if scraped_products is not None
+        else await scrape_zoommer()
+    )
+    return await _ingest_store(
+        session,
+        store_title="Zoommer",
+        store_url=BASE_URL,
+        scraped_products=products,
+    )
+
+
+async def ingest_alta(
+    session: AsyncSession,
+    scraped_products: Iterable[Mapping[str, object]] | None = None,
+) -> IngestionSummary:
+    products = (
+        list(scraped_products)
+        if scraped_products is not None
+        else await asyncio.to_thread(scrape_alta, ALTA_IPHONE_URL)
+    )
+    return await _ingest_store(
+        session,
+        store_title="Alta",
+        store_url=ALTA_BASE_URL,
+        scraped_products=products,
+    )
+
+
+async def _run_store_ingestion(
+    store_title: str,
+    store_url: str,
+    scrape_products: Callable[[], Awaitable[list[dict[str, object]]]],
+) -> IngestionSummary:
     async with SESSION() as session:
         try:
             async with session.begin():
                 store = await get_or_create_store(
                     session,
-                    StoreCreate(title="Zoommer", web_url=BASE_URL),
+                    StoreCreate(title=store_title, web_url=store_url),
                 )
                 crawl_run = await create_crawl_run(session, store.id)
                 crawl_run_id = crawl_run.id
         except IntegrityError as error:
             raise RefreshInProgressError(
-                "A Zoommer refresh is already running"
+                f"A {store_title} refresh is already running"
             ) from error
 
         products_found = 0
 
         try:
-            scraped_products = await scrape_zoommer()
+            scraped_products = await scrape_products()
             products_found = len(scraped_products)
 
             async with session.begin():
-                summary = await ingest_zoommer(session, scraped_products)
+                summary = await _ingest_store(
+                    session,
+                    store_title=store_title,
+                    store_url=store_url,
+                    scraped_products=scraped_products,
+                )
                 await complete_crawl_run(
                     session,
                     crawl_run_id,
@@ -177,6 +225,7 @@ async def run_zoommer_ingestion() -> IngestionSummary:
                 listings_created=summary.listings_created,
                 listings_updated=summary.listings_updated,
                 prices_recorded=summary.prices_recorded,
+                crawl_run_ids=(crawl_run_id,),
             )
         except Exception as error:
             if session.in_transaction():
@@ -191,6 +240,21 @@ async def run_zoommer_ingestion() -> IngestionSummary:
                 )
 
             raise
+
+
+async def run_zoommer_ingestion() -> IngestionSummary:
+    return await _run_store_ingestion("Zoommer", BASE_URL, scrape_zoommer)
+
+
+async def run_alta_ingestion() -> IngestionSummary:
+    async def scrape_in_worker() -> list[dict[str, object]]:
+        return await asyncio.to_thread(scrape_alta, ALTA_IPHONE_URL)
+
+    return await _run_store_ingestion(
+        "Alta",
+        ALTA_BASE_URL,
+        scrape_in_worker,
+    )
 
 
 async def main() -> None:

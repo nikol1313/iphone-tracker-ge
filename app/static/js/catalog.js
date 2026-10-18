@@ -1,16 +1,32 @@
 /* Catalog search, offer cards, charts, and retailer comparison. */
 import { $, $$, api, dateTime, escapeHtml, money, productName, safeUrl, state, variant, showToast } from "./core.js";
 
+function setApiStatus(status) {
+  const indicator = $("#apiStatus");
+  const label = status === "connected" ? "API connected" : "API unavailable";
+  indicator.dataset.state = status;
+  indicator.setAttribute("aria-label", label);
+  indicator.title = label;
+}
+
 export async function loadProducts(query = "", { focusFirst = false } = {}) {
   state.searchQuery = query;
-  state.visibleCount = 10;
+  state.visibleCount = 8;
   const grid = $("#productGrid");
   grid.innerHTML = '<div class="loading-state">Loading products from the API…</div>';
   try {
     const endpoint = query ? `/search?q=${encodeURIComponent(query)}&limit=100` : "/products?limit=100";
     const page = await api(endpoint);
-    $("#apiStatus").innerHTML = "<span></span>API connected";
+    setApiStatus("connected");
     state.products = Array.isArray(page.items) ? page.items : [];
+    if (!query) {
+      $("#overviewModelCount").textContent = Number(page.total || 0).toLocaleString();
+      const listingCount = state.products.reduce(
+        (total, product) => total + Number(product.listing_count || 0),
+        0,
+      );
+      $("#overviewListingCount").textContent = listingCount.toLocaleString();
+    }
     renderProducts(page.total);
     $("#clearSearch").hidden = !query;
     if (query && focusFirst && state.products.length) {
@@ -20,7 +36,9 @@ export async function loadProducts(query = "", { focusFirst = false } = {}) {
       selectProduct(priced.id);
     }
   } catch (error) {
-    $("#apiStatus").innerHTML = "<span></span>API unavailable";
+    setApiStatus("unavailable");
+    $("#overviewModelCount").textContent = "—";
+    $("#overviewListingCount").textContent = "—";
     grid.innerHTML = `<div class="empty-state">Could not load products.<br>${escapeHtml(error.message)}</div>`;
     $("#productCount").textContent = "Unavailable";
   }
@@ -30,16 +48,19 @@ export function renderProducts(total = state.products?.length || 0) {
   $("#productCount").textContent = `${total} ${total === 1 ? "product" : "products"}`;
   const grid = $("#productGrid");
   const showMore = $("#showMoreButton");
+  const showLess = $("#showLessButton");
   if (!state.products?.length) {
     grid.innerHTML = `<div class="empty-state">${state.searchQuery
       ? "No iPhones match this search. Try another model or clear the search."
       : "No iPhones are in the catalog yet. Products will appear after a retailer crawl succeeds."}</div>`;
     showMore.hidden = true;
+    showLess.hidden = true;
     return;
   }
   const visibleProducts = state.products.slice(0, state.visibleCount);
   showMore.hidden = state.visibleCount >= state.products.length;
-  showMore.textContent = `Show more (${state.products.length - state.visibleCount} remaining)`;
+  showLess.hidden = state.visibleCount <= 8;
+  showMore.textContent = `Show more · ${state.products.length - state.visibleCount} remaining`;
   grid.innerHTML = visibleProducts.map(product => `
     <article class="product-card ${product.id === state.selectedId ? "selected" : ""}" data-product-id="${product.id}" tabindex="0">
       <div class="product-image${product.image_url ? "" : " no-image"}">
@@ -69,19 +90,33 @@ export async function selectProduct(productId, { scroll = false } = {}) {
   $$(".product-card").forEach(card => card.classList.toggle("selected", Number(card.dataset.productId) === state.selectedId));
   $("#historySection").hidden = false;
   $("#storesSection").hidden = false;
+  const image = $("#historyProductImage");
+  image.classList.toggle("no-image", !product.image_url);
+  image.innerHTML = product.image_url
+    ? `<img src="${escapeHtml(safeUrl(product.image_url))}" alt="">`
+    : "<span>iPhone</span>";
+  image.querySelector("img")?.addEventListener("error", () => {
+    image.classList.add("no-image");
+    image.innerHTML = "<span>iPhone</span>";
+  }, { once: true });
   $("#historyTitle").textContent = productName(product);
   $("#historyVariant").textContent = variant(product);
+  $("#allTimeLow").textContent = "Loading…";
+  $("#allTimeHigh").textContent = "Loading…";
   updateSelectedActions();
   $("#historySummary").innerHTML = `
     <div class="summary-item"><span>${product.available_listing_count > 0 ? "Best available" : "Last listed"}</span><strong>${escapeHtml(money(product.lowest_price, product.currency || "GEL"))}</strong></div>
     <div class="summary-item"><span>Listings</span><strong>${product.listing_count}</strong></div>`;
   try {
-    const [prices, listings] = await Promise.all([
+    const currency = product.currency || "GEL";
+    const [prices, listings, extremes] = await Promise.all([
       api(`/products/${product.id}/prices?limit=100`),
       api(`/products/${product.id}/listings?limit=100`),
+      api(`/products/${product.id}/prices/extremes?currency=${encodeURIComponent(currency)}`),
     ]);
     renderChart(prices.items, product);
     renderListings(listings.items);
+    renderAllTimePrices(extremes);
     if (scroll) {
       const details = $("#historySection");
       const top = details.getBoundingClientRect().top + window.scrollY - 88;
@@ -90,6 +125,14 @@ export async function selectProduct(productId, { scroll = false } = {}) {
   } catch (error) {
     showToast(error.message);
   }
+}
+
+function renderAllTimePrices(extremes) {
+  const formatPrice = value => value == null
+    ? "No recorded price"
+    : money(value, extremes.currency);
+  $("#allTimeLow").textContent = formatPrice(extremes.lowest_price);
+  $("#allTimeHigh").textContent = formatPrice(extremes.highest_price);
 }
 
 export function renderChart(items, product) {
@@ -114,31 +157,44 @@ export function renderChart(items, product) {
   const padding = Math.max((max - min) * .18, max * .025, 1);
   const low = min - padding;
   const high = max + padding;
-  const W = 1000, H = 260, left = 28, right = 110, top = 34, bottom = 38;
+  const singleRecord = ordered.length === 1;
+  const W = 1000, H = 320, left = singleRecord ? 132 : 28;
+  const right = singleRecord ? 60 : 110, top = 42, bottom = 48;
   const plotW = W - left - right, plotH = H - top - bottom;
-  const x = index => left + (ordered.length === 1 ? plotW / 2 : index * plotW / (ordered.length - 1));
+  const x = index => left + (singleRecord ? plotW * .2 : index * plotW / (ordered.length - 1));
   const y = value => top + (high - value) * plotH / (high - low || 1);
   const points = ordered.map((item, i) => `${x(i)},${y(Number(item.price))}`).join(" ");
   const currency = ordered[0].currency;
   const last = ordered.at(-1);
   const lastX = x(ordered.length - 1);
-  const lastY = y(Number(last.price));
+  const lastY = singleRecord ? top + plotH * .74 : y(Number(last.price));
   const firstDate = new Date(ordered[0].recorded_at);
   const lastDate = new Date(last.recorded_at);
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const tooltipX = lastX + 54;
+  const tooltipY = Math.max(top, lastY - 100);
+  const tooltipWidth = 320;
+  const tooltipHeight = 76;
   svg.innerHTML = `
-    <polyline class="chart-line" points="${points}"/>
-    <circle class="chart-snapshot" cx="${lastX}" cy="${lastY}" r="5"><title>${escapeHtml(last.store_name)} — ${escapeHtml(money(last.price, currency))} — ${escapeHtml(dateTime(last.recorded_at))}</title></circle>
-    <text class="chart-note" x="${lastX + 13}" y="${lastY + 4}">${escapeHtml(money(last.price, currency))}</text>
+    ${singleRecord
+      ? `<line class="chart-line chart-baseline" x1="${left}" y1="${lastY}" x2="${W - right}" y2="${lastY}"/>`
+      : `<polyline class="chart-line" points="${points}"/>`}
+    ${singleRecord ? `
+      <text class="chart-note chart-axis-price" text-anchor="end" x="${left - 14}" y="${lastY + 6}">${escapeHtml(money(last.price, currency))}</text>
+      <path class="chart-tooltip-link" d="M ${lastX + 8} ${lastY - 4} L ${tooltipX + 20} ${tooltipY + tooltipHeight}"/>
+      <circle class="chart-snapshot chart-snapshot-large" cx="${lastX}" cy="${lastY}" r="13"><title>${escapeHtml(last.store_name)} — ${escapeHtml(money(last.price, currency))} — ${escapeHtml(dateTime(last.recorded_at))}</title></circle>
+      <rect class="chart-tooltip" x="${tooltipX}" y="${tooltipY}" width="${tooltipWidth}" height="${tooltipHeight}" rx="12"/>
+      <text class="chart-tooltip-price" x="${tooltipX + 16}" y="${tooltipY + 33}">${escapeHtml(money(last.price, currency))}</text>
+      <text class="chart-tooltip-date" x="${tooltipX + 16}" y="${tooltipY + 59}">Recorded ${lastDate.toLocaleDateString()}</text>
+      <text class="chart-label chart-annotation" text-anchor="middle" x="${left + plotW / 2}" y="${lastY + 42}">Awaiting next price update to build trend line…</text>` : `
+      <circle class="chart-snapshot" cx="${lastX}" cy="${lastY}" r="5"><title>${escapeHtml(last.store_name)} — ${escapeHtml(money(last.price, currency))} — ${escapeHtml(dateTime(last.recorded_at))}</title></circle>
+      <text class="chart-note" x="${lastX + 13}" y="${lastY + 4}">${escapeHtml(money(last.price, currency))}</text>`}
     <text class="chart-label" x="${left}" y="${H - 12}">${firstDate.toLocaleDateString()}</text>
-    <text class="chart-label" text-anchor="end" x="${W - right}" y="${H - 12}">${lastDate.toLocaleDateString()}</text>`;
-  $("#historySummary").insertAdjacentHTML("beforeend", `
-    <div class="summary-item"><span>Recorded low</span><strong>${escapeHtml(money(min, currency))}</strong></div>
-    <div class="summary-item"><span>Recorded high</span><strong>${escapeHtml(money(max, currency))}</strong></div>`);
+    ${singleRecord ? "" : `<text class="chart-label" text-anchor="end" x="${W - right}" y="${H - 12}">${lastDate.toLocaleDateString()}</text>`}`;
 }
 
 function renderCurrentSnapshot(svg, product) {
-  const W = 1000, H = 260, left = 28, right = 110, centerY = 130;
+  const W = 1000, H = 320, left = 28, right = 110, centerY = 220;
   const label = money(product.lowest_price, product.currency || "GEL");
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   svg.innerHTML = `

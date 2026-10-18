@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 
 from app.db.db_schemas import RefreshResponse
 from app.dependencies import CurrentAdmin, SessionDep
+from app.scraper.scrape_alta import AltaCrawlError
 from app.scraper.scrape_zoommer import ZoommerCrawlError
 from app.services.errors import NotFoundError, RefreshInProgressError
 from app.services.product_service import (
@@ -34,7 +35,7 @@ async def refresh_product(
         summary = await refresh_full_catalog()
     except RefreshInProgressError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
-    except ZoommerCrawlError as error:
+    except (AltaCrawlError, ZoommerCrawlError) as error:
         raise HTTPException(
             status_code=502,
             detail="The external store could not be refreshed",
@@ -49,6 +50,10 @@ async def refresh_product(
     )
     return RefreshResponse(
         crawl_run_id=summary.crawl_run_id or 0,
+        crawl_run_ids=list(
+            summary.crawl_run_ids
+            or ((summary.crawl_run_id,) if summary.crawl_run_id else ())
+        ),
         requested_product_id=product_id,
         products_found=summary.scraped,
         listings_created=summary.listings_created,

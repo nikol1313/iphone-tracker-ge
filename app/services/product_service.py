@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.db_schemas import (
     Page,
+    PriceExtremesResponse,
     PriceHistoryResponse,
     ProductCreate,
     ProductListingResponse,
@@ -438,3 +439,28 @@ async def list_product_prices(
         for history, listing, store_name in rows
     ]
     return Page(items=items, total=total, limit=limit, offset=offset)
+
+
+async def get_product_price_extremes(
+    session: AsyncSession,
+    *,
+    product_id: int,
+    currency: str,
+) -> PriceExtremesResponse:
+    await require_active_product(session, product_id)
+    normalized_currency = currency.strip().upper()
+    lowest, highest = (
+        await session.execute(
+            select(func.min(PriceHist.price), func.max(PriceHist.price))
+            .join(ProductListing, ProductListing.id == PriceHist.listing_id)
+            .where(
+                ProductListing.product_id == product_id,
+                PriceHist.currency == normalized_currency,
+            )
+        )
+    ).one()
+    return PriceExtremesResponse(
+        currency=normalized_currency,
+        lowest_price=lowest,
+        highest_price=highest,
+    )

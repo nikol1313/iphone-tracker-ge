@@ -19,7 +19,7 @@ export function openAlert(productId) {
   $("#alertTitle").textContent = `${product.model} target`;
   const form = $("#alertForm");
   form.product_id.value = product.id;
-  form.currency.value = product.currency || "GEL";
+  form.currency.value = product.currency === "USD" ? "USD" : "GEL";
   form.target_price.value = product.lowest_price || "";
   $("#alertError").textContent = "";
   $("#alertDialog").showModal();
@@ -96,6 +96,23 @@ function bindAuthentication() {
 }
 
 function bindAlertForm() {
+  const priceInput = $("#alertForm [name=target_price]");
+  const adjustPrice = direction => {
+    const currentPrice = Number(priceInput.value);
+    const current = Number.isFinite(currentPrice) ? currentPrice : 0;
+    priceInput.value = Math.max(0.01, Math.round((current + direction * 100) * 100) / 100).toFixed(2);
+    priceInput.dispatchEvent(new Event("input", { bubbles: true }));
+  };
+  priceInput.addEventListener("wheel", event => {
+    event.preventDefault();
+    adjustPrice(event.deltaY < 0 ? 1 : -1);
+  }, { passive: false });
+  priceInput.addEventListener("keydown", event => {
+    if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+    event.preventDefault();
+    adjustPrice(event.key === "ArrowUp" ? 1 : -1);
+  });
+
   $("#alertForm").addEventListener("submit", async event => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);

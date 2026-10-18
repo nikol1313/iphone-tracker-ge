@@ -20,6 +20,25 @@
   --shadow: 0 18px 54px rgba(0, 0, 0, .34);
 }
 
+:root[data-theme="light"] {
+  color-scheme: light;
+  --canvas: #f4f6fb;
+  --paper: #ffffff;
+  --paper-soft: #eef1f8;
+  --ink: #22283a;
+  --ink-soft: #4a5268;
+  --muted: #707991;
+  --line: #e2e6ef;
+  --line-strong: #cbd2e1;
+  --green: #7259d1;
+  --green-dark: #34265f;
+  --lime: #d6ccff;
+  --lime-soft: #f0edfb;
+  --orange: #bd5a2c;
+  --danger: #bd3545;
+  --shadow: 0 18px 54px rgba(30, 42, 75, .14);
+}
+
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body {

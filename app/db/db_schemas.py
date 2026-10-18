@@ -247,6 +247,12 @@ class PriceHistoryResponse(BaseModel):
     recorded_at: datetime
 
 
+class PriceExtremesResponse(BaseModel):
+    currency: str
+    lowest_price: Decimal | None
+    highest_price: Decimal | None
+
+
 class TrackedProductCreate(BaseModel):
     product_id: int
 
@@ -307,6 +313,7 @@ class CrawlRunResponse(BaseModel):
 
 class RefreshResponse(BaseModel):
     crawl_run_id: int
+    crawl_run_ids: list[int] = Field(default_factory=list)
     requested_product_id: int
     scope: Literal["full_catalog"] = "full_catalog"
     products_found: int

@@ -1,8 +1,8 @@
 /* Connect the page controls to their feature modules. */
 import { $, $$, pageFromLocation, showPage, state } from "./core.js";
-import { loadProducts, renderProducts, selectProduct, updateSelectedActions } from "./catalog.js";
+import { loadProducts, renderProducts, selectProduct, updateSelectedActions } from "./catalog.js?v=20261018-12";
 import { loadTracked, logout, track } from "./account.js";
-import { bindDialogs, openAlert, openAuth, openEmailSettings, openTelegramSettings } from "./dialogs.js";
+import { bindDialogs, openAlert, openAuth, openEmailSettings, openTelegramSettings } from "./dialogs.js?v=20261018-1";
 
 function bindSearchAndCatalog() {
   $("#searchForm").addEventListener("submit", event => {
@@ -15,8 +15,13 @@ function bindSearchAndCatalog() {
     loadProducts();
   });
   $("#showMoreButton").addEventListener("click", () => {
-    state.visibleCount += 10;
+    state.visibleCount += 12;
     renderProducts();
+  });
+  $("#showLessButton").addEventListener("click", () => {
+    state.visibleCount = 8;
+    renderProducts();
+    $("#productsTitle").scrollIntoView({ behavior: "smooth", block: "start" });
   });
   $("#productGrid").addEventListener("click", event => {
     const card = event.target.closest("[data-product-id]");
@@ -30,6 +35,27 @@ function bindSearchAndCatalog() {
   });
   $("#selectedTrackButton").addEventListener("click", () => state.selectedId && track(state.selectedId));
   $("#selectedAlertButton").addEventListener("click", () => state.selectedId && openAlert(state.selectedId));
+}
+
+function bindThemeToggle() {
+  const button = $("#themeToggle");
+  const applyTheme = theme => {
+    const isDark = theme === "dark";
+    document.documentElement.dataset.theme = isDark ? "dark" : "light";
+    button.setAttribute("aria-label", `Switch to ${isDark ? "light" : "dark"} theme`);
+    button.title = `Switch to ${isDark ? "light" : "dark"} theme`;
+    button.innerHTML = `<svg aria-hidden="true"><use href="#${isDark ? "i-sun" : "i-moon"}"/></svg>`;
+  };
+  applyTheme(document.documentElement.dataset.theme === "light" ? "light" : "dark");
+  button.addEventListener("click", () => {
+    const nextTheme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    applyTheme(nextTheme);
+    try {
+      localStorage.setItem("priceMonitorTheme", nextTheme);
+    } catch {
+      // Theme still applies for this page if storage is unavailable.
+    }
+  });
 }
 
 function bindAccountMenu() {
@@ -76,6 +102,7 @@ function bindNavigation() {
 }
 
 bindSearchAndCatalog();
+bindThemeToggle();
 bindAccountMenu();
 bindNavigation();
 bindDialogs();

@@ -221,6 +221,24 @@ async def test_listing_and_merged_price_history_ordering(
         "2500.00",
         "3100.00",
     ]
+    extremes = await client.get(
+        f"/products/{product_id}/prices/extremes",
+        params={"currency": "gel"},
+    )
+    assert extremes.json() == {
+        "currency": "GEL",
+        "lowest_price": "2500.00",
+        "highest_price": "3100.00",
+    }
+    no_usd_history = await client.get(
+        f"/products/{product_id}/prices/extremes",
+        params={"currency": "USD"},
+    )
+    assert no_usd_history.json() == {
+        "currency": "USD",
+        "lowest_price": None,
+        "highest_price": None,
+    }
 
     async with session_factory() as session:
         listings = list(await session.scalars(select(ProductListing)))

@@ -15,15 +15,17 @@
   .brand-mark { width: 38px; height: 38px; border-radius: 12px 12px 12px 4px; }
   .brand-copy strong { font-size: .87rem; }
   .account-actions { gap: 7px; }
-  .api-status { display: none; }
+  .api-status { display: inline-flex; }
   .account-button { width: 41px; padding: 0; border-radius: 12px; }
   main { padding-top: 16px; }
   .overview-hero, .search-band, .section, footer { width: calc(100% - 28px); }
-  .overview-hero { min-height: 390px; grid-template-columns: 1fr; padding: 34px 25px; border-radius: 18px; }
+  .overview-hero { min-height: 440px; grid-template-columns: 1fr; padding: 34px 25px; border-radius: 18px; }
   .hero-tagline { margin-bottom: 18px; font-size: .7rem; }
   .hero-title { font-size: clamp(2.35rem, 8vw, 3.3rem); }
   .hero-lead { margin: 18px 0 20px; font-size: .93rem; }
   .overview-cta { width: 100%; }
+  .overview-metrics { gap: 16px 22px; margin-top: 27px; }
+  .overview-metric strong { font-size: 1.3rem; }
   .search-band { align-items: stretch; flex-direction: column; padding: 9px; border-radius: 15px; }
   .search-form { min-height: 48px; }
   .search-form > svg { margin-left: 13px; }
@@ -35,8 +37,11 @@
   .section-heading h1, .section-heading h2 { font-size: 1.72rem; }
   .section-description { font-size: .82rem; }
   .product-grid { grid-template-columns: 1fr; gap: 9px; }
-  .product-card { min-height: 270px; padding: 12px; border-radius: 15px; }
-  .product-image { height: 220px; }
+  .product-card { min-height: 210px; padding: 10px; border-radius: 15px; }
+  .product-image { height: 145px; }
+  .history-product { grid-template-columns: 60px minmax(0, 1fr); gap: 12px; }
+  .history-product-image { width: 60px; height: 60px; border-radius: 10px; }
+    .all-time-prices { grid-template-columns: 1fr; }
   .history-tools { width: 100%; justify-items: stretch; }
   .summary-strip { width: 100%; }
   .summary-item { flex: 1 1 50%; min-width: 0; }
@@ -50,3 +55,6 @@
   html { scroll-behavior: auto; }
   *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+:root[data-theme="light"] .api-status[data-state="connected"] span { background: #238653; box-shadow: 0 0 0 3px rgba(35, 134, 83, .13); }
+:root[data-theme="light"] .api-status[data-state="unavailable"] span { background: #c33d4a; box-shadow: 0 0 0 3px rgba(195, 61, 74, .13); }

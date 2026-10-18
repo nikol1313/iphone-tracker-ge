@@ -97,14 +97,20 @@ def products_from_next_data(soup: BeautifulSoup) -> list[dict[str, object]]:
         name = item.get("name")
         price = item.get("price")
         category_id = item.get("categoryId")
+        route = item.get("route")
 
         if not isinstance(name, str) or not isinstance(price, (int, float)):
             continue
-        if category_id != 16 or "iphone" not in name.lower():
+        if (
+            category_id != 16
+            or "iphone" not in name.lower()
+            or price <= 0
+            or not isinstance(route, str)
+            or not route.strip()
+        ):
             continue
 
-        route = item.get("route", "")
-        product_url = urljoin(BASE_URL, f"/{route}") if route else None
+        product_url = urljoin(BASE_URL, f"/{route.lstrip('/')}")
         image_url = item.get("imageUrl")
 
         products.append({

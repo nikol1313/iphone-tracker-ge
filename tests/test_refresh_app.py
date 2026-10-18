@@ -7,11 +7,53 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.conf import settings
 from app.main import app
+from app.scraper.scrape_alta import AltaCrawlError
 from app.scraper.scrape_zoommer import ZoommerCrawlError
 from app.services.errors import RefreshInProgressError
+from app.services import scraper_service
 from app.services.zmr_inges import IngestionSummary
 from tests.helpers import bearer
 from tests.test_products import create_admin_product
+
+
+@pytest.mark.asyncio
+async def test_full_catalog_refresh_runs_both_retailers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    zoommer = AsyncMock(
+        return_value=IngestionSummary(
+            scraped=10,
+            ingested=9,
+            crawl_run_id=41,
+            listings_created=3,
+            listings_updated=6,
+            prices_recorded=9,
+            crawl_run_ids=(41,),
+        )
+    )
+    alta = AsyncMock(
+        return_value=IngestionSummary(
+            scraped=20,
+            ingested=18,
+            crawl_run_id=42,
+            listings_created=5,
+            listings_updated=13,
+            prices_recorded=18,
+            crawl_run_ids=(42,),
+        )
+    )
+    monkeypatch.setattr(scraper_service, "run_zoommer_ingestion", zoommer)
+    monkeypatch.setattr(scraper_service, "run_alta_ingestion", alta)
+
+    summary = await scraper_service.refresh_full_catalog()
+
+    assert (summary.scraped, summary.ingested) == (30, 27)
+    assert (summary.listings_created, summary.listings_updated) == (8, 19)
+    assert summary.prices_recorded == 27
+    assert summary.crawl_run_id == 41
+    assert summary.crawl_run_ids == (41, 42)
+    zoommer.assert_awaited_once()
+    alta.assert_awaited_once()
 
 
 @pytest.mark.asyncio
@@ -29,6 +71,7 @@ async def test_refresh_success_and_scope(
             listings_created=8,
             listings_updated=112,
             prices_recorded=120,
+            crawl_run_ids=(42, 43),
         )
     )
     monkeypatch.setattr("app.api.refresh.refresh_full_catalog", mocked)
@@ -39,6 +82,7 @@ async def test_refresh_success_and_scope(
     assert response.status_code == 200, response.text
     assert response.json() == {
         "crawl_run_id": 42,
+        "crawl_run_ids": [42, 43],
         "requested_product_id": product["id"],
         "scope": "full_catalog",
         "products_found": 120,
@@ -55,6 +99,7 @@ async def test_refresh_success_and_scope(
     ("error", "status_code"),
     [
         (ZoommerCrawlError("upstream failed"), 502),
+        (AltaCrawlError("upstream failed"), 502),
         (RefreshInProgressError("already running"), 409),
     ],
 )
@@ -97,6 +142,7 @@ def test_openapi_contains_all_requested_routes():
         "/products/{product_id}",
         "/products/{product_id}/listings",
         "/products/{product_id}/prices",
+            "/products/{product_id}/prices/extremes",
         "/tracked-products",
         "/tracked-products/{product_id}",
         "/products/{product_id}/alerts",

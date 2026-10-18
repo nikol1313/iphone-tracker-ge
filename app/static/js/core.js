@@ -3,7 +3,7 @@ export const state = {
   products: [],
   tracked: [],
   selectedId: null,
-  visibleCount: 10,
+  visibleCount: 8,
   currentPage: "overview",
   notificationSettings: null,
   token: sessionStorage.getItem("priceMonitorToken"),

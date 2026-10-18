@@ -9,7 +9,7 @@ A Georgian iPhone price comparison and tracking app. It imports retailer listing
 - View price history for tracked products.
 - Register an account, track products, and configure target-price alerts.
 - Configure Telegram notifications for price alerts.
-- Refresh the catalog from Zoommer and record crawl outcomes.
+- Refresh the catalog from Zoommer and Alta and record crawl outcomes.
 - Explore the REST API using Swagger UI.
 
 ## Technology
@@ -30,7 +30,7 @@ Requirements: Docker with the Compose plugin.
 3. Start the services with `docker compose up --build`.
 4. Open [http://localhost:8080](http://localhost:8080). API docs are available at [http://localhost:8080/docs](http://localhost:8080/docs).
 
-Database migrations run when the backend starts. Populate or refresh the local product catalog by running `docker compose exec backend python -m app.services.zmr_inges`.
+Database migrations run when the backend starts. Populate or refresh the local product catalog by running `docker compose exec backend python -m app.services.scraper_service`.
 
 Stop the containers with `docker compose down`. To also remove the local database volume, use `docker compose down -v`.
 
@@ -45,7 +45,7 @@ uv run pytest
 
 ## Current scope and limitations
 
-- Zoommer is currently connected to the automated ingestion flow. The Alta scraper is not yet wired into that flow.
+- Zoommer and Alta are connected to the automated ingestion flow; each retailer has its own store listing and crawl-run record.
 - Catalog refresh is manual; scheduled background crawling is not set up yet.
 - Retailer HTML can change, so scraper results should be monitored and parser coverage maintained.
 - The admin setup helper requires `ADMIN_EMAIL` and `ADMIN_PASSWORD` of at least 12 characters; never use a shared default password.

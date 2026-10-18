@@ -6,15 +6,16 @@
   <meta name="description" content="Compare iPhone prices from Georgian stores, explore price history, and get notified when prices drop.">
   <meta name="theme-color" content="#111a2b">
   <title>Price Monitor — iPhone deals in Georgia</title>
+  <script>try { document.documentElement.dataset.theme = localStorage.getItem("priceMonitorTheme") === "light" ? "light" : "dark"; } catch { document.documentElement.dataset.theme = "dark"; }</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/base.css?v=20261016-7">
-  <link rel="stylesheet" href="/static/css/shell.css?v=20261016-7">
-  <link rel="stylesheet" href="/static/css/catalog.css?v=20261016-7">
-  <link rel="stylesheet" href="/static/css/overlays.css?v=20261016-7">
-  <link rel="stylesheet" href="/static/css/responsive.css?v=20261016-7">
-  <script type="module" src="/static/js/app.js?v=20261016-8"></script>
+  <link rel="stylesheet" href="/static/css/base.css?v=20261018-1">
+  <link rel="stylesheet" href="/static/css/shell.css?v=20261018-5">
+  <link rel="stylesheet" href="/static/css/catalog.css?v=20261018-9">
+  <link rel="stylesheet" href="/static/css/overlays.css?v=20261018-3">
+  <link rel="stylesheet" href="/static/css/responsive.css?v=20261018-5">
+  <script type="module" src="/static/js/app.js?v=20261018-13"></script>
 </head>
 <body>
   <svg class="icon-sprite" aria-hidden="true">
@@ -32,12 +33,14 @@
     <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 6v5h-5M4 18v-5h5M18 9a7 7 0 0 0-12-2M6 15a7 7 0 0 0 12 2"/></symbol>
     <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
     <symbol id="i-telegram" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.5 8.5 0 1 0 20.2 15.4Z"/></symbol>
   </svg>
 
   <header class="topbar">
     <a class="brand" href="/?page=overview" data-page-link="overview" aria-label="Price Monitor home">
       <span class="brand-mark"><svg><use href="#i-activity"/></svg></span>
-      <span class="brand-copy"><strong>Price Monitor</strong><small>GEORGIA</small></span>
+      <span class="brand-copy"><strong>Price Monitor</strong></span>
     </a>
     <nav aria-label="Primary navigation">
       <a class="nav-link active" href="/?page=overview" data-page-link="overview"><svg><use href="#i-chart"/></svg>Discover</a>
@@ -45,7 +48,8 @@
       <a class="nav-link" href="/?page=alerts" data-page-link="alerts"><svg><use href="#i-bell"/></svg>Watchlist</a>
     </nav>
     <div class="account-actions">
-      <span class="api-status" id="apiStatus"><span></span>Connecting</span>
+      <span class="api-status" id="apiStatus" data-state="connecting" role="status" aria-label="Connecting to API" title="Connecting to API"><span aria-hidden="true"></span></span>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to light theme" title="Switch to light theme"><svg aria-hidden="true"><use href="#i-sun"/></svg></button>
       <button class="account-button" id="accountButton" type="button" aria-label="Sign in" aria-haspopup="true" aria-expanded="false"><svg><use href="#i-user"/></svg></button>
       <section class="account-menu" id="accountMenu" aria-label="Account menu" hidden>
         <div class="account-menu-heading">
@@ -74,11 +78,16 @@
       <section class="overview-hero">
         <div class="overview-intro">
           <p class="hero-tagline">IPHONE PRICE TRACKER · GEORGIA</p>
-          <h1 class="hero-title" id="overviewTitle">iPhone prices,<br><span>without the guesswork.</span></h1>
-          <p class="hero-lead">Compare local listings and follow prices over time. Set an alert and buy when it suits you.</p>
+          <h1 class="hero-title" id="overviewTitle">Your next iPhone.<br><span>At the right price.</span></h1>
+          <p class="hero-lead">Compare current iPhone listings from Georgian retailers, track prices over time, and know when it’s the right moment to buy.</p>
           <a class="primary-button overview-cta" href="/?page=products" data-page-link="products" data-focus-search>
-            Browse iPhones <svg><use href="#i-external"/></svg>
+            Explore iPhones <svg><use href="#i-external"/></svg>
           </a>
+          <div class="overview-metrics" aria-label="Catalog coverage">
+            <div class="overview-metric"><strong>2</strong><span>retailers monitored</span><small>Zoommer · Alta</small></div>
+            <div class="overview-metric"><strong id="overviewModelCount">—</strong><span>iPhone models</span><small>in the catalog</small></div>
+            <div class="overview-metric"><strong id="overviewListingCount">—</strong><span>store listings</span><small>to compare</small></div>
+          </div>
         </div>
       </section>
     </div>
@@ -106,14 +115,20 @@
         <div id="productGrid" class="product-grid" aria-live="polite">
           <div class="loading-state">Loading products from the API…</div>
         </div>
-        <button class="show-more-button" id="showMoreButton" type="button" hidden>Show more</button>
+        <div class="catalog-controls">
+          <button class="show-more-button" id="showMoreButton" type="button" aria-controls="productGrid" hidden>Show more</button>
+          <button class="show-less-button" id="showLessButton" type="button" aria-controls="productGrid" hidden>Show fewer</button>
+        </div>
       </section>
 
       <section class="section data-panel" id="historySection" hidden>
         <div class="section-heading compact">
-          <div>
-            <h2 id="historyTitle">Price history</h2>
-            <p id="historyVariant" class="muted"></p>
+          <div class="history-product">
+            <div id="historyProductImage" class="history-product-image no-image" aria-hidden="true"><span>iPhone</span></div>
+            <div class="history-product-copy">
+              <h2 id="historyTitle">Price history</h2>
+              <p id="historyVariant" class="muted"></p>
+            </div>
           </div>
           <div class="history-tools">
             <div id="historySummary" class="summary-strip"></div>
@@ -126,6 +141,10 @@
         <div class="chart-wrap">
           <svg id="priceChart" role="img" aria-label="Price history chart"></svg>
           <div id="chartEmpty" class="chart-empty" hidden>No recorded price history for this product.</div>
+        </div>
+        <div class="all-time-prices" aria-label="All-time price range">
+          <div class="all-time-price"><span>All-time low</span><strong id="allTimeLow">—</strong></div>
+          <div class="all-time-price"><span>All-time high</span><strong id="allTimeHigh">—</strong></div>
         </div>
       </section>
 
@@ -163,8 +182,7 @@
   </main>
 
   <footer>
-    <span>Made for smarter iPhone shopping in Georgia.</span>
-    <a href="/docs">API documentation <svg><use href="#i-external"/></svg></a>
+    <span>Made by Nikusha Avsajanishvili.</span>
   </footer>
 
   <dialog id="authDialog">
@@ -188,8 +206,13 @@
     </div>
     <form id="alertForm">
       <input type="hidden" name="product_id">
-      <label>Target price<input type="number" name="target_price" min="0.01" step="0.01" required></label>
-      <label>Currency<input type="text" name="currency" minlength="3" maxlength="3" required value="GEL"></label>
+      <label>Target price<input type="number" name="target_price" min="0.01" step="any" aria-describedby="alertPriceHelp" required></label>
+      <p id="alertPriceHelp" class="settings-note">Scroll over the price or use ↑/↓ to adjust by 100. You can also type any amount.</p>
+      <label>Currency<select name="currency" required>
+        <option value="GEL">GEL — Georgian lari</option>
+        <option value="USD">USD — US dollar</option>
+      </select></label>
+      <p class="settings-note">The alert checks offers in the selected currency.</p>
       <p id="alertError" class="form-error" role="alert"></p>
       <button class="primary-button full" type="submit">Create alert</button>
     </form>
