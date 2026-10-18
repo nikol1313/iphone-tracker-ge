@@ -45,7 +45,6 @@ uv run pytest
 
 ## Current scope and limitations
 
-- Zoommer and Alta are connected to the automated ingestion flow; each retailer has its own store listing and crawl-run record.
 - Catalog refresh is manual; scheduled background crawling is not set up yet.
 - Retailer HTML can change, so scraper results should be monitored and parser coverage maintained.
 - The admin setup helper requires `ADMIN_EMAIL` and `ADMIN_PASSWORD` of at least 12 characters; never use a shared default password.
