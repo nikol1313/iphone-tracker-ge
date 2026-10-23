@@ -9,7 +9,8 @@ A Georgian iPhone price comparison and tracking app. It imports retailer listing
 - View price history for tracked products.
 - Register an account, track products, and configure target-price alerts.
 - Configure Telegram notifications for price alerts.
-- Refresh the catalog from Zoommer and Alta and record crawl outcomes.
+- Refresh the catalog from Zoommer, Alta, and iSpace automatically every 12 hours and record crawl outcomes.
+- Refresh prices on demand from the catalog page (signed-in users, once per hour).
 - Explore the REST API using Swagger UI.
 
 ## Technology
