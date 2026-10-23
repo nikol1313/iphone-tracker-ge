@@ -16,6 +16,7 @@ from app.db.sess import Base, get_conn
 from app.main import app
 
 settings.JWT_SECRET = SecretStr("test-secret-that-is-at-least-32-characters")
+settings.REFRESH_SCHEDULER_ENABLED = False
 
 
 @pytest_asyncio.fixture

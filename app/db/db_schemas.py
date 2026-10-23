@@ -311,13 +311,16 @@ class CrawlRunResponse(BaseModel):
     error_message: str | None
 
 
-class RefreshResponse(BaseModel):
-    crawl_run_id: int
-    crawl_run_ids: list[int] = Field(default_factory=list)
-    requested_product_id: int
-    scope: Literal["full_catalog"] = "full_catalog"
+class RefreshStatusResponse(BaseModel):
+    last_refreshed_at: datetime | None
+    next_manual_refresh_at: datetime | None
+
+
+class RefreshResponse(RefreshStatusResponse):
+    crawl_run_ids: list[int]
     products_found: int
     listings_created: int
     listings_updated: int
     prices_recorded: int
-    listings: list[ProductListingResponse]
+    succeeded_stores: list[str]
+    failed_stores: list[str]

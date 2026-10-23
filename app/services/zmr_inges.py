@@ -21,6 +21,7 @@ from app.scraper.scrape_alta import (
     BASE_URL as ALTA_BASE_URL,
     scrape_alta,
 )
+from app.scraper.scrape_ispace import BASE_URL as ISPACE_BASE_URL, scrape_ispace
 from app.scraper.scrape_zoommer import BASE_URL, scrape_zoommer
 from app.services.alert_service import check_and_send_alert_notifications
 from app.services.errors import RefreshInProgressError
@@ -255,6 +256,10 @@ async def run_alta_ingestion() -> IngestionSummary:
         ALTA_BASE_URL,
         scrape_in_worker,
     )
+
+
+async def run_ispace_ingestion() -> IngestionSummary:
+    return await _run_store_ingestion("iSpace", ISPACE_BASE_URL, scrape_ispace)
 
 
 async def main() -> None:

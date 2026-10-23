@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     JWT_SECRET: SecretStr | None = None
     JWT_ACCESS_TOKEN_EXPIRE_SECONDS: int = Field(default=86400, ge=60)
     TELEGRAM_BOT_TOKEN: SecretStr | None = None
+    REFRESH_SCHEDULER_ENABLED: bool = True
 
     @property
     def database_url(self) -> str:

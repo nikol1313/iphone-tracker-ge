@@ -1,63 +1,69 @@
+import math
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, HTTPException
 
-from app.db.db_schemas import RefreshResponse
-from app.dependencies import CurrentAdmin, SessionDep
-from app.scraper.scrape_alta import AltaCrawlError
-from app.scraper.scrape_zoommer import ZoommerCrawlError
-from app.services.errors import NotFoundError, RefreshInProgressError
-from app.services.product_service import (
-    list_product_listings,
-    require_active_product,
+from app.db.db_schemas import RefreshResponse, RefreshStatusResponse
+from app.dependencies import CurrentUser, SessionDep
+from app.services.errors import RefreshCooldownError, RefreshInProgressError
+from app.services.scraper_service import (
+    last_refresh_started_at,
+    next_manual_refresh_at,
+    request_manual_refresh,
 )
-from app.services.scraper_service import refresh_full_catalog
 
-router = APIRouter(tags=["refresh"])
+router = APIRouter(prefix="/refresh", tags=["refresh"])
 
 
-@router.post(
-    "/products/{product_id}/refresh",
-    response_model=RefreshResponse,
-)
-async def refresh_product(
-    product_id: int,
+async def _status(session: SessionDep) -> RefreshStatusResponse:
+    return RefreshStatusResponse(
+        last_refreshed_at=await last_refresh_started_at(session),
+        next_manual_refresh_at=await next_manual_refresh_at(session),
+    )
+
+
+@router.get("", response_model=RefreshStatusResponse)
+async def refresh_status(session: SessionDep) -> RefreshStatusResponse:
+    return await _status(session)
+
+
+@router.post("", response_model=RefreshResponse)
+async def refresh_catalog(
     session: SessionDep,
-    _: CurrentAdmin,
+    user: CurrentUser,
 ) -> RefreshResponse:
     try:
-        await require_active_product(session, product_id)
-    except NotFoundError as error:
-        raise HTTPException(status_code=404, detail=str(error)) from error
-
-
-    await session.commit()
-
-    try:
-        summary = await refresh_full_catalog()
+        summary = await request_manual_refresh(
+            session,
+            bypass_cooldown=user.is_admin,
+        )
+    except RefreshCooldownError as error:
+        retry_after = math.ceil(
+            (error.available_at - datetime.now(UTC)).total_seconds()
+        )
+        raise HTTPException(
+            status_code=429,
+            detail=str(error),
+            headers={"Retry-After": str(max(retry_after, 1))},
+        ) from error
     except RefreshInProgressError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
-    except (AltaCrawlError, ZoommerCrawlError) as error:
+
+    if not summary.succeeded_stores:
         raise HTTPException(
             status_code=502,
-            detail="The external store could not be refreshed",
-        ) from error
+            detail="No store could be refreshed",
+        )
 
-    listings = await list_product_listings(
-        session,
-        product_id=product_id,
-        include_inactive=False,
-        limit=100,
-        offset=0,
-    )
+    await session.rollback()
+    status = await _status(session)
     return RefreshResponse(
-        crawl_run_id=summary.crawl_run_id or 0,
-        crawl_run_ids=list(
-            summary.crawl_run_ids
-            or ((summary.crawl_run_id,) if summary.crawl_run_id else ())
-        ),
-        requested_product_id=product_id,
+        **status.model_dump(),
+        crawl_run_ids=list(summary.crawl_run_ids),
         products_found=summary.scraped,
         listings_created=summary.listings_created,
         listings_updated=summary.listings_updated,
         prices_recorded=summary.prices_recorded,
-        listings=listings.items,
+        succeeded_stores=list(summary.succeeded_stores),
+        failed_stores=list(summary.failed_stores),
     )

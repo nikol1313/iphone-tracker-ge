@@ -1,5 +1,6 @@
+import asyncio
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse
@@ -19,14 +20,24 @@ from app.api import (
 )
 from app.conf import settings
 from app.db.sess import engine
+from app.services.scraper_service import run_refresh_schedule
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     settings.jwt_secret()
+    scheduler = (
+        asyncio.create_task(run_refresh_schedule())
+        if settings.REFRESH_SCHEDULER_ENABLED
+        else None
+    )
     try:
         yield
     finally:
+        if scheduler is not None:
+            scheduler.cancel()
+            with suppress(asyncio.CancelledError):
+                await scheduler
         await engine.dispose()
 
 
