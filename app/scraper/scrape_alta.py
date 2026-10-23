@@ -2,6 +2,7 @@ import json
 import logging
 import re
 import time
+from collections.abc import Callable
 from urllib.parse import urljoin
 
 import cloudscraper
@@ -9,7 +10,10 @@ import requests
 from bs4 import BeautifulSoup
 
 BASE_URL = "https://alta.ge"
-ALTA_IPHONE_URL = f"{BASE_URL}/search/iphone"
+ALTA_IPHONE_URL = f"{BASE_URL}/search/iphone/category=mobiluri-telefonebi;"
+ALTA_PHONE_CATEGORY_ID = 16
+PAGE_SIZE = 20
+MAX_PRICE = 100_000
 LOGGER = logging.getLogger(__name__)
 
 class AltaCrawlError(RuntimeError):
@@ -68,24 +72,30 @@ def product_from_json_ld_item(item: dict) -> dict[str, object] | None:
     }
 
 
-def products_from_next_data(soup: BeautifulSoup) -> list[dict[str, object]]:
-    products: list[dict[str, object]] = []
-
+def _search_data(soup: BeautifulSoup) -> dict | None:
     next_data_script = soup.select_one("script[id='__NEXT_DATA__']")
     if not next_data_script:
-        return products
+        return None
 
     try:
         script_text = next_data_script.string or next_data_script.get_text(strip=True)
         data = json.loads(script_text)
-    except (json.JSONDecodeError, AttributeError):
-        return products
+        search_data = data["props"]["pageProps"]["initialSearchData"]
+    except (json.JSONDecodeError, AttributeError, KeyError, TypeError):
+        return None
 
-    # Navigate to products array in Next.js data structure
-    try:
-        products_data = data["props"]["pageProps"]["initialSearchData"]["products"]
-    except (KeyError, TypeError):
-        return products
+    return search_data if isinstance(search_data, dict) else None
+
+
+def total_from_next_data(soup: BeautifulSoup) -> int | None:
+    total = (_search_data(soup) or {}).get("productsCount")
+    return total if isinstance(total, int) else None
+
+
+def products_from_next_data(soup: BeautifulSoup) -> list[dict[str, object]]:
+    products: list[dict[str, object]] = []
+
+    products_data = (_search_data(soup) or {}).get("products")
 
     if not isinstance(products_data, list):
         return products
@@ -102,7 +112,7 @@ def products_from_next_data(soup: BeautifulSoup) -> list[dict[str, object]]:
         if not isinstance(name, str) or not isinstance(price, (int, float)):
             continue
         if (
-            category_id != 16
+            category_id != ALTA_PHONE_CATEGORY_ID
             or "iphone" not in name.lower()
             or price <= 0
             or not isinstance(route, str)
@@ -192,6 +202,7 @@ def _fetch_with_retries(
     scraper: cloudscraper.CloudScraper,
     url: str,
     *,
+    params: dict[str, int] | None = None,
     max_attempts: int,
     backoff_seconds: float,
     request_delay_seconds: float,
@@ -205,7 +216,7 @@ def _fetch_with_retries(
             time.sleep(request_delay_seconds)
 
         try:
-            response = scraper.get(url)
+            response = scraper.get(url, params=params)
             response.raise_for_status()
             return response
         except Exception as error:
@@ -227,8 +238,52 @@ def _fetch_with_retries(
                 time.sleep(retry_delay)
 
     raise AltaCrawlError(
-        f"Failed to fetch {url} after {attempts_made} attempt(s): {last_error}"
+        f"Failed to fetch {url} {params or ''} after {attempts_made} attempt(s): "
+        f"{last_error}"
     ) from last_error
+
+
+def _scrape_price_windows(
+    fetch: Callable[[dict[str, int]], requests.Response],
+) -> list[dict[str, object]]:
+    # Alta only renders the first PAGE_SIZE results, so split by price until each window fits.
+    products: dict[str, dict[str, object]] = {}
+    windows = [(0, MAX_PRICE)]
+
+    while windows:
+        price_from, price_to = windows.pop()
+        response = fetch(
+            {
+                "cats": ALTA_PHONE_CATEGORY_ID,
+                "priceFrom": price_from,
+                "priceTo": price_to,
+            }
+        )
+        soup = BeautifulSoup(response.text, "html.parser")
+        page_products = (
+            products_from_next_data(soup)
+            if _search_data(soup) is not None
+            else products_from_html_cards(soup)
+        )
+        for product in page_products:
+            products.setdefault(str(product["url"]), product)
+
+        total = total_from_next_data(soup)
+        if total is None or total <= PAGE_SIZE:
+            continue
+        if price_to - price_from <= 1:
+            LOGGER.warning(
+                "Alta has %d iPhones priced %d-%d; only %d are visible",
+                total,
+                price_from,
+                price_to,
+                PAGE_SIZE,
+            )
+            continue
+        middle = (price_from + price_to) // 2
+        windows.extend([(middle, price_to), (price_from, middle)])
+
+    return list(products.values())
 
 
 def scrape_alta(
@@ -253,16 +308,16 @@ def scrape_alta(
             }
         )
 
-    response = _fetch_with_retries(
-        scraper,
-        url,
-        max_attempts=max_attempts,
-        backoff_seconds=backoff_seconds,
-        request_delay_seconds=request_delay_seconds,
+    return _scrape_price_windows(
+        lambda params: _fetch_with_retries(
+            scraper,
+            url,
+            params=params,
+            max_attempts=max_attempts,
+            backoff_seconds=backoff_seconds,
+            request_delay_seconds=request_delay_seconds,
+        )
     )
-
-    soup = BeautifulSoup(response.text, "html.parser")
-    return products_from_next_data(soup) or products_from_html_cards(soup)
 
 
 def main() -> None:
