@@ -35,6 +35,7 @@
   .section { padding: 23px 19px; border-radius: 19px; }
   .section-heading { align-items: flex-start; flex-direction: column; gap: 8px; margin-bottom: 19px; }
   .section-heading h1, .section-heading h2 { font-size: 1.72rem; }
+  .catalog-meta { align-items: flex-start; }
   .section-description { font-size: .82rem; }
   .product-grid { grid-template-columns: 1fr; gap: 9px; }
   .product-card { min-height: 210px; padding: 10px; border-radius: 15px; }

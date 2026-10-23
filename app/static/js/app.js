@@ -3,6 +3,7 @@ import { $, $$, pageFromLocation, showPage, state } from "./core.js";
 import { loadProducts, renderProducts, selectProduct, updateSelectedActions } from "./catalog.js?v=20261018-12";
 import { loadTracked, logout, track } from "./account.js";
 import { bindDialogs, openAlert, openAuth, openEmailSettings, openTelegramSettings } from "./dialogs.js?v=20261018-1";
+import { bindRefresh, loadRefreshStatus } from "./refresh.js?v=20261023-1";
 
 function bindSearchAndCatalog() {
   $("#searchForm").addEventListener("submit", event => {
@@ -106,7 +107,9 @@ bindThemeToggle();
 bindAccountMenu();
 bindNavigation();
 bindDialogs();
+bindRefresh();
 showPage(pageFromLocation());
 loadProducts();
+loadRefreshStatus();
 loadTracked();
 updateSelectedActions();
