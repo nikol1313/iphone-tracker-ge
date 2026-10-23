@@ -12,10 +12,10 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/base.css?v=20261018-1">
   <link rel="stylesheet" href="/static/css/shell.css?v=20261018-5">
-  <link rel="stylesheet" href="/static/css/catalog.css?v=20261018-9">
+  <link rel="stylesheet" href="/static/css/catalog.css?v=20261023-1">
   <link rel="stylesheet" href="/static/css/overlays.css?v=20261018-3">
-  <link rel="stylesheet" href="/static/css/responsive.css?v=20261018-5">
-  <script type="module" src="/static/js/app.js?v=20261018-13"></script>
+  <link rel="stylesheet" href="/static/css/responsive.css?v=20261023-1">
+  <script type="module" src="/static/js/app.js?v=20261023-1"></script>
 </head>
 <body>
   <svg class="icon-sprite" aria-hidden="true">
@@ -84,7 +84,7 @@
             Explore iPhones <svg><use href="#i-external"/></svg>
           </a>
           <div class="overview-metrics" aria-label="Catalog coverage">
-            <div class="overview-metric"><strong>2</strong><span>retailers monitored</span><small>Zoommer · Alta</small></div>
+            <div class="overview-metric"><strong>3</strong><span>retailers monitored</span><small>Zoommer · Alta · iSpace</small></div>
             <div class="overview-metric"><strong id="overviewModelCount">—</strong><span>iPhone models</span><small>in the catalog</small></div>
             <div class="overview-metric"><strong id="overviewListingCount">—</strong><span>store listings</span><small>to compare</small></div>
           </div>
@@ -110,7 +110,11 @@
             <h1 id="productsTitle">Find your iPhone</h1>
             <p class="section-description">Compare current offers and explore how prices have moved.</p>
           </div>
-          <p id="productCount" class="count-label">Loading…</p>
+          <div class="catalog-meta">
+            <button class="small-button refresh-button" id="refreshButton" type="button"><svg aria-hidden="true"><use href="#i-refresh"/></svg><span>Refresh prices</span></button>
+            <p id="refreshStatus" class="count-label" role="status"></p>
+            <p id="productCount" class="count-label">Loading…</p>
+          </div>
         </div>
         <div id="productGrid" class="product-grid" aria-live="polite">
           <div class="loading-state">Loading products from the API…</div>

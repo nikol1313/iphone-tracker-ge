@@ -19,6 +19,11 @@
 .small-button { min-height: 40px; padding: 0 14px; color: var(--ink); background: var(--paper); border: 1px solid var(--line-strong); border-radius: 11px; font-size: .76rem; font-weight: 700; cursor: pointer; transition: background 160ms ease, border 160ms ease, transform 160ms ease; }
 .small-button:hover { color: #e4dcff; background: #292542; border-color: #897ac6; transform: translateY(-1px); }
 .small-button.tracked { color: #111323; background: #a18aff; border-color: #a18aff; }
+.catalog-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.refresh-button { display: inline-flex; align-items: center; gap: 7px; }
+.refresh-button svg { width: 15px; height: 15px; }
+.refresh-button:disabled:hover { color: var(--ink); background: var(--paper); border-color: var(--line-strong); transform: none; }
+#refreshStatus:empty { display: none; }
 .catalog-controls { display: flex; gap: 10px; margin-top: 14px; }
 .show-more-button { display: block; flex: 1; min-width: 0; min-height: 45px; color: var(--green); background: var(--paper); border: 1px solid var(--line); border-radius: 12px; font-size: .78rem; font-weight: 700; cursor: pointer; }
 .show-more-button:hover { background: var(--lime-soft); border-color: #adc28f; }
