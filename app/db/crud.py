@@ -1,5 +1,5 @@
-from datetime import UTC, datetime
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from sqlalchemy import select
@@ -13,8 +13,8 @@ from app.db.db_schemas import (
     ProductListingCreate,
     StoreCreate,
 )
-#impts
 
+#impts
 from app.db.models import CrawlRun, PriceHist, Product, ProductListing, Store
 from app.services.normalization import (
     normalize_color,
@@ -151,6 +151,19 @@ async def get_crawl_run(
     crawl_run_id: int,
 ) -> CrawlRun | None:
     return await session.get(CrawlRun, crawl_run_id)
+
+
+async def last_succeeded_products_found(
+    session: AsyncSession,
+    store_id: int,
+) -> int | None:
+    statement = (
+        select(CrawlRun.products_found)
+        .where(CrawlRun.store_id == store_id, CrawlRun.status == "succeeded")
+        .order_by(CrawlRun.started_at.desc())
+        .limit(1)
+    )
+    return await session.scalar(statement)
 
 
 async def create_crawl_run(session: AsyncSession, store_id: int) -> CrawlRun:
