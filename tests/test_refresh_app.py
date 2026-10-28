@@ -67,22 +67,28 @@ async def test_full_catalog_refresh_isolates_store_failures(
     zoommer = AsyncMock(side_effect=ZoommerCrawlError("upstream failed"))
     alta = AsyncMock(return_value=ingestion(42, 20))
     ispace = AsyncMock(return_value=ingestion(43, 10))
+    elit = AsyncMock(return_value=ingestion(44, 5))
+    megatechnica = AsyncMock(side_effect=RuntimeError("layout changed"))
     monkeypatch.setattr(scraper_service, "run_zoommer_ingestion", zoommer)
     monkeypatch.setattr(scraper_service, "run_alta_ingestion", alta)
     monkeypatch.setattr(scraper_service, "run_ispace_ingestion", ispace)
+    monkeypatch.setattr(scraper_service, "run_elit_ingestion", elit)
+    monkeypatch.setattr(scraper_service, "run_megatechnica_ingestion", megatechnica)
+    monkeypatch.setattr(scraper_service, "run_extra_ingestion", AsyncMock(return_value=ingestion(45, 4)))
+    monkeypatch.setattr(scraper_service, "run_pcshop_ingestion", AsyncMock(return_value=ingestion(46, 3)))
 
     summary = await scraper_service.refresh_full_catalog()
 
     assert summary == CatalogRefreshSummary(
-        scraped=30,
-        listings_created=2,
-        listings_updated=28,
-        prices_recorded=30,
-        crawl_run_ids=(42, 43),
-        succeeded_stores=("Alta", "iSpace"),
-        failed_stores=("Zoommer",),
+        scraped=42,
+        listings_created=5,
+        listings_updated=37,
+        prices_recorded=42,
+        crawl_run_ids=(42, 43, 44, 45, 46),
+        succeeded_stores=("Alta", "iSpace", "Elit Electronics", "Extra.ge", "PCShop"),
+        failed_stores=("Zoommer", "Megatechnica"),
     )
-    for runner in (zoommer, alta, ispace):
+    for runner in (zoommer, alta, ispace, elit, megatechnica):
         runner.assert_awaited_once()
 
 
@@ -98,7 +104,15 @@ async def test_full_catalog_refresh_rejects_concurrent_runs(
         await release.wait()
         return ingestion(1, 1)
 
-    for name in ("run_zoommer_ingestion", "run_alta_ingestion", "run_ispace_ingestion"):
+    for name in (
+        "run_zoommer_ingestion",
+        "run_alta_ingestion",
+        "run_ispace_ingestion",
+        "run_elit_ingestion",
+        "run_megatechnica_ingestion",
+        "run_extra_ingestion",
+        "run_pcshop_ingestion",
+    ):
         monkeypatch.setattr(scraper_service, name, slow_ingestion)
 
     first = asyncio.create_task(scraper_service.refresh_full_catalog())
@@ -106,7 +120,15 @@ async def test_full_catalog_refresh_rejects_concurrent_runs(
     with pytest.raises(RefreshInProgressError):
         await scraper_service.refresh_full_catalog()
     release.set()
-    assert (await first).succeeded_stores == ("Zoommer", "Alta", "iSpace")
+    assert (await first).succeeded_stores == (
+        "Zoommer",
+        "Alta",
+        "iSpace",
+        "Elit Electronics",
+        "Megatechnica",
+        "Extra.ge",
+        "PCShop",
+    )
 
 
 @pytest.mark.asyncio
@@ -319,7 +341,8 @@ def test_openapi_contains_all_requested_routes():
         "/products/{product_id}/alerts",
         "/alerts",
         "/alerts/{alert_id}",
-        "/notification-settings/telegram",
+        "/notification-settings/email",
+        "/notification-settings/email/test",
         "/refresh",
     }
     assert set(app.openapi()["paths"]) == expected

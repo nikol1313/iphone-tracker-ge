@@ -1,139 +1,119 @@
-import json
 from decimal import Decimal
+from email.message import EmailMessage
 
 import httpx
 import pytest
-from pydantic import SecretStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.conf import settings
 from app.db.models import PriceAlert, Product, ProductListing, Store, User
-from app.services import alert_service
+from app.services import alert_service, email_service
 from app.services.alert_service import check_and_send_alert_notifications
-from app.services.telegram_service import (
-    TelegramNotificationError,
+from app.services.email_service import (
+    EmailNotificationError,
     send_price_alert_notification,
-    send_telegram_message,
 )
 from tests.helpers import bearer, register_and_login
 
 
-@pytest.mark.asyncio
-async def test_price_alert_message_is_escaped_and_uses_decimal_amounts(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(
-        settings,
-        "TELEGRAM_BOT_TOKEN",
-        SecretStr("test-bot-token"),
-    )
-    captured: dict = {}
-
-    async def handler(request: httpx.Request) -> httpx.Response:
-        captured.update(json.loads(request.content))
-        return httpx.Response(200, json={"ok": True})
-
-    async with httpx.AsyncClient(
-        transport=httpx.MockTransport(handler)
-    ) as client:
-        await send_price_alert_notification(
-            chat_id="-123456",
-            product_name="iPhone <Pro & Max>",
-            product_variant="256GB & Blue",
-            target_price=Decimal("2500.10"),
-            current_price=Decimal("2399.99"),
-            currency="gel",
-            store_name='Shop "One"',
-            product_url="https://shop.example/phone?a=1&b=2",
-            client=client,
-        )
-
-    text = captured["text"]
-    assert captured["chat_id"] == "-123456"
-    assert captured["parse_mode"] == "HTML"
-    assert "iPhone &lt;Pro &amp; Max&gt;" in text
-    assert "256GB &amp; Blue" in text
-    assert "GEL 2,500.10" in text
-    assert "GEL 2,399.99" in text
-    assert "Below target by:</b> GEL 100.11" in text
-    assert "Shop &quot;One&quot;" in text
-    assert 'href="https://shop.example/phone?a=1&amp;b=2"' in text
+@pytest.fixture
+def smtp_configured(monkeypatch: pytest.MonkeyPatch) -> list[EmailMessage]:
+    monkeypatch.setattr(settings, "SMTP_HOST", "smtp.example.com")
+    monkeypatch.setattr(settings, "SMTP_FROM", "Price Monitor <alerts@example.com>")
+    sent: list[EmailMessage] = []
+    monkeypatch.setattr(email_service, "_send", sent.append)
+    return sent
 
 
 @pytest.mark.asyncio
-async def test_telegram_errors_use_notification_error(
-    monkeypatch: pytest.MonkeyPatch,
+async def test_price_alert_email_is_escaped_and_uses_decimal_amounts(
+    smtp_configured: list[EmailMessage],
 ) -> None:
-    monkeypatch.setattr(
-        settings,
-        "TELEGRAM_BOT_TOKEN",
-        SecretStr("test-bot-token"),
+    await send_price_alert_notification(
+        email="buyer@example.com",
+        product_name="iPhone <Pro & Max>",
+        product_variant="256GB & Blue",
+        target_price=Decimal("2500.10"),
+        current_price=Decimal("2399.99"),
+        currency="gel",
+        store_name='Shop "One"',
+        product_url="https://shop.example/phone?a=1&b=2",
     )
 
-    async def handler(_: httpx.Request) -> httpx.Response:
-        return httpx.Response(
-            400,
-            json={"ok": False, "description": "chat not found"},
-        )
-
-    async with httpx.AsyncClient(
-        transport=httpx.MockTransport(handler)
-    ) as client:
-        with pytest.raises(
-            TelegramNotificationError,
-            match="chat not found",
-        ):
-            await send_telegram_message(
-                "hello",
-                chat_id="123",
-                client=client,
-            )
+    [message] = smtp_configured
+    assert message["To"] == "buyer@example.com"
+    assert message["Subject"] == "Price alert: iPhone <Pro & Max> is now GEL 2,399.99"
+    text = message.get_body(("plain",)).get_content()
+    html = message.get_body(("html",)).get_content()
+    assert "Below target by: GEL 100.11" in text
+    assert "View product: https://shop.example/phone?a=1&b=2" in text
+    assert "iPhone &lt;Pro &amp; Max&gt;" in html
+    assert "Shop &quot;One&quot;" in html
+    assert 'href="https://shop.example/phone?a=1&amp;b=2"' in html
 
 
 @pytest.mark.asyncio
-async def test_telegram_settings_are_authenticated_and_persisted(
+async def test_unconfigured_smtp_raises_and_smtp_errors_are_wrapped(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "SMTP_HOST", None)
+    with pytest.raises(RuntimeError):
+        await email_service.send_test_email("buyer@example.com")
+
+    monkeypatch.setattr(settings, "SMTP_HOST", "smtp.example.com")
+    monkeypatch.setattr(settings, "SMTP_FROM", "alerts@example.com")
+
+    def refuse(_: EmailMessage) -> None:
+        raise ConnectionRefusedError("connection refused")
+
+    monkeypatch.setattr(email_service, "_send", refuse)
+    with pytest.raises(EmailNotificationError):
+        await email_service.send_test_email("buyer@example.com")
+
+
+@pytest.mark.asyncio
+async def test_email_settings_are_authenticated_validated_and_testable(
     client: httpx.AsyncClient,
     session_factory: async_sessionmaker[AsyncSession],
+    smtp_configured: list[EmailMessage],
 ) -> None:
-    assert (
-        await client.get("/notification-settings/telegram")
-    ).status_code == 401
-
+    assert (await client.get("/notification-settings/email")).status_code == 401
     token = await register_and_login(
         client,
-        email="telegram@example.com",
+        email="owner@example.com",
         session_factory=session_factory,
     )
-    headers = bearer(token)
 
+    assert (
+        await client.post("/notification-settings/email/test", headers=bearer(token))
+    ).status_code == 409
     invalid = await client.put(
-        "/notification-settings/telegram",
-        headers=headers,
-        json={"telegram_chat_id": "not-a-chat"},
+        "/notification-settings/email",
+        headers=bearer(token),
+        json={"notification_email": "not-an-email"},
     )
     assert invalid.status_code == 422
 
     saved = await client.put(
-        "/notification-settings/telegram",
-        headers=headers,
-        json={"telegram_chat_id": " -100123456789 "},
+        "/notification-settings/email",
+        headers=bearer(token),
+        json={"notification_email": " Alerts@Example.com "},
     )
-    assert saved.status_code == 200
-    assert saved.json() == {"telegram_chat_id": "-100123456789"}
-    assert (
-        await client.get(
-            "/notification-settings/telegram",
-            headers=headers,
-        )
-    ).json() == {"telegram_chat_id": "-100123456789"}
+    assert saved.json() == {
+        "notification_email": "alerts@example.com",
+        "delivery_configured": True,
+    }
+    tested = await client.post("/notification-settings/email/test", headers=bearer(token))
+    assert tested.status_code == 204
+    assert smtp_configured[-1]["To"] == "alerts@example.com"
 
     cleared = await client.put(
-        "/notification-settings/telegram",
-        headers=headers,
-        json={"telegram_chat_id": None},
+        "/notification-settings/email",
+        headers=bearer(token),
+        json={"notification_email": None},
     )
-    assert cleared.json() == {"telegram_chat_id": None}
+    assert cleared.json()["notification_email"] is None
 
 
 @pytest.mark.asyncio
@@ -154,7 +134,7 @@ async def test_triggered_alert_routes_to_owner_once_with_correct_listing(
         configured_user = User(
             email="configured@example.com",
             password_hash="unused",
-            telegram_chat_id="111",
+            notification_email="alerts@example.com",
         )
         unconfigured_user = User(
             email="unconfigured@example.com",
@@ -226,7 +206,7 @@ async def test_triggered_alert_routes_to_owner_once_with_correct_listing(
         ).all()
 
     assert len(deliveries) == 1
-    assert deliveries[0]["chat_id"] == "111"
+    assert deliveries[0]["email"] == "alerts@example.com"
     assert deliveries[0]["currency"] == "GEL"
     assert deliveries[0]["current_price"] == Decimal("2400.00")
     assert deliveries[0]["store_name"] == "GEL Store"
@@ -249,7 +229,7 @@ async def test_failed_delivery_is_left_pending_for_retry(
         user = User(
             email="retry@example.com",
             password_hash="unused",
-            telegram_chat_id="222",
+            notification_email="retry@example.com",
         )
         session.add_all([store, product, user])
         await session.flush()
@@ -277,7 +257,7 @@ async def test_failed_delivery_is_left_pending_for_retry(
     async def fail_delivery(**_: object) -> None:
         nonlocal attempts
         attempts += 1
-        raise TelegramNotificationError("temporary failure")
+        raise EmailNotificationError("temporary failure")
 
     monkeypatch.setattr(
         alert_service,

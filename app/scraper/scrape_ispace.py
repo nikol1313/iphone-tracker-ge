@@ -1,11 +1,17 @@
 import asyncio
 import json
 import logging
-import re
 from urllib.parse import urljoin
 
 import httpx
 from bs4 import BeautifulSoup
+
+from app.scraper.http import (
+    browser_client,
+    fetch_with_retries,
+    parse_price,
+    validate_retry_options,
+)
 
 BASE_URL = "https://ispace.ge"
 ISPACE_IPHONE_URL = f"{BASE_URL}/category/iphone"
@@ -15,28 +21,6 @@ LOGGER = logging.getLogger(__name__)
 
 class IspaceCrawlError(RuntimeError):
     """Raised when iSpace cannot be fetched after the retry policy."""
-
-
-def _is_retryable(error: httpx.HTTPError) -> bool:
-    if isinstance(error, httpx.RequestError):
-        return True
-    if isinstance(error, httpx.HTTPStatusError):
-        return error.response.status_code in {408, 429} or (
-            error.response.status_code >= 500
-        )
-    return False
-
-
-def parse_price(price_text: str) -> float | None:
-    cleaned_price = re.sub(r"[^\d.]", "", str(price_text))
-
-    if not cleaned_price:
-        return None
-
-    try:
-        return float(cleaned_price)
-    except ValueError:
-        return None
 
 
 def _is_open_box(product_path: str) -> bool:
@@ -109,51 +93,6 @@ def _deduplicate(products: list[dict[str, object]]) -> list[dict[str, object]]:
     return list(best.values())
 
 
-async def _fetch_with_retries(
-    client: httpx.AsyncClient,
-    url: str,
-    *,
-    params: dict[str, int],
-    max_attempts: int,
-    backoff_seconds: float,
-    request_delay_seconds: float,
-) -> httpx.Response:
-    last_error: httpx.HTTPError | None = None
-    attempts_made = 0
-
-    for attempt in range(1, max_attempts + 1):
-        attempts_made = attempt
-        if request_delay_seconds:
-            await asyncio.sleep(request_delay_seconds)
-
-        try:
-            response = await client.get(url, params=params)
-            response.raise_for_status()
-            return response
-        except httpx.HTTPError as error:
-            last_error = error
-
-            if attempt == max_attempts or not _is_retryable(error):
-                break
-
-            retry_delay = backoff_seconds * (2 ** (attempt - 1))
-            LOGGER.warning(
-                "iSpace request failed; retrying in %.1f seconds "
-                "(attempt %d/%d): %s",
-                retry_delay,
-                attempt,
-                max_attempts,
-                error,
-            )
-            if retry_delay:
-                await asyncio.sleep(retry_delay)
-
-    raise IspaceCrawlError(
-        f"Failed to fetch {url} {params} after {attempts_made} attempt(s): "
-        f"{last_error}"
-    ) from last_error
-
-
 async def _scrape_pages(
     client: httpx.AsyncClient,
     url: str,
@@ -165,9 +104,11 @@ async def _scrape_pages(
     products: list[dict[str, object]] = []
 
     for page in range(1, MAX_PAGES + 1):
-        response = await _fetch_with_retries(
+        response = await fetch_with_retries(
             client,
             url,
+            store="iSpace",
+            error_type=IspaceCrawlError,
             params={"page": page},
             max_attempts=max_attempts,
             backoff_seconds=backoff_seconds,
@@ -189,10 +130,7 @@ async def scrape_ispace(
     request_delay_seconds: float = 0.5,
     client: httpx.AsyncClient | None = None,
 ) -> list[dict[str, object]]:
-    if max_attempts < 1:
-        raise ValueError("max_attempts must be at least 1")
-    if backoff_seconds < 0 or request_delay_seconds < 0:
-        raise ValueError("retry and request delays cannot be negative")
+    validate_retry_options(max_attempts, backoff_seconds, request_delay_seconds)
 
     options = {
         "max_attempts": max_attempts,
@@ -203,20 +141,7 @@ async def scrape_ispace(
     if client is not None:
         return await _scrape_pages(client, url, **options)
 
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (X11; Linux x86_64) "
-            "AppleWebKit/537.36 "
-            "Chrome/149.0.0.0 Safari/537.36"
-        ),
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "ka-GE,ka;q=0.9,en-US;q=0.8,en;q=0.7",
-    }
-    async with httpx.AsyncClient(
-        headers=headers,
-        timeout=httpx.Timeout(20, connect=10),
-        follow_redirects=True,
-    ) as owned_client:
+    async with browser_client() as owned_client:
         return await _scrape_pages(owned_client, url, **options)
 
 

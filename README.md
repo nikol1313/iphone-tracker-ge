@@ -5,12 +5,14 @@ A Georgian iPhone price comparison and tracking app. It imports retailer listing
 ## Features
 
 - Search the iPhone catalog by model and variant.
-- Compare retailer listings and availability.
+- Compare one phone across retailers: titles like "Apple iPhone 17 (8GB/256GB) - Sage" and
+  "iPhone 17, 256 GB, Sage" are parsed into the same model, storage, and color.
+- Filter by model, storage, and stock; sort by price, store savings, or store count.
 - See price-drop and lowest-ever badges on catalog cards.
 - View price history for tracked products.
 - Register an account, track products, and configure target-price alerts.
-- Configure Telegram notifications for price alerts.
-- Refresh the catalog from Zoommer, Alta, and iSpace automatically every 12 hours and record crawl outcomes.
+- Get price alerts by email (any address; send a test email from the account menu).
+- Refresh the catalog from Zoommer, Alta, iSpace, Elit Electronics, Megatechnica, Extra.ge, and PCShop automatically every 12 hours and record crawl outcomes.
 - Refresh prices on demand from the catalog page (signed-in users, once per hour).
 - Explore the REST API using Swagger UI.
 
@@ -32,7 +34,8 @@ The app currently runs locally only; a hosted deployment is in progress.
 2. Start the services with `docker compose up --build`.
 3. Open [http://localhost:8080](http://localhost:8080).
 
-Telegram alerts need `TELEGRAM_BOT_TOKEN` in `.env`. On a deployed server, set `PROD=true`:
+Email alerts need an SMTP account: set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`,
+and `SMTP_FROM` in `.env` (see `.env.example` for Gmail). On a deployed server, set `PROD=true`:
 the backend then refuses to start without a `DATABASE_URL` and a non-placeholder `JWT_SECRET`.
 
 ## Development

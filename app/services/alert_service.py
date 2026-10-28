@@ -1,7 +1,7 @@
 import logging
 from datetime import UTC, datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,7 +11,6 @@ from app.db.db_schemas import (
     AlertResponse,
     Page,
     ProductResponse,
-    ProductSummary,
     TrackedProductResponse,
 )
 from app.db.models import (
@@ -22,11 +21,16 @@ from app.db.models import (
     TrackedProduct,
     User,
 )
-from app.services.errors import ConflictError, NotFoundError
-from app.services.product_service import require_active_product
-from app.services.telegram_service import (
-    TelegramNotificationError,
+from app.services.email_service import (
+    EmailNotificationError,
     send_price_alert_notification,
+)
+from app.services.errors import ConflictError, NotFoundError
+from app.services.product_service import (
+    product_summary,
+    product_summary_select,
+    require_active_product,
+    with_price_trends,
 )
 
 logger = logging.getLogger(__name__)
@@ -46,33 +50,6 @@ def _lowest_price(product_id_column, currency_column=None):
         .order_by(ProductListing.current_price, ProductListing.id)
         .limit(1)
         .correlate(Product, PriceAlert, TrackedProduct)
-        .scalar_subquery()
-    )
-
-
-def _listing_count(product_id_column):
-    return (
-        select(func.count(ProductListing.id))
-        .where(
-            ProductListing.product_id == product_id_column,
-            ProductListing.is_active.is_(True),
-        )
-        .correlate(Product, TrackedProduct)
-        .scalar_subquery()
-    )
-
-
-def _lowest_currency(product_id_column):
-    return (
-        select(ProductListing.currency)
-        .where(
-            ProductListing.product_id == product_id_column,
-            ProductListing.is_active.is_(True),
-            ProductListing.is_available.is_(True),
-        )
-        .order_by(ProductListing.current_price, ProductListing.id)
-        .limit(1)
-        .correlate(Product, TrackedProduct)
         .scalar_subquery()
     )
 
@@ -123,22 +100,13 @@ async def list_tracked_products(
         )
         or 0
     )
-    lowest = _lowest_price(Product.id)
-    lowest_currency = _lowest_currency(Product.id)
-    listing_count = _listing_count(Product.id)
     alert_lowest = _lowest_price(Product.id, PriceAlert.currency)
+    # Same summary as the catalog, so the watchlist shows the same prices and stock.
     rows = (
         await session.execute(
-            select(
-                TrackedProduct,
-                Product,
-                PriceAlert,
-                lowest.label("lowest_price"),
-                lowest_currency.label("lowest_currency"),
-                listing_count.label("listing_count"),
-                alert_lowest.label("alert_lowest"),
-            )
-            .join(Product, Product.id == TrackedProduct.product_id)
+            product_summary_select()
+            .add_columns(TrackedProduct, PriceAlert, alert_lowest.label("alert_lowest"))
+            .join(TrackedProduct, TrackedProduct.product_id == Product.id)
             .outerjoin(
                 PriceAlert,
                 (PriceAlert.product_id == Product.id)
@@ -150,8 +118,11 @@ async def list_tracked_products(
             .offset(offset)
         )
     ).all()
+    summaries = await with_price_trends(
+        session, [product_summary(*row[:-3]) for row in rows]
+    )
     items = []
-    for tracked, product, alert, price, currency, count, alert_price in rows:
+    for summary, (*_, tracked, alert, alert_price) in zip(summaries, rows, strict=True):
         active_alert = None
         if alert is not None:
             active_alert = AlertBrief(
@@ -164,12 +135,7 @@ async def list_tracked_products(
             )
         items.append(
             TrackedProductResponse(
-                product=ProductSummary(
-                    **_product_response(product).model_dump(),
-                    lowest_price=price,
-                    currency=currency,
-                    listing_count=count,
-                ),
+                product=summary,
                 active_alert=active_alert,
                 created_at=tracked.created_at,
             )
@@ -192,6 +158,13 @@ async def untrack_product(
     if tracked is None:
         raise NotFoundError("Tracked product not found")
     await session.delete(tracked)
+    # An alert outside the watchlist would notify about a product the user dropped.
+    await session.execute(
+        delete(PriceAlert).where(
+            PriceAlert.user_id == user_id,
+            PriceAlert.product_id == product_id,
+        )
+    )
     await session.flush()
 
 
@@ -215,6 +188,16 @@ async def create_alert(
             await session.flush()
     except IntegrityError as error:
         raise ConflictError("An alert already exists for this product") from error
+    # The watchlist lists tracked products, so an alert always tracks its product.
+    already_tracked = await session.scalar(
+        select(TrackedProduct.id).where(
+            TrackedProduct.user_id == user_id,
+            TrackedProduct.product_id == product_id,
+        )
+    )
+    if already_tracked is None:
+        session.add(TrackedProduct(user_id=user_id, product_id=product_id))
+        await session.flush()
     return alert
 
 
@@ -313,7 +296,7 @@ async def delete_alert(
 
 
 async def check_and_send_alert_notifications(session: AsyncSession) -> None:
-    """Send each newly triggered alert once to its owner's configured chat."""
+    """Email each newly triggered alert once to its owner's notification address."""
     current_price = _lowest_price(Product.id, PriceAlert.currency)
 
     rows = (
@@ -321,7 +304,7 @@ async def check_and_send_alert_notifications(session: AsyncSession) -> None:
             select(
                 PriceAlert,
                 Product,
-                User.telegram_chat_id,
+                User.notification_email,
                 current_price.label("current_price"),
             )
             .join(Product, Product.id == PriceAlert.product_id)
@@ -329,13 +312,13 @@ async def check_and_send_alert_notifications(session: AsyncSession) -> None:
             .where(
                 Product.is_active.is_(True),
                 User.is_active.is_(True),
-                User.telegram_chat_id.is_not(None),
+                User.notification_email.is_not(None),
                 PriceAlert.notified_at.is_(None),
             )
         )
     ).all()
 
-    for alert, product, chat_id, price in rows:
+    for alert, product, email, price in rows:
         if price is not None and price <= alert.target_price:
             listing_row = (
                 await session.execute(
@@ -369,7 +352,7 @@ async def check_and_send_alert_notifications(session: AsyncSession) -> None:
 
             try:
                 await send_price_alert_notification(
-                    chat_id=chat_id,
+                    email=email,
                     product_name=product_name,
                     product_variant=product_variant,
                     target_price=alert.target_price,
@@ -380,9 +363,9 @@ async def check_and_send_alert_notifications(session: AsyncSession) -> None:
                         listing_result.product_url if listing_result else None
                     ),
                 )
-            except (TelegramNotificationError, RuntimeError) as error:
+            except (EmailNotificationError, RuntimeError) as error:
                 logger.warning(
-                    "Telegram delivery failed for alert %s: %s",
+                    "Email delivery failed for alert %s: %s",
                     alert.id,
                     error,
                 )

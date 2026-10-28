@@ -13,7 +13,11 @@ from app.services.errors import RefreshCooldownError, RefreshInProgressError
 from app.services.zmr_inges import (
     IngestionSummary,
     run_alta_ingestion,
+    run_elit_ingestion,
+    run_extra_ingestion,
     run_ispace_ingestion,
+    run_megatechnica_ingestion,
+    run_pcshop_ingestion,
     run_zoommer_ingestion,
 )
 
@@ -40,6 +44,10 @@ def _store_runners() -> tuple[tuple[str, Callable[[], Awaitable[IngestionSummary
         ("Zoommer", run_zoommer_ingestion),
         ("Alta", run_alta_ingestion),
         ("iSpace", run_ispace_ingestion),
+        ("Elit Electronics", run_elit_ingestion),
+        ("Megatechnica", run_megatechnica_ingestion),
+        ("Extra.ge", run_extra_ingestion),
+        ("PCShop", run_pcshop_ingestion),
     )
 
 

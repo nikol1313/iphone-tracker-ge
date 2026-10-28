@@ -66,30 +66,21 @@ class UserResponse(BaseModel):
     created_at: datetime
 
 
-class TelegramSettingsUpdate(BaseModel):
-    telegram_chat_id: str | None
+class EmailSettingsUpdate(BaseModel):
+    notification_email: EmailStr | None
 
-    @field_validator("telegram_chat_id")
+    @field_validator("notification_email")
     @classmethod
-    def valid_chat_id(cls, value: str | None) -> str | None:
-        if value is None:
-            return None
-        normalized = value.strip()
-        digits = normalized.removeprefix("-")
-        if (
-            len(normalized) > 32
-            or not digits.isascii()
-            or not digits.isdigit()
-            or int(normalized) == 0
-        ):
-            raise ValueError("Telegram chat ID must be a non-zero integer")
-        return normalized
+    def normalized_email(cls, value: EmailStr | None) -> str | None:
+        return normalize_email(str(value)) if value is not None else None
 
 
-class TelegramSettingsResponse(BaseModel):
+class EmailSettingsResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    telegram_chat_id: str | None
+    notification_email: str | None
+    # False until the server has SMTP settings, so the page can say so.
+    delivery_configured: bool = False
 
 
 class TokenResponse(BaseModel):
@@ -171,6 +162,8 @@ class ProductSummary(ProductResponse):
     currency: str | None
     listing_count: int
     available_listing_count: int = 0
+    # Most expensive available offer in the lowest price's currency.
+    highest_price: Decimal | None = None
     # Lowest price across listings PRICE_TREND_WINDOW ago, for "price drop" badges.
     price_week_ago: Decimal | None = None
     lowest_price_ever: Decimal | None = None
@@ -222,6 +215,8 @@ class ProductListingResponse(BaseModel):
     currency: str
     is_available: bool
     last_checked_at: datetime
+    # The retailer's own title for this listing.
+    variant_name: str | None = None
 
 
 class PriceHistCreate(BaseModel):

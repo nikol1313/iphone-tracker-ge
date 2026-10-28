@@ -59,3 +59,8 @@
 
 :root[data-theme="light"] .api-status[data-state="connected"] span { background: #238653; box-shadow: 0 0 0 3px rgba(35, 134, 83, .13); }
 :root[data-theme="light"] .api-status[data-state="unavailable"] span { background: #c33d4a; box-shadow: 0 0 0 3px rgba(195, 61, 74, .13); }
+@media (max-width: 700px) {
+  .catalog-filters { display: grid; grid-template-columns: 1fr 1fr; }
+  .filter-field { min-width: 0; }
+  .catalog-filters .text-button { margin-left: 0; }
+}

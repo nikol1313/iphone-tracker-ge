@@ -151,3 +151,47 @@ async def test_alert_validation_trigger_and_ownership(
             headers=bearer(user_token),
         )
     ).status_code == 204
+
+
+@pytest.mark.asyncio
+async def test_alert_adds_product_to_watchlist_and_untrack_removes_it(
+    client: httpx.AsyncClient,
+    session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    _, product = await create_admin_product(client, session_factory)
+    token = await register_and_login(
+        client,
+        email="watcher@example.com",
+        session_factory=session_factory,
+    )
+
+    created = await client.post(
+        f"/products/{product['id']}/alerts",
+        headers=bearer(token),
+        json={"target_price": "2100", "currency": "GEL"},
+    )
+    assert created.status_code == 201
+
+    watchlist = await client.get("/tracked-products", headers=bearer(token))
+    [item] = watchlist.json()["items"]
+    assert item["product"]["id"] == product["id"]
+    assert item["active_alert"]["target_price"] == "2100.00"
+
+    # Alerting on an already tracked product keeps one watchlist row.
+    await client.delete(f"/alerts/{created.json()['id']}", headers=bearer(token))
+    again = await client.post(
+        f"/products/{product['id']}/alerts",
+        headers=bearer(token),
+        json={"target_price": "2000", "currency": "GEL"},
+    )
+    assert again.status_code == 201
+    watchlist = await client.get("/tracked-products", headers=bearer(token))
+    assert len(watchlist.json()["items"]) == 1
+
+    removed = await client.delete(
+        f"/tracked-products/{product['id']}",
+        headers=bearer(token),
+    )
+    assert removed.status_code == 204
+    alerts = await client.get("/alerts", headers=bearer(token))
+    assert alerts.json()["items"] == []

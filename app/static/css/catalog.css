@@ -105,3 +105,34 @@ tbody tr:hover { background: #1a2035; }
 :root[data-theme="light"] .small-button.tracked { color: #fff; background: #7259d1; border-color: #7259d1; }
 :root[data-theme="light"] .table-wrap { background: var(--paper); }
 :root[data-theme="light"] tbody tr:hover { background: #f5f6fb; }
+
+.catalog-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 12px; margin-bottom: 16px; padding: 12px; background: var(--canvas); border: 1px solid var(--line); border-radius: 12px; }
+.filter-field { display: grid; gap: 4px; min-width: 150px; color: var(--muted); font-size: .66rem; font-weight: 600; letter-spacing: .04em; }
+.filter-field select { width: 100%; min-width: 0; min-height: 38px; padding: 0 30px 0 11px; color: var(--ink); background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238992b1' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 11px center; border: 1px solid var(--line-strong); border-radius: 10px; font: inherit; font-size: .8rem; font-weight: 500; letter-spacing: 0; appearance: none; cursor: pointer; }
+.filter-field select:focus-visible, .filter-toggle input:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.filter-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 4px; color: var(--ink-soft); font-size: .8rem; cursor: pointer; }
+.filter-toggle input { width: 16px; height: 16px; margin: 0; accent-color: var(--green); }
+.catalog-filters .text-button { min-height: 38px; margin-left: auto; }
+.catalog-filters .text-button[hidden] { display: none; }
+.product-variant { margin: 3px 0 9px; color: var(--muted); font-size: .72rem; }
+.product-card h3 { min-height: 0; }
+.price-label { display: block; margin-bottom: 1px; color: var(--muted); font-size: .62rem; letter-spacing: .03em; }
+.savings { color: #7fe0ae; font-weight: 600; }
+.listing-title { display: block; max-width: 280px; margin-top: 3px; overflow: hidden; color: var(--muted); font-size: .68rem; text-overflow: ellipsis; white-space: nowrap; }
+.listing-price { font-weight: 600; white-space: nowrap; }
+.listing-diff { color: var(--muted); white-space: nowrap; }
+.best-tag { display: inline-block; margin-left: 8px; padding: 2px 7px; color: #0c3b24; background: #7fe0ae; border-radius: 999px; font-size: .6rem; font-weight: 700; vertical-align: 1px; }
+tbody tr.best-offer { background: color-mix(in srgb, var(--green) 9%, transparent); }
+tbody tr.best-offer td:first-child { box-shadow: inset 3px 0 0 var(--green); }
+
+:root[data-theme="light"] .savings { color: #1f7a4c; }
+:root[data-theme="light"] .product-card.selected .price strong { color: var(--green); }
+
+.product-card.top-deal { border: 2px solid var(--danger); box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 18%, transparent); }
+.product-card.top-deal.selected { box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 18%, transparent), inset 0 0 0 1px var(--green); }
+.deal-ribbon { display: grid; gap: 1px; margin: -2px 0 10px; padding: 7px 10px; color: #fff; background: var(--danger); border-radius: 8px; line-height: 1.25; }
+.deal-ribbon strong { font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.deal-ribbon span { font-size: .74rem; font-weight: 600; }
+:root[data-theme="dark"] .deal-ribbon { color: #2a0b0e; }
+.chart-point-price { fill: var(--ink); font: 600 15px var(--font); font-variant-numeric: lining-nums tabular-nums; }
+.chart-point-date { fill: var(--muted); font: 12px var(--font); }

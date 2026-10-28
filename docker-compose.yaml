@@ -22,7 +22,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    # Passes TELEGRAM_BOT_TOKEN, PROD, REFRESH_SCHEDULER_ENABLED, etc.
+    # Passes SMTP_*, PROD, REFRESH_SCHEDULER_ENABLED, etc.
     env_file: .env
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-iphone_monitor}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-iphone_monitor}
