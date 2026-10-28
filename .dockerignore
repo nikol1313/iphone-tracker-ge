@@ -4,11 +4,11 @@
 .pytest_cache
 .ruff_cache
 .venv
-__pycache__ 
-.py
+__pycache__
 .env
 *.env
 pgdata
 postgres_data
 tests
 todo
+.env.example
