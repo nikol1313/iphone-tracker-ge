@@ -4,7 +4,9 @@ import pytest
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.db.models import PriceHist, Product, ProductListing, Store
+from app.db.models import CrawlRun, PriceHist, Product, ProductListing, Store
+from app.services import zmr_inges
+from app.services.errors import EmptyScrapeError
 from app.services.zmr_inges import ingest_alta, ingest_zoommer
 
 
@@ -39,3 +41,56 @@ async def test_ingests_shared_product_for_zoommer_and_alta(
 
         listings = (await session.scalars(select(ProductListing))).all()
         assert {listing.current_price for listing in listings} == {Decimal("4299.00")}
+
+PRODUCT = {
+    "name": "Apple iPhone 17 Pro 256GB Black",
+    "model": "iPhone 17 Pro",
+    "storage": "256GB",
+    "color": "Black",
+    "price": 4299,
+    "url": "https://example.com/iphone-17-pro",
+}
+
+
+def scraper_returning(*products: dict):
+    async def scrape() -> list[dict[str, object]]:
+        return [dict(product, url=f"{product['url']}-{i}") for i, product in enumerate(products)]
+
+    return scrape
+
+
+@pytest.mark.asyncio
+async def test_empty_scrape_fails_crawl_run(
+    session_factory: async_sessionmaker[AsyncSession],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(zmr_inges, "SESSION", session_factory)
+
+    with pytest.raises(EmptyScrapeError):
+        await zmr_inges._run_store_ingestion(
+            "Zoommer", "https://zoommer.ge", scraper_returning()
+        )
+
+    async with session_factory() as session:
+        run = await session.scalar(select(CrawlRun))
+        assert run.status == "failed"
+        assert "no products" in run.error_message
+
+
+@pytest.mark.asyncio
+async def test_sharp_drop_in_scraped_products_logs_warning(
+    session_factory: async_sessionmaker[AsyncSession],
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    monkeypatch.setattr(zmr_inges, "SESSION", session_factory)
+    await zmr_inges._run_store_ingestion(
+        "Zoommer", "https://zoommer.ge", scraper_returning(*[PRODUCT] * 4)
+    )
+
+    summary = await zmr_inges._run_store_ingestion(
+        "Zoommer", "https://zoommer.ge", scraper_returning(PRODUCT)
+    )
+
+    assert summary.scraped == 1
+    assert "down from 4 last run" in caplog.text

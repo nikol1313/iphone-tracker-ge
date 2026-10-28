@@ -1,10 +1,11 @@
 import asyncio
+import logging
 from collections.abc import Awaitable, Callable, Iterable, Mapping
 from dataclasses import asdict, dataclass
 from decimal import Decimal, InvalidOperation
 
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.crud import (
     complete_crawl_run,
@@ -12,19 +13,27 @@ from app.db.crud import (
     fail_crawl_run,
     get_or_create_product,
     get_or_create_store,
+    last_succeeded_products_found,
     upsert_product_listing,
 )
 from app.db.db_schemas import ProductCreate, ProductListingCreate, StoreCreate
 from app.db.sess import SESSION
 from app.scraper.scrape_alta import (
     ALTA_IPHONE_URL,
-    BASE_URL as ALTA_BASE_URL,
     scrape_alta,
 )
-from app.scraper.scrape_ispace import BASE_URL as ISPACE_BASE_URL, scrape_ispace
+from app.scraper.scrape_alta import (
+    BASE_URL as ALTA_BASE_URL,
+)
+from app.scraper.scrape_ispace import BASE_URL as ISPACE_BASE_URL
+from app.scraper.scrape_ispace import scrape_ispace
 from app.scraper.scrape_zoommer import BASE_URL, scrape_zoommer
 from app.services.alert_service import check_and_send_alert_notifications
-from app.services.errors import RefreshInProgressError
+from app.services.errors import EmptyScrapeError, RefreshInProgressError
+
+LOGGER = logging.getLogger(__name__)
+# Warn when a crawl finds less than this share of the previous successful crawl.
+SCRAPE_DROP_WARNING_RATIO = 0.5
 
 
 @dataclass(frozen=True, slots=True)
@@ -189,6 +198,9 @@ async def _run_store_ingestion(
                     session,
                     StoreCreate(title=store_title, web_url=store_url),
                 )
+                previous_found = await last_succeeded_products_found(
+                    session, store.id
+                )
                 crawl_run = await create_crawl_run(session, store.id)
                 crawl_run_id = crawl_run.id
         except IntegrityError as error:
@@ -201,6 +213,22 @@ async def _run_store_ingestion(
         try:
             scraped_products = await scrape_products()
             products_found = len(scraped_products)
+            if not products_found:
+                raise EmptyScrapeError(
+                    f"{store_title} scraper returned no products; "
+                    "the store page layout may have changed"
+                )
+            if (
+                previous_found
+                and products_found < previous_found * SCRAPE_DROP_WARNING_RATIO
+            ):
+                LOGGER.warning(
+                    "%s scraper found %d products, down from %d last run; "
+                    "the store page layout may have changed",
+                    store_title,
+                    products_found,
+                    previous_found,
+                )
 
             async with session.begin():
                 summary = await _ingest_store(
