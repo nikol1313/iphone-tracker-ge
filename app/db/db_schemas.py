@@ -171,6 +171,10 @@ class ProductSummary(ProductResponse):
     currency: str | None
     listing_count: int
     available_listing_count: int = 0
+    # Lowest price across listings PRICE_TREND_WINDOW ago, for "price drop" badges.
+    price_week_ago: Decimal | None = None
+    lowest_price_ever: Decimal | None = None
+    highest_price_ever: Decimal | None = None
 
 
 class ProductListingCreate(BaseModel):

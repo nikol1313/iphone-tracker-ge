@@ -249,3 +249,52 @@ async def test_listing_and_merged_price_history_ordering(
     unavailable_detail = await client.get(f"/products/{product_id}")
     assert unavailable_detail.json()["lowest_price"] == "2000.00"
     assert unavailable_detail.json()["available_listing_count"] == 0
+
+
+@pytest.mark.asyncio
+async def test_catalog_reports_price_trends(
+    client: httpx.AsyncClient,
+    session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    _, product = await create_admin_product(client, session_factory)
+    now = datetime.now(UTC)
+    async with session_factory() as session:
+        store_a = Store(title="Store A", web_url="https://a.example")
+        store_b = Store(title="Store B", web_url="https://b.example")
+        session.add_all([store_a, store_b])
+        await session.flush()
+        listings = [
+            ProductListing(
+                product_id=product["id"],
+                store_id=store.id,
+                product_url=f"{store.web_url}/phone",
+                current_price=price,
+                currency="GEL",
+                is_available=True,
+                last_checked_at=now,
+            )
+            for store, price in ((store_a, Decimal("2700.00")), (store_b, Decimal("2900.00")))
+        ]
+        session.add_all(listings)
+        await session.flush()
+        a, b = listings
+        session.add_all(
+            [
+                PriceHist(listing_id=a.id, price=Decimal("3300.00"), currency="GEL", recorded_at=now - timedelta(days=20)),
+                PriceHist(listing_id=a.id, price=Decimal("3100.00"), currency="GEL", recorded_at=now - timedelta(days=10)),
+                PriceHist(listing_id=b.id, price=Decimal("3000.00"), currency="GEL", recorded_at=now - timedelta(days=9)),
+                PriceHist(listing_id=a.id, price=Decimal("2700.00"), currency="GEL", recorded_at=now - timedelta(days=1)),
+                PriceHist(listing_id=b.id, price=Decimal("2900.00"), currency="GEL", recorded_at=now - timedelta(days=1)),
+            ]
+        )
+        await session.commit()
+
+    for endpoint in ("/products", "/search?q=iphone"):
+        response = await client.get(endpoint)
+        assert response.status_code == 200, response.text
+        item = response.json()["items"][0]
+        assert item["lowest_price"] == "2700.00"
+        # A week ago store A was at 3100 and store B at 3000.
+        assert item["price_week_ago"] == "3000.00"
+        assert item["lowest_price_ever"] == "2700.00"
+        assert item["highest_price_ever"] == "3300.00"

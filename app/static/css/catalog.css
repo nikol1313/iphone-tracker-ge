@@ -8,6 +8,10 @@
 .product-image-fallback { display: none; color: #b9b0d9; font-family: var(--mono); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; }
 .product-image.no-image .product-image-fallback { display: block; }
 .product-image.no-image { background: #151d32; border-color: #252e49; }
+.price-badges { position: absolute; top: 7px; left: 7px; z-index: 1; display: flex; flex-wrap: wrap; gap: 4px; }
+.price-badge { padding: 3px 7px; border-radius: 999px; font-size: .62rem; font-weight: 700; line-height: 1.2; }
+.price-badge.drop { color: #0c3b24; background: #7fe0ae; }
+.price-badge.lowest { color: #2b1d00; background: #ffd479; }
 .product-card-info { position: relative; z-index: 1; padding: 9px 3px 2px; }
 .product-card h3 { position: relative; z-index: 1; min-height: 2.5em; margin: 0; padding-right: 20px; color: #f0f1fb; font-size: .82rem; font-weight: 600; line-height: 1.35; }
 .product-card::after { position: absolute; top: 18px; right: 18px; content: "↗"; color: var(--green); font-size: .95rem; opacity: 0; transition: opacity 160ms ease; }

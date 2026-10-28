@@ -1,4 +1,5 @@
-from datetime import UTC, datetime
+from collections import defaultdict
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 from sqlalchemy import Select, and_, func, or_, select
@@ -22,6 +23,8 @@ from app.services.normalization import (
     normalize_text,
     product_identity_key,
 )
+
+PRICE_TREND_WINDOW = timedelta(days=7)
 
 
 def _lowest_price_expression():
@@ -134,6 +137,55 @@ def _summary(
     )
 
 
+async def _with_price_trends(
+    session: AsyncSession,
+    summaries: list[ProductSummary],
+) -> list[ProductSummary]:
+    if not summaries:
+        return summaries
+    rows = (
+        await session.execute(
+            select(
+                ProductListing.product_id,
+                PriceHist.listing_id,
+                PriceHist.price,
+                PriceHist.currency,
+                PriceHist.recorded_at,
+            )
+            .join(ProductListing, ProductListing.id == PriceHist.listing_id)
+            .where(
+                ProductListing.product_id.in_([summary.id for summary in summaries]),
+                ProductListing.is_active.is_(True),
+            )
+            .order_by(PriceHist.recorded_at, PriceHist.id)
+        )
+    ).all()
+    currencies = {summary.id: summary.currency for summary in summaries}
+    cutoff = datetime.now(UTC) - PRICE_TREND_WINDOW
+    prices: dict[int, list[Decimal]] = defaultdict(list)
+    # Per product, each listing's latest price at the cutoff (rows are time-ordered).
+    at_cutoff: dict[int, dict[int, Decimal]] = defaultdict(dict)
+    for product_id, listing_id, price, currency, recorded_at in rows:
+        if currency != currencies[product_id]:
+            continue
+        prices[product_id].append(price)
+        if recorded_at.tzinfo is None:
+            recorded_at = recorded_at.replace(tzinfo=UTC)
+        if recorded_at <= cutoff:
+            at_cutoff[product_id][listing_id] = price
+
+    return [
+        summary.model_copy(
+            update={
+                "price_week_ago": min(at_cutoff[summary.id].values(), default=None),
+                "lowest_price_ever": min(prices[summary.id], default=None),
+                "highest_price_ever": max(prices[summary.id], default=None),
+            }
+        )
+        for summary in summaries
+    ]
+
+
 async def require_active_product(
     session: AsyncSession,
     product_id: int,
@@ -241,10 +293,13 @@ async def list_products(
     )
     rows = (await session.execute(statement.limit(limit).offset(offset))).all()
     return Page(
-        items=[
-            _summary(product, price, currency, count, available_count)
-            for product, price, currency, count, available_count in rows
-        ],
+        items=await _with_price_trends(
+            session,
+            [
+                _summary(product, price, currency, count, available_count)
+                for product, price, currency, count, available_count in rows
+            ],
+        ),
         total=total,
         limit=limit,
         offset=offset,
@@ -336,10 +391,13 @@ async def search_products(
         )
     ).all()
     return Page(
-        items=[
-            _summary(product, price, currency, count, available_count)
-            for product, price, currency, count, available_count in rows
-        ],
+        items=await _with_price_trends(
+            session,
+            [
+                _summary(product, price, currency, count, available_count)
+                for product, price, currency, count, available_count in rows
+            ],
+        ),
         total=total,
         limit=limit,
         offset=offset,
