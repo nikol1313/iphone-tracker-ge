@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-iphone_monitor}
       POSTGRES_USER: ${POSTGRES_USER:-iphone_monitor}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-iphone_monitor}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -22,9 +22,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    # Passes TELEGRAM_BOT_TOKEN, PROD, REFRESH_SCHEDULER_ENABLED, etc.
+    env_file: .env
     environment:
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-iphone_monitor}:${POSTGRES_PASSWORD:-iphone_monitor}@db:5432/${POSTGRES_DB:-iphone_monitor}
-      JWT_SECRET: ${JWT_SECRET:-local-development-secret-change-me-1234567890}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-iphone_monitor}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-iphone_monitor}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
       JWT_ACCESS_TOKEN_EXPIRE_SECONDS: ${JWT_ACCESS_TOKEN_EXPIRE_SECONDS:-86400}
     command:
       [
@@ -44,7 +46,7 @@ services:
     ports:
       - "${HTTP_PORT:-8080}:80"
     volumes:
-      - ./nginx.text:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./app/static:/usr/share/nginx/html:ro
     depends_on:
       backend:
