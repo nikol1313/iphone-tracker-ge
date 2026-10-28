@@ -106,22 +106,39 @@ def _available_listing_count_expression():
     )
 
 
-def _product_select() -> Select:
+def _highest_available_price_expression():
+    # Paired with the lowest price, shows how much choosing the right store saves.
+    return (
+        select(func.max(ProductListing.current_price))
+        .where(
+            ProductListing.product_id == Product.id,
+            ProductListing.is_active.is_(True),
+            ProductListing.is_available.is_(True),
+            ProductListing.currency == _lowest_currency_expression(),
+        )
+        .correlate(Product)
+        .scalar_subquery()
+    )
+
+
+def product_summary_select() -> Select:
     return select(
         Product,
         _lowest_price_expression().label("lowest_price"),
         _lowest_currency_expression().label("currency"),
         _listing_count_expression().label("listing_count"),
         _available_listing_count_expression().label("available_listing_count"),
+        _highest_available_price_expression().label("highest_price"),
     )
 
 
-def _summary(
+def product_summary(
     product: Product,
     lowest_price: Decimal | None,
     currency: str | None,
     listing_count: int,
     available_listing_count: int,
+    highest_price: Decimal | None = None,
 ) -> ProductSummary:
     return ProductSummary(
         id=product.id,
@@ -134,10 +151,11 @@ def _summary(
         currency=currency,
         listing_count=listing_count,
         available_listing_count=available_listing_count,
+        highest_price=highest_price,
     )
 
 
-async def _with_price_trends(
+async def with_price_trends(
     session: AsyncSession,
     summaries: list[ProductSummary],
 ) -> list[ProductSummary]:
@@ -223,7 +241,7 @@ async def create_product(
             await session.flush()
     except IntegrityError as error:
         raise ConflictError("A product with this identity already exists") from error
-    return _summary(product, None, None, 0, 0)
+    return product_summary(product, None, None, 0, 0)
 
 
 def _apply_product_filters(
@@ -280,7 +298,7 @@ async def list_products(
         or 0
     )
     statement = _apply_product_filters(
-        _product_select(),
+        product_summary_select(),
         brand=brand,
         model=model,
         storage=storage,
@@ -293,11 +311,11 @@ async def list_products(
     )
     rows = (await session.execute(statement.limit(limit).offset(offset))).all()
     return Page(
-        items=await _with_price_trends(
+        items=await with_price_trends(
             session,
             [
-                _summary(product, price, currency, count, available_count)
-                for product, price, currency, count, available_count in rows
+                product_summary(*row)
+                for row in rows
             ],
         ),
         total=total,
@@ -312,7 +330,7 @@ async def get_product_summary(
 ) -> ProductSummary:
     row = (
         await session.execute(
-            _product_select().where(
+            product_summary_select().where(
                 Product.id == product_id,
                 Product.is_active.is_(True),
             )
@@ -320,7 +338,7 @@ async def get_product_summary(
     ).one_or_none()
     if row is None:
         raise NotFoundError("Product not found")
-    return _summary(row[0], row[1], row[2], row[3], row[4])
+    return product_summary(*row)
 
 
 async def update_product(
@@ -383,7 +401,7 @@ async def search_products(
     )
     rows = (
         await session.execute(
-            _product_select()
+            product_summary_select()
             .where(predicate)
             .order_by(func.lower(Product.brand), func.lower(Product.model), Product.id)
             .limit(limit)
@@ -391,11 +409,11 @@ async def search_products(
         )
     ).all()
     return Page(
-        items=await _with_price_trends(
+        items=await with_price_trends(
             session,
             [
-                _summary(product, price, currency, count, available_count)
-                for product, price, currency, count, available_count in rows
+                product_summary(*row)
+                for row in rows
             ],
         ),
         total=total,
@@ -448,6 +466,7 @@ async def list_product_listings(
             currency=listing.currency,
             is_available=listing.is_available,
             last_checked_at=listing.last_checked_at,
+            variant_name=listing.variant_name,
         )
         for listing, store_name in rows
     ]

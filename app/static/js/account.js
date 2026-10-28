@@ -32,7 +32,7 @@ export function renderTracked() {
       <div>
         <p>${escapeHtml(money(item.product.lowest_price, item.product.currency || "GEL"))} ${item.product.available_listing_count > 0 ? "best available" : "last listed"}</p>
         ${item.active_alert
-          ? `<p class="alert-value">Target: ${escapeHtml(money(item.active_alert.target_price, item.active_alert.currency))}${item.active_alert.is_triggered ? " · Reached" : ""}</p>`
+          ? `<p class="alert-value">Email me at ${escapeHtml(money(item.active_alert.target_price, item.active_alert.currency))} or lower${item.active_alert.is_triggered ? " · Reached" : ""}</p>`
           : "<p>No active alert</p>"}
       </div>
       <button class="small-button" type="button" data-untrack="${item.product.id}">Stop tracking</button>
@@ -65,7 +65,6 @@ export function updateAccount() {
     signIn.hidden = false;
     $("#trackedContent").innerHTML = '<p>Sign in to track products and create price alerts.</p><button class="primary-button" type="button" data-open-auth>Sign in</button>';
   }
-  $("#accountEmailInput").value = state.email || "Sign in to set your email";
 }
 
 export async function track(productId) {

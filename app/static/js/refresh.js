@@ -1,7 +1,7 @@
 /* Manual price refresh with the shared one-hour cooldown. */
 import { $, api, showToast, state } from "./core.js";
-import { loadProducts } from "./catalog.js?v=20261018-12";
-import { openAuth } from "./dialogs.js?v=20261018-1";
+import { loadProducts } from "./catalog.js?v=20261028-3";
+import { openAuth } from "./dialogs.js?v=20261028-4";
 
 const refresh = { lastRefreshedAt: null, availableAt: null, running: false };
 
@@ -53,7 +53,7 @@ async function refreshPrices() {
     showToast(result.failed_stores.length
       ? `Prices updated · ${result.failed_stores.join(", ")} unavailable`
       : "Prices updated from all stores");
-    loadProducts(state.searchQuery || "");
+    loadProducts();
   } catch (error) {
     showToast(error.message);
     await loadRefreshStatus();

@@ -290,6 +290,23 @@ async def upsert_product_listing(
         store_id=listing_data.store_id,
         product_id=listing_data.product_id,
     )
+    external_product_id = normalize_optional_text(listing_data.external_product_id)
+    if external_product_id is not None:
+        # A retitled store item can parse to another product; follow the store's id.
+        by_external_id = await session.scalar(
+            select(ProductListing).where(
+                ProductListing.store_id == listing_data.store_id,
+                ProductListing.external_product_id == external_product_id,
+            )
+        )
+        if by_external_id is not None and listing is None:
+            by_external_id.product_id = listing_data.product_id
+            listing = by_external_id
+        elif by_external_id is not None and by_external_id is not listing:
+            # The store's id moved onto a product this store already lists.
+            by_external_id.external_product_id = None
+            by_external_id.is_active = False
+            await session.flush()
     price = Decimal(listing_data.current_price)
     currency = _normalize_currency(listing_data.currency)
 
@@ -319,9 +336,7 @@ async def upsert_product_listing(
     listing.is_available = listing_data.is_available
     listing.last_seen_at = listing_data.last_seen_at or datetime.now(UTC)
     listing.variant_name = normalize_optional_text(listing_data.variant_name)
-    listing.external_product_id = normalize_optional_text(
-        listing_data.external_product_id
-    )
+    listing.external_product_id = external_product_id
 
     if price_changed or record_unchanged_price:
         await create_price_history(

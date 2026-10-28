@@ -1,9 +1,11 @@
 /* Shared state and browser-level helpers. */
 export const state = {
   products: [],
+  visibleProducts: [],
+  searchQuery: "",
   tracked: [],
   selectedId: null,
-  visibleCount: 8,
+  visibleCount: 12,
   currentPage: "overview",
   notificationSettings: null,
   token: sessionStorage.getItem("priceMonitorToken"),
@@ -11,8 +13,6 @@ export const state = {
   authMode: "login",
 };
 
-localStorage.removeItem("telegramBotToken");
-localStorage.removeItem("telegramChatId");
 
 export const $ = (selector, root = document) => root.querySelector(selector);
 export const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -38,6 +38,7 @@ export const escapeHtml = (value = "") => String(value).replace(/[&<>"']/g, char
 export const productName = product => {
   const brand = String(product?.brand || "").trim();
   const model = String(product?.model || "").trim();
+  if (/^iphone\b/i.test(model)) return model;
   const fullName = model.toLowerCase().startsWith(brand.toLowerCase()) ? model : [brand, model].filter(Boolean).join(" ");
   if (/\biphone\b/i.test(fullName)) return fullName;
   if (brand.toLowerCase() === "apple") return `iPhone ${model}`;

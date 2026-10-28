@@ -22,7 +22,12 @@ class Settings(BaseSettings):
     PROD: bool = False
     JWT_SECRET: SecretStr | None = None
     JWT_ACCESS_TOKEN_EXPIRE_SECONDS: int = Field(default=86400, ge=60)
-    TELEGRAM_BOT_TOKEN: SecretStr | None = None
+    # Outgoing mail for price alerts; alerts stay pending until SMTP_HOST and SMTP_FROM are set.
+    SMTP_HOST: str | None = None
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str | None = None
+    SMTP_PASSWORD: SecretStr | None = None
+    SMTP_FROM: str | None = None
     REFRESH_SCHEDULER_ENABLED: bool = True
 
     @model_validator(mode="after")

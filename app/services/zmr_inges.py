@@ -25,13 +25,23 @@ from app.scraper.scrape_alta import (
 from app.scraper.scrape_alta import (
     BASE_URL as ALTA_BASE_URL,
 )
+from app.scraper.scrape_elit import BASE_URL as ELIT_BASE_URL
+from app.scraper.scrape_elit import scrape_elit
+from app.scraper.scrape_extra import BASE_URL as EXTRA_BASE_URL
+from app.scraper.scrape_extra import scrape_extra
 from app.scraper.scrape_ispace import BASE_URL as ISPACE_BASE_URL
 from app.scraper.scrape_ispace import scrape_ispace
+from app.scraper.scrape_megatechnica import BASE_URL as MEGATECHNICA_BASE_URL
+from app.scraper.scrape_megatechnica import scrape_megatechnica
+from app.scraper.scrape_pcshop import BASE_URL as PCSHOP_BASE_URL
+from app.scraper.scrape_pcshop import scrape_pcshop
 from app.scraper.scrape_zoommer import BASE_URL, scrape_zoommer
 from app.services.alert_service import check_and_send_alert_notifications
 from app.services.errors import EmptyScrapeError, RefreshInProgressError
+from app.services.normalization import parse_iphone_title, product_identity_key
 
 LOGGER = logging.getLogger(__name__)
+VARIANT_NAME_LENGTH = 100
 # Warn when a crawl finds less than this share of the previous successful crawl.
 SCRAPE_DROP_WARNING_RATIO = 0.5
 
@@ -83,7 +93,19 @@ def _price(item: Mapping[str, object]) -> Decimal:
 
 def _product_create(item: Mapping[str, object]) -> ProductCreate:
     brand = _optional_text(item, "brand") or "Apple"
-    model = _optional_text(item, "model") or _required_text(item, "name")
+    model = _optional_text(item, "model")
+    if model is None:
+        name = _required_text(item, "name")
+        parsed = parse_iphone_title(name)
+        if parsed is not None:
+            return ProductCreate(
+                brand=brand,
+                model=parsed.model,
+                storage=parsed.storage,
+                color=parsed.color,
+            )
+        LOGGER.warning("Could not parse iPhone title %r; using it as the model", name)
+        model = name
 
     return ProductCreate(
         brand=brand,
@@ -91,6 +113,10 @@ def _product_create(item: Mapping[str, object]) -> ProductCreate:
         storage=_optional_text(item, "storage"),
         color=_optional_text(item, "color"),
     )
+
+
+def _preferred_offer(item: Mapping[str, object]) -> tuple[bool, Decimal]:
+    return item.get("is_available") is False, _price(item)
 
 
 async def _ingest_store(
@@ -114,8 +140,23 @@ async def _ingest_store(
     listings_updated = 0
     prices_recorded = 0
 
+    # A store can list one phone several times (regional or open-box variants);
+    # keep its best offer so one listing per product reflects what a buyer pays.
+    offers: dict[str, tuple[ProductCreate, Mapping[str, object]]] = {}
     for item in products:
-        product = await get_or_create_product(session, _product_create(item))
+        product_data = _product_create(item)
+        key = product_identity_key(
+            product_data.brand,
+            product_data.model,
+            product_data.storage,
+            product_data.color,
+        )
+        current = offers.get(key)
+        if current is None or _preferred_offer(item) < _preferred_offer(current[1]):
+            offers[key] = (product_data, item)
+
+    for product_data, item in offers.values():
+        product = await get_or_create_product(session, product_data)
         image_url = _optional_text(item, "image_url")
         if image_url:
             product.image_url = image_url
@@ -137,6 +178,7 @@ async def _ingest_store(
                     if item.get("external_product_id") is not None
                     else None
                 ),
+                variant_name=_required_text(item, "name")[:VARIANT_NAME_LENGTH],
             ),
         )
         listings_created += int(result.created)
@@ -145,7 +187,7 @@ async def _ingest_store(
 
     return IngestionSummary(
         scraped=len(products),
-        ingested=len(products),
+        ingested=len(offers),
         listings_created=listings_created,
         listings_updated=listings_updated,
         prices_recorded=prices_recorded,
@@ -288,6 +330,26 @@ async def run_alta_ingestion() -> IngestionSummary:
 
 async def run_ispace_ingestion() -> IngestionSummary:
     return await _run_store_ingestion("iSpace", ISPACE_BASE_URL, scrape_ispace)
+
+
+async def run_elit_ingestion() -> IngestionSummary:
+    return await _run_store_ingestion("Elit Electronics", ELIT_BASE_URL, scrape_elit)
+
+
+async def run_megatechnica_ingestion() -> IngestionSummary:
+    return await _run_store_ingestion(
+        "Megatechnica",
+        MEGATECHNICA_BASE_URL,
+        scrape_megatechnica,
+    )
+
+
+async def run_extra_ingestion() -> IngestionSummary:
+    return await _run_store_ingestion("Extra.ge", EXTRA_BASE_URL, scrape_extra)
+
+
+async def run_pcshop_ingestion() -> IngestionSummary:
+    return await _run_store_ingestion("PCShop", PCSHOP_BASE_URL, scrape_pcshop)
 
 
 async def main() -> None:

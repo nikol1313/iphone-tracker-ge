@@ -1,26 +1,39 @@
 /* Connect the page controls to their feature modules. */
 import { $, $$, pageFromLocation, showPage, state } from "./core.js";
-import { loadProducts, renderProducts, selectProduct, updateSelectedActions } from "./catalog.js?v=20261018-12";
+import { applyFilters, loadProducts, renderProducts, selectProduct, updateSelectedActions } from "./catalog.js?v=20261028-3";
 import { loadTracked, logout, track } from "./account.js";
-import { bindDialogs, openAlert, openAuth, openEmailSettings, openTelegramSettings } from "./dialogs.js?v=20261018-1";
-import { bindRefresh, loadRefreshStatus } from "./refresh.js?v=20261023-1";
+import { bindDialogs, openAlert, openAuth, openEmailSettings } from "./dialogs.js?v=20261028-4";
+import { bindRefresh, loadRefreshStatus } from "./refresh.js?v=20261028-1";
 
 function bindSearchAndCatalog() {
+  const search = () => {
+    state.searchQuery = $("#searchInput").value.trim();
+    applyFilters();
+  };
   $("#searchForm").addEventListener("submit", event => {
     event.preventDefault();
-    const query = $("#searchInput").value.trim();
-    if (query.length >= 2) loadProducts(query, { focusFirst: true });
+    search();
+    const first = state.visibleProducts[0];
+    if (first) selectProduct(first.id, { scroll: true });
   });
-  $("#clearSearch").addEventListener("click", () => {
+  $("#searchInput").addEventListener("input", search);
+  $("#clearFilters").addEventListener("click", () => {
     $("#searchInput").value = "";
-    loadProducts();
+    state.searchQuery = "";
+    $("#modelFilter").value = "";
+    $("#storageFilter").value = "";
+    $("#inStockFilter").checked = false;
+    applyFilters();
+  });
+  ["#modelFilter", "#storageFilter", "#sortSelect", "#inStockFilter"].forEach(selector => {
+    $(selector).addEventListener("change", () => applyFilters());
   });
   $("#showMoreButton").addEventListener("click", () => {
     state.visibleCount += 12;
     renderProducts();
   });
   $("#showLessButton").addEventListener("click", () => {
-    state.visibleCount = 8;
+    state.visibleCount = 12;
     renderProducts();
     $("#productsTitle").scrollIntoView({ behavior: "smooth", block: "start" });
   });
@@ -76,7 +89,6 @@ function bindAccountMenu() {
     $("#accountButton").setAttribute("aria-expanded", "false");
     openAuth();
   });
-  $("[data-notification=telegram]").addEventListener("click", openTelegramSettings);
   $("[data-notification=email]").addEventListener("click", openEmailSettings);
   document.addEventListener("click", event => {
     if (!event.target.closest(".account-actions")) {

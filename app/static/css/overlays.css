@@ -49,3 +49,15 @@ dialog > .text-button { margin: 0 25px 24px; }
 :root[data-theme="light"] .signout-button { color: #a32e3b; background: #fff2f3; border-color: #f0d1d5; }
 :root[data-theme="light"] .signout-button:hover { background: #ffe7e9; }
 :root[data-theme="light"] .toast { color: #fff; background: #34265f; border-color: rgba(52, 38, 95, .16); }
+/* Alert price: own ±100 buttons replace the native ±1 spinner. */
+.price-stepper { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; margin-top: -8px; }
+.price-stepper input { text-align: center; font-variant-numeric: tabular-nums; appearance: textfield; -moz-appearance: textfield; }
+.price-stepper input::-webkit-outer-spin-button,
+.price-stepper input::-webkit-inner-spin-button { margin: 0; -webkit-appearance: none; }
+.stepper-button { min-width: 64px; min-height: 45px; padding: 0 12px; color: var(--ink); background: var(--paper-soft); border: 1px solid var(--line-strong); border-radius: 11px; font-weight: 700; cursor: pointer; }
+.stepper-button:hover { border-color: var(--green); }
+.stepper-button:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.alert-explainer { display: grid; gap: 6px; padding: 12px 14px; background: var(--lime-soft); border: 1px solid var(--line-strong); border-radius: 11px; }
+.alert-explainer strong { font-size: .8rem; }
+.alert-explainer p { margin: 0; color: var(--ink-soft); font-size: .78rem; }
+.alert-explainer .settings-note { color: var(--muted); }

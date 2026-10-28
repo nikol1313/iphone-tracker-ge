@@ -12,10 +12,10 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/base.css?v=20261018-1">
   <link rel="stylesheet" href="/static/css/shell.css?v=20261018-5">
-  <link rel="stylesheet" href="/static/css/catalog.css?v=20261023-1">
-  <link rel="stylesheet" href="/static/css/overlays.css?v=20261018-3">
-  <link rel="stylesheet" href="/static/css/responsive.css?v=20261023-1">
-  <script type="module" src="/static/js/app.js?v=20261023-1"></script>
+  <link rel="stylesheet" href="/static/css/catalog.css?v=20261028-3">
+  <link rel="stylesheet" href="/static/css/overlays.css?v=20261028-2">
+  <link rel="stylesheet" href="/static/css/responsive.css?v=20261028-1">
+  <script type="module" src="/static/js/app.js?v=20261028-7"></script>
 </head>
 <body>
   <svg class="icon-sprite" aria-hidden="true">
@@ -32,7 +32,6 @@
     <symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 5H4v14h6M14 8l4 4-4 4M8 12h10"/></symbol>
     <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 6v5h-5M4 18v-5h5M18 9a7 7 0 0 0-12-2M6 15a7 7 0 0 0 12 2"/></symbol>
     <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
-    <symbol id="i-telegram" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></symbol>
     <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></symbol>
     <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.5 8.5 0 1 0 20.2 15.4Z"/></symbol>
   </svg>
@@ -57,14 +56,9 @@
           <div><strong id="accountMenuName">Guest</strong><span id="accountMenuEmail">Sign in to manage your account</span></div>
         </div>
         <p class="menu-label">NOTIFICATIONS</p>
-        <button class="notification-option" type="button" data-notification="telegram">
-          <span class="notification-icon telegram-icon"><svg><use href="#i-telegram"/></svg></span>
-          <span><strong>Telegram</strong><small>Connect a chat for price alerts</small></span>
-          <span class="option-arrow">›</span>
-        </button>
         <button class="notification-option" type="button" data-notification="email">
           <span class="notification-icon email-icon"><svg><use href="#i-user"/></svg></span>
-          <span><strong>Email</strong><small>Use your account email address</small></span>
+          <span><strong>Email alerts</strong><small>Choose where price alerts are sent</small></span>
           <span class="option-arrow">›</span>
         </button>
         <button class="signout-button" id="signOutButton" type="button" hidden><svg><use href="#i-logout"/></svg>Sign out</button>
@@ -84,7 +78,7 @@
             Explore iPhones <svg><use href="#i-external"/></svg>
           </a>
           <div class="overview-metrics" aria-label="Catalog coverage">
-            <div class="overview-metric"><strong>3</strong><span>retailers monitored</span><small>Zoommer · Alta · iSpace</small></div>
+            <div class="overview-metric"><strong>7</strong><span>retailers monitored</span><small>Zoommer · Alta · iSpace · Elit · Megatechnica · Extra · PCShop</small></div>
             <div class="overview-metric"><strong id="overviewModelCount">—</strong><span>iPhone models</span><small>in the catalog</small></div>
             <div class="overview-metric"><strong id="overviewListingCount">—</strong><span>store listings</span><small>to compare</small></div>
           </div>
@@ -97,10 +91,9 @@
         <form id="searchForm" class="search-form">
           <svg><use href="#i-search"/></svg>
           <label class="sr-only" for="searchInput">Search iPhone models</label>
-          <input id="searchInput" name="q" type="search" minlength="2" placeholder="Search model, storage or color" autocomplete="off">
+          <input id="searchInput" name="q" type="search" minlength="2" placeholder="Search, e.g. 17 Pro 256GB blue" autocomplete="off">
           <button class="primary-button" type="submit">Search</button>
         </form>
-        <button class="text-button" id="clearSearch" type="button" hidden>Show all products</button>
       </section>
 
       <section class="section">
@@ -108,13 +101,26 @@
           <div>
             <p class="section-kicker">THE LINEUP</p>
             <h1 id="productsTitle">Find your iPhone</h1>
-            <p class="section-description">Compare current offers and explore how prices have moved.</p>
+            <p class="section-description">One card per phone. Prices from every store, cheapest first.</p>
           </div>
           <div class="catalog-meta">
             <button class="small-button refresh-button" id="refreshButton" type="button"><svg aria-hidden="true"><use href="#i-refresh"/></svg><span>Refresh prices</span></button>
             <p id="refreshStatus" class="count-label" role="status"></p>
             <p id="productCount" class="count-label">Loading…</p>
           </div>
+        </div>
+        <div class="catalog-filters" role="group" aria-label="Filter and sort iPhones">
+          <label class="filter-field"><span>Model</span><select id="modelFilter"><option value="">All models</option></select></label>
+          <label class="filter-field"><span>Storage</span><select id="storageFilter"><option value="">Any storage</option></select></label>
+          <label class="filter-field"><span>Sort by</span><select id="sortSelect">
+            <option value="model">Newest model</option>
+            <option value="price-asc">Price: low to high</option>
+            <option value="price-desc">Price: high to low</option>
+            <option value="savings">Biggest store savings</option>
+            <option value="stores">Most stores in stock</option>
+          </select></label>
+          <label class="filter-toggle"><input type="checkbox" id="inStockFilter"><span>In stock only</span></label>
+          <button class="text-button" id="clearFilters" type="button" hidden>Clear filters</button>
         </div>
         <div id="productGrid" class="product-grid" aria-live="polite">
           <div class="loading-state">Loading products from the API…</div>
@@ -156,11 +162,12 @@
         <div class="section-heading compact">
           <div>
             <h2>Store comparison</h2>
+            <p class="section-description">The same phone at every store we track, cheapest in-stock offer first.</p>
           </div>
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Store</th><th>Price</th><th>Status</th><th>Last checked</th><th><span class="sr-only">Open</span></th></tr></thead>
+            <thead><tr><th>Store</th><th>Price</th><th>vs best</th><th>Status</th><th>Last checked</th><th><span class="sr-only">Open</span></th></tr></thead>
             <tbody id="storesBody"></tbody>
           </table>
         </div>
@@ -209,30 +216,26 @@
       <button class="icon-button" id="closeAlert" type="button" aria-label="Close"><svg><use href="#i-close"/></svg></button>
     </div>
     <form id="alertForm">
+      <div class="alert-explainer">
+        <strong>How it works</strong>
+        <p>Pick the most you want to pay. When this iPhone’s best price at any store drops to <b>your target or lower</b>, we email you once.</p>
+        <p id="alertCurrentPrice" class="settings-note"></p>
+      </div>
       <input type="hidden" name="product_id">
-      <label>Target price<input type="number" name="target_price" min="0.01" step="any" aria-describedby="alertPriceHelp" required></label>
-      <p id="alertPriceHelp" class="settings-note">Scroll over the price or use ↑/↓ to adjust by 100. You can also type any amount.</p>
+      <label for="alertTargetPrice">Target price</label>
+      <div class="price-stepper">
+        <button class="stepper-button" type="button" data-price-step="-1" aria-label="Lower target price by 100">−100</button>
+        <input id="alertTargetPrice" type="number" name="target_price" min="0.01" step="any" aria-describedby="alertPriceHelp" required>
+        <button class="stepper-button" type="button" data-price-step="1" aria-label="Raise target price by 100">+100</button>
+      </div>
+      <p id="alertPriceHelp" class="settings-note">Tap −100/+100, scroll, or use ↑/↓ to move in steps of 100. You can also type any amount.</p>
       <label>Currency<select name="currency" required>
         <option value="GEL">GEL — Georgian lari</option>
         <option value="USD">USD — US dollar</option>
       </select></label>
-      <p class="settings-note">The alert checks offers in the selected currency.</p>
+      <p id="alertEmailNote" class="settings-note"></p>
       <p id="alertError" class="form-error" role="alert"></p>
-      <button class="primary-button full" type="submit">Create alert</button>
-    </form>
-  </dialog>
-
-  <dialog id="telegramDialog" class="settings-dialog">
-    <div class="dialog-head">
-      <div><p class="section-kicker">PRICE ALERTS</p><h2>Telegram notifications</h2></div>
-      <button class="icon-button" id="closeTelegram" type="button" aria-label="Close"><svg><use href="#i-close"/></svg></button>
-    </div>
-    <form id="telegramForm">
-      <p class="settings-help">Enter your Telegram chat ID. The bot token stays on the server; never enter your Telegram password here.</p>
-      <label>Telegram chat ID<input type="text" name="telegram_chat_id" inputmode="numeric" maxlength="32" placeholder="For example: 123456789" autocomplete="off"></label>
-      <p id="telegramError" class="form-error" role="alert"></p>
-      <p id="telegramSuccess" class="form-success" role="status"></p>
-      <button class="primary-button full" type="submit">Save chat ID</button>
+      <button class="primary-button full" type="submit">Email me at this price</button>
     </form>
   </dialog>
 
@@ -241,12 +244,16 @@
       <div><p class="section-kicker">PRICE ALERTS</p><h2>Email notifications</h2></div>
       <button class="icon-button" id="closeEmail" type="button" aria-label="Close"><svg><use href="#i-close"/></svg></button>
     </div>
-    <div class="email-settings-content">
-      <p class="settings-help">Price Monitor uses the email address on your account. Email delivery is not configured yet, so alerts are not sent by email at this time.</p>
-      <label>Account email<input id="accountEmailInput" type="email" readonly></label>
-      <p class="settings-note">No email password or provider credentials are needed here.</p>
-      <button class="primary-button full" id="closeEmailDone" type="button">Done</button>
-    </div>
+    <form id="emailForm">
+      <p class="settings-help">When an iPhone you set an alert on drops to your target price or lower, we email this address once.</p>
+      <label>Email for price alerts<input type="email" name="notification_email" maxlength="320" autocomplete="email" placeholder="you@example.com"></label>
+      <p class="settings-note">Leave empty and save to turn email alerts off.</p>
+      <p id="emailDeliveryWarning" class="form-error" hidden>Email sending is not set up on this server yet, so alerts wait until it is.</p>
+      <p id="emailError" class="form-error" role="alert"></p>
+      <p id="emailSuccess" class="form-success" role="status"></p>
+      <button class="primary-button full" type="submit">Save email</button>
+      <button class="small-button full" id="emailTestButton" type="button" disabled>Send test email</button>
+    </form>
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>

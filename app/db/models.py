@@ -185,7 +185,8 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(512), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    telegram_chat_id: Mapped[str | None] = mapped_column(String(32))
+    # Where price alerts are emailed; None turns email alerts off.
+    notification_email: Mapped[str | None] = mapped_column(String(320))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),

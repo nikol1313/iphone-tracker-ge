@@ -1,41 +1,28 @@
 import asyncio
 import json
 import logging
-import re
+from collections.abc import Awaitable, Callable
 from urllib.parse import urljoin
 
 import httpx
 from bs4 import BeautifulSoup
 
+from app.scraper.http import (
+    browser_client,
+    fetch_with_retries,
+    parse_price,
+    validate_retry_options,
+)
+
 BASE_URL = "https://zoommer.ge"
 ZOOMMER_APPLE_PHONES_URL = f"{BASE_URL}/mobiluri-telefonebi-apple-c724"
+PAGE_SIZE = 28
+MAX_PRICE = 100_000
 LOGGER = logging.getLogger(__name__)
 
 
 class ZoommerCrawlError(RuntimeError):
     """Raised when Zoommer cannot be fetched after the retry policy."""
-
-
-def _is_retryable(error: httpx.HTTPError) -> bool:
-    if isinstance(error, httpx.RequestError):
-        return True
-    if isinstance(error, httpx.HTTPStatusError):
-        return error.response.status_code in {408, 429} or (
-            error.response.status_code >= 500
-        )
-    return False
-
-
-def parse_price(price_text: str) -> float | None:
-    cleaned_price = re.sub(r"[^\d.]", "", str(price_text))
-
-    if not cleaned_price:
-        return None
-
-    try:
-        return float(cleaned_price)
-    except ValueError:
-        return None
 
 
 def product_from_json_ld_item(item: dict) -> dict[str, object] | None:
@@ -108,22 +95,29 @@ def products_from_json_ld(soup: BeautifulSoup) -> list[dict[str, object]]:
     return products
 
 
-def products_from_next_data(soup: BeautifulSoup) -> list[dict[str, object]]:
-    """Read the server-rendered product payload from Zoommer's Next.js page."""
+def _filtered_products(soup: BeautifulSoup) -> dict | None:
     next_data_script = soup.select_one("script[id='__NEXT_DATA__']")
     if not next_data_script:
-        return []
+        return None
 
     try:
         script_text = next_data_script.string or next_data_script.get_text(strip=True)
         data = json.loads(script_text)
-    except (json.JSONDecodeError, AttributeError):
-        return []
+        filtered = data["props"]["pageProps"]["initialFilteredProducts"]
+    except (json.JSONDecodeError, AttributeError, KeyError, TypeError):
+        return None
 
-    try:
-        products = data["props"]["pageProps"]["initialFilteredProducts"]["products"]
-    except (KeyError, TypeError):
-        return []
+    return filtered if isinstance(filtered, dict) else None
+
+
+def total_from_next_data(soup: BeautifulSoup) -> int | None:
+    total = (_filtered_products(soup) or {}).get("productsCount")
+    return total if isinstance(total, int) else None
+
+
+def products_from_next_data(soup: BeautifulSoup) -> list[dict[str, object]]:
+    """Read the server-rendered product payload from Zoommer's Next.js page."""
+    products = (_filtered_products(soup) or {}).get("products")
 
     if not isinstance(products, list):
         return []
@@ -147,7 +141,6 @@ def products_from_next_data(soup: BeautifulSoup) -> list[dict[str, object]]:
             continue
 
         image_url = item.get("imageUrl")
-        stock = item.get("isInStock")
         product: dict[str, object] = {
             "name": name.strip(),
             "price": price,
@@ -155,7 +148,10 @@ def products_from_next_data(soup: BeautifulSoup) -> list[dict[str, object]]:
             "url": urljoin(BASE_URL, f"/{route.lstrip('/')}"),
             "image_url": image_url if isinstance(image_url, str) else None,
             "store": "Zoommer",
-            "is_available": stock if isinstance(stock, bool) else True,
+            # Listing pages report isInStock=false for everything; coming-soon
+            # and sold-out items disable the buy button instead.
+            "is_available": item.get("disableBuyButton") is not True
+            and item.get("onSaleSoon") is not True,
         }
         product_id = item.get("id")
         if product_id is not None:
@@ -228,47 +224,45 @@ def products_from_html_cards(soup: BeautifulSoup) -> list[dict[str, object]]:
     return products
 
 
-async def _fetch_with_retries(
-    client: httpx.AsyncClient,
-    url: str,
-    *,
-    max_attempts: int,
-    backoff_seconds: float,
-    request_delay_seconds: float,
-) -> httpx.Response:
-    last_error: httpx.HTTPError | None = None
-    attempts_made = 0
+def products_from_page(soup: BeautifulSoup) -> list[dict[str, object]]:
+    # The Next.js payload carries stock and ids; JSON-LD and cards are fallbacks.
+    return (
+        products_from_next_data(soup)
+        or products_from_json_ld(soup)
+        or products_from_html_cards(soup)
+    )
 
-    for attempt in range(1, max_attempts + 1):
-        attempts_made = attempt
-        if request_delay_seconds:
-            await asyncio.sleep(request_delay_seconds)
 
-        try:
-            response = await client.get(url)
-            response.raise_for_status()
-            return response
-        except httpx.HTTPError as error:
-            last_error = error
+async def _scrape_price_windows(
+    fetch: Callable[[dict[str, int]], Awaitable[httpx.Response]],
+) -> list[dict[str, object]]:
+    # Zoommer ignores ?page= and renders PAGE_SIZE results, so split by price until each window fits.
+    products: dict[str, dict[str, object]] = {}
+    windows = [(0, MAX_PRICE)]
 
-            if attempt == max_attempts or not _is_retryable(error):
-                break
+    while windows:
+        price_from, price_to = windows.pop()
+        response = await fetch({"priceFrom": price_from, "priceTo": price_to})
+        soup = BeautifulSoup(response.text, "html.parser")
+        for product in products_from_page(soup):
+            products.setdefault(str(product["url"]), product)
 
-            retry_delay = backoff_seconds * (2 ** (attempt - 1))
+        total = total_from_next_data(soup)
+        if total is None or total <= PAGE_SIZE:
+            continue
+        if price_to - price_from <= 1:
             LOGGER.warning(
-                "Zoommer request failed; retrying in %.1f seconds "
-                "(attempt %d/%d): %s",
-                retry_delay,
-                attempt,
-                max_attempts,
-                error,
+                "Zoommer has %d iPhones priced %d-%d; only %d are visible",
+                total,
+                price_from,
+                price_to,
+                PAGE_SIZE,
             )
-            if retry_delay:
-                await asyncio.sleep(retry_delay)
+            continue
+        middle = (price_from + price_to) // 2
+        windows.extend([(middle, price_to), (price_from, middle)])
 
-    raise ZoommerCrawlError(
-        f"Failed to fetch {url} after {attempts_made} attempt(s): {last_error}"
-    ) from last_error
+    return list(products.values())
 
 
 async def scrape_zoommer(
@@ -279,49 +273,27 @@ async def scrape_zoommer(
     request_delay_seconds: float = 0.5,
     client: httpx.AsyncClient | None = None,
 ) -> list[dict[str, object]]:
-    if max_attempts < 1:
-        raise ValueError("max_attempts must be at least 1")
-    if backoff_seconds < 0 or request_delay_seconds < 0:
-        raise ValueError("retry and request delays cannot be negative")
+    validate_retry_options(max_attempts, backoff_seconds, request_delay_seconds)
 
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (X11; Linux x86_64) "
-            "AppleWebKit/537.36 "
-            "Chrome/149.0.0.0 Safari/537.36"
-        ),
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "ka-GE,ka;q=0.9,en-US;q=0.8,en;q=0.7",
-    }
-
-    if client is None:
-        async with httpx.AsyncClient(
-            headers=headers,
-            timeout=httpx.Timeout(20, connect=10),
-            follow_redirects=True,
-        ) as owned_client:
-            response = await _fetch_with_retries(
-                owned_client,
+    def scrape_with(http_client: httpx.AsyncClient) -> Awaitable[list[dict[str, object]]]:
+        return _scrape_price_windows(
+            lambda params: fetch_with_retries(
+                http_client,
                 url,
+                store="Zoommer",
+                error_type=ZoommerCrawlError,
+                params=params,
                 max_attempts=max_attempts,
                 backoff_seconds=backoff_seconds,
                 request_delay_seconds=request_delay_seconds,
             )
-    else:
-        response = await _fetch_with_retries(
-            client,
-            url,
-            max_attempts=max_attempts,
-            backoff_seconds=backoff_seconds,
-            request_delay_seconds=request_delay_seconds,
         )
 
-    soup = BeautifulSoup(response.text, "html.parser")
-    return (
-        products_from_json_ld(soup)
-        or products_from_next_data(soup)
-        or products_from_html_cards(soup)
-    )
+    if client is not None:
+        return await scrape_with(client)
+
+    async with browser_client() as owned_client:
+        return await scrape_with(owned_client)
 
 
 async def main() -> None:
