@@ -2,6 +2,7 @@
 """Create an administrator using explicit environment credentials."""
 import asyncio
 import os
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker
 

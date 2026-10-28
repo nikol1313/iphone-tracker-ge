@@ -6,7 +6,6 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-
 from app.api import (
     alerts,
     auth,

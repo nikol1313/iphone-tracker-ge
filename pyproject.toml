@@ -6,7 +6,6 @@ dependencies = [
     "alembic>=1.18.5",
     "asyncpg>=0.31.0",
     "beautifulsoup4>=4.15.0",
-    "django-request>=1.7.1",
     "email-validator>=2.3.0",
     "fastapi>=0.116.0",
     "httpx>=0.28.1",
@@ -25,4 +24,13 @@ dev = [
     "aiosqlite>=0.21.0",
     "pytest>=8.4.0",
     "pytest-asyncio>=1.1.0",
+    "ruff>=0.17.3",
 ]
+
+[tool.ruff]
+target-version = "py312"
+extend-exclude = ["alembic/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501", "UP046"]
