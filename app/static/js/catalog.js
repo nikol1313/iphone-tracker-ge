@@ -44,6 +44,20 @@ export async function loadProducts(query = "", { focusFirst = false } = {}) {
   }
 }
 
+// Badges from price trend fields on catalog summaries; ignores sub-1% moves.
+function priceBadges(product) {
+  const lowest = Number(product.lowest_price);
+  if (product.lowest_price == null || !(lowest > 0)) return "";
+  const badges = [];
+  const weekAgo = Number(product.price_week_ago);
+  const drop = product.price_week_ago == null ? 0 : (weekAgo - lowest) / weekAgo;
+  if (drop >= 0.01) badges.push(`<span class="price-badge drop">↓ ${Math.round(drop * 100)}% this week</span>`);
+  if (lowest <= Number(product.lowest_price_ever) && Number(product.highest_price_ever) > lowest) {
+    badges.push('<span class="price-badge lowest">Lowest ever</span>');
+  }
+  return badges.length ? `<div class="price-badges">${badges.join("")}</div>` : "";
+}
+
 export function renderProducts(total = state.products?.length || 0) {
   $("#productCount").textContent = `${total} ${total === 1 ? "product" : "products"}`;
   const grid = $("#productGrid");
@@ -66,6 +80,7 @@ export function renderProducts(total = state.products?.length || 0) {
       <div class="product-image${product.image_url ? "" : " no-image"}">
         ${product.image_url ? `<img src="${escapeHtml(safeUrl(product.image_url))}" alt="${escapeHtml(productName(product))}" loading="lazy">` : ""}
         <span class="product-image-fallback">iPhone</span>
+        ${priceBadges(product)}
       </div>
       <div class="product-card-info">
         <h3>${escapeHtml(productName(product))}</h3>
