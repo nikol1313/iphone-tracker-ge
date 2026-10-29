@@ -136,3 +136,20 @@ async def send_test_email(email: str) -> None:
         text="This test email confirms Price Monitor can send your price alerts.",
         html="<p>This test email confirms Price Monitor can send your price alerts.</p>",
     )
+
+
+async def send_verification_email(email: str, link: str) -> None:
+    await send_email(
+        to=email,
+        subject="Price Monitor: confirm your email for price alerts",
+        text=(
+            "Confirm this address to receive Price Monitor price alerts:\n\n"
+            f"{link}\n\n"
+            "The link expires in 24 hours. If you did not ask for this, ignore this email."
+        ),
+        html=(
+            "<p>Confirm this address to receive Price Monitor price alerts.</p>"
+            f'<p><a href="{escape(link, quote=True)}">Confirm email address</a></p>'
+            "<p>The link expires in 24 hours. If you did not ask for this, ignore this email.</p>"
+        ),
+    )

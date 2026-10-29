@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     SMTP_USERNAME: str | None = None
     SMTP_PASSWORD: SecretStr | None = None
     SMTP_FROM: str | None = None
+    # Origin users open the site at; email verification links point here.
+    PUBLIC_BASE_URL: str | None = None
     REFRESH_SCHEDULER_ENABLED: bool = True
 
     @model_validator(mode="after")
@@ -36,6 +38,8 @@ class Settings(BaseSettings):
             return self
         if not self.DATABASE_URL:
             raise ValueError("DATABASE_URL must be configured when PROD=true")
+        if not self.PUBLIC_BASE_URL:
+            raise ValueError("PUBLIC_BASE_URL must be configured when PROD=true")
         secret = self.JWT_SECRET.get_secret_value() if self.JWT_SECRET else ""
         if secret in KNOWN_PLACEHOLDER_SECRETS:
             raise ValueError("JWT_SECRET must not be a placeholder when PROD=true")
@@ -44,6 +48,10 @@ class Settings(BaseSettings):
     @property
     def database_url(self) -> str:
         return self.DATABASE_URL or self.DEV_DATABASE_URL
+
+    @property
+    def public_base_url(self) -> str:
+        return (self.PUBLIC_BASE_URL or "http://localhost:8080").rstrip("/")
 
     def jwt_secret(self) -> str:
         if self.JWT_SECRET is None:
