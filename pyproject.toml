@@ -24,6 +24,7 @@ dev = [
     "aiosqlite>=0.21.0",
     "pytest>=8.4.0",
     "pytest-asyncio>=1.1.0",
+    "pytest-playwright>=0.10.0",
     "ruff>=0.17.3",
 ]
 
@@ -34,3 +35,8 @@ extend-exclude = ["alembic/versions"]
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
 ignore = ["E501", "UP046"]
+
+[tool.pytest.ini_options]
+markers = ["e2e: browser tests that need the app running (docker compose up)"]
+# Plain `pytest` skips browser tests; run them with `pytest -m e2e`.
+addopts = "-m 'not e2e'"
