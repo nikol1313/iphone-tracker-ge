@@ -1,5 +1,7 @@
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from email.message import EmailMessage
+from urllib.parse import parse_qs, urlsplit
 
 import httpx
 import pytest
@@ -24,6 +26,72 @@ def smtp_configured(monkeypatch: pytest.MonkeyPatch) -> list[EmailMessage]:
     sent: list[EmailMessage] = []
     monkeypatch.setattr(email_service, "_send", sent.append)
     return sent
+
+
+def verification_link(message: EmailMessage) -> str:
+    text = message.get_body(("plain",)).get_content()
+    return next(line for line in text.splitlines() if "verify_email=" in line)
+
+
+def verification_token(link: str) -> str:
+    return parse_qs(urlsplit(link).query)["verify_email"][0]
+
+
+@pytest.mark.asyncio
+async def test_changed_email_needs_new_confirmation_and_old_links_stop_working(
+    client: httpx.AsyncClient,
+    session_factory: async_sessionmaker[AsyncSession],
+    smtp_configured: list[EmailMessage],
+) -> None:
+    token = await register_and_login(
+        client,
+        email="mover@example.com",
+        session_factory=session_factory,
+    )
+    await client.put(
+        "/notification-settings/email",
+        headers=bearer(token),
+        json={"notification_email": "first@example.com"},
+    )
+    await client.post("/notification-settings/email/verification", headers=bearer(token))
+    first_link = verification_link(smtp_configured[-1])
+    assert (
+        await client.post(
+            "/notification-settings/email/verify",
+            json={"token": verification_token(first_link)},
+        )
+    ).status_code == 204
+
+    # Saving the same address keeps it confirmed; a new address starts unconfirmed.
+    same = await client.put(
+        "/notification-settings/email",
+        headers=bearer(token),
+        json={"notification_email": "first@example.com"},
+    )
+    assert same.json()["email_verified"] is True
+    changed = await client.put(
+        "/notification-settings/email",
+        headers=bearer(token),
+        json={"notification_email": "second@example.com"},
+    )
+    assert changed.json()["email_verified"] is False
+    assert (
+        await client.post(
+            "/notification-settings/email/verify",
+            json={"token": verification_token(first_link)},
+        )
+    ).status_code == 400
+
+    async with session_factory() as session:
+        user = await session.scalar(select(User).where(User.email == "mover@example.com"))
+        assert user is not None
+        # Let the resend cooldown lapse.
+        user.verification_email_sent_at = datetime.now(UTC) - timedelta(minutes=5)
+        await session.commit()
+    assert (
+        await client.post("/notification-settings/email/verification", headers=bearer(token))
+    ).status_code == 204
+    assert smtp_configured[-1]["To"] == "second@example.com"
 
 
 @pytest.mark.asyncio
@@ -102,8 +170,34 @@ async def test_email_settings_are_authenticated_validated_and_testable(
     )
     assert saved.json() == {
         "notification_email": "alerts@example.com",
+        "email_verified": False,
         "delivery_configured": True,
     }
+    # Unconfirmed addresses get no mail except the confirmation link.
+    assert (
+        await client.post("/notification-settings/email/test", headers=bearer(token))
+    ).status_code == 409
+
+    sent = await client.post("/notification-settings/email/verification", headers=bearer(token))
+    assert sent.status_code == 204
+    assert smtp_configured[-1]["To"] == "alerts@example.com"
+    link = verification_link(smtp_configured[-1])
+    assert link.startswith(f"{settings.public_base_url}/?verify_email=")
+    resent = await client.post("/notification-settings/email/verification", headers=bearer(token))
+    assert resent.status_code == 429
+    assert int(resent.headers["Retry-After"]) > 0
+
+    assert (
+        await client.post("/notification-settings/email/verify", json={"token": "forged"})
+    ).status_code == 400
+    verified = await client.post(
+        "/notification-settings/email/verify",
+        json={"token": verification_token(link)},
+    )
+    assert verified.status_code == 204
+    settings_response = await client.get("/notification-settings/email", headers=bearer(token))
+    assert settings_response.json()["email_verified"] is True
+
     tested = await client.post("/notification-settings/email/test", headers=bearer(token))
     assert tested.status_code == 204
     assert smtp_configured[-1]["To"] == "alerts@example.com"
@@ -135,10 +229,16 @@ async def test_triggered_alert_routes_to_owner_once_with_correct_listing(
             email="configured@example.com",
             password_hash="unused",
             notification_email="alerts@example.com",
+            notification_email_verified_at=datetime.now(UTC),
         )
         unconfigured_user = User(
             email="unconfigured@example.com",
             password_hash="unused",
+        )
+        unverified_user = User(
+            email="unverified@example.com",
+            password_hash="unused",
+            notification_email="someone-else@example.com",
         )
         session.add_all(
             [
@@ -147,6 +247,7 @@ async def test_triggered_alert_routes_to_owner_once_with_correct_listing(
                 product,
                 configured_user,
                 unconfigured_user,
+                unverified_user,
             ]
         )
         await session.flush()
@@ -174,6 +275,12 @@ async def test_triggered_alert_routes_to_owner_once_with_correct_listing(
                 ),
                 PriceAlert(
                     user_id=unconfigured_user.id,
+                    product_id=product.id,
+                    target_price=Decimal("2500.00"),
+                    currency="GEL",
+                ),
+                PriceAlert(
+                    user_id=unverified_user.id,
                     product_id=product.id,
                     target_price=Decimal("2500.00"),
                     currency="GEL",
@@ -212,6 +319,7 @@ async def test_triggered_alert_routes_to_owner_once_with_correct_listing(
     assert deliveries[0]["store_name"] == "GEL Store"
     assert alerts[0].notified_at is not None
     assert alerts[1].notified_at is None
+    assert alerts[2].notified_at is None
 
 
 @pytest.mark.asyncio
@@ -230,6 +338,7 @@ async def test_failed_delivery_is_left_pending_for_retry(
             email="retry@example.com",
             password_hash="unused",
             notification_email="retry@example.com",
+            notification_email_verified_at=datetime.now(UTC),
         )
         session.add_all([store, product, user])
         await session.flush()

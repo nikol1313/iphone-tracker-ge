@@ -343,6 +343,8 @@ def test_openapi_contains_all_requested_routes():
         "/alerts/{alert_id}",
         "/notification-settings/email",
         "/notification-settings/email/test",
+        "/notification-settings/email/verification",
+        "/notification-settings/email/verify",
         "/refresh",
     }
     assert set(app.openapi()["paths"]) == expected
