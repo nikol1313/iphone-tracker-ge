@@ -7,6 +7,13 @@ export function openAuth() {
   $("#authDialog").showModal();
 }
 
+/* Explain where alert emails go, or what is missing before they can be sent. */
+export function emailStatusNote(settings) {
+  if (!settings.notification_email) return "Add your email in the account menu (Email alerts) so we can reach you.";
+  if (!settings.email_verified) return `Confirm ${settings.notification_email} using the link we emailed you (account menu → Email alerts to resend).`;
+  return `We’ll email ${settings.notification_email}.`;
+}
+
 export function openAlert(productId) {
   if (!state.token) {
     openAuth();
@@ -16,11 +23,15 @@ export function openAlert(productId) {
   const product = state.products.find(item => item.id === Number(productId))
     || state.tracked.find(item => item.product.id === Number(productId))?.product;
   if (!product) return;
-  $("#alertTitle").textContent = `${product.model} target`;
+  const alert = activeAlert(product.id);
+  $("#alertTitle").textContent = `${product.model} ${alert ? "alert" : "target"}`;
   const form = $("#alertForm");
   form.product_id.value = product.id;
-  form.currency.value = product.currency === "USD" ? "USD" : "GEL";
-  form.target_price.value = product.lowest_price || "";
+  form.alert_id.value = alert?.id ?? "";
+  form.currency.value = alert?.currency || (product.currency === "USD" ? "USD" : "GEL");
+  form.target_price.value = alert?.target_price || product.lowest_price || "";
+  $("#alertSubmit").textContent = alert ? "Update alert" : "Email me at this price";
+  $("#alertRemoveButton").hidden = !alert;
   $("#alertCurrentPrice").textContent = product.lowest_price == null
     ? "No store has a price for this iPhone right now."
     : `Best price right now: ${money(product.lowest_price, product.currency || "GEL")}. Set a lower target to wait for a drop.`;
@@ -28,11 +39,12 @@ export function openAlert(productId) {
   $("#alertError").textContent = "";
   $("#alertDialog").showModal();
   api("/notification-settings/email").then(settings => {
-    $("#alertEmailNote").textContent = settings.notification_email
-      ? `We’ll email ${settings.notification_email}.`
-      : "Add your email in the account menu (Email alerts) so we can reach you.";
+    $("#alertEmailNote").textContent = emailStatusNote(settings);
   }).catch(() => {});
 }
+
+export const activeAlert = productId => state.tracked
+  .find(item => item.product.id === Number(productId))?.active_alert || null;
 
 export async function openEmailSettings() {
   closeAccountMenu();
@@ -50,10 +62,37 @@ export async function openEmailSettings() {
     state.notificationSettings = settings;
     // Suggest the account email until the user picks an address.
     form.notification_email.value = settings.notification_email || state.email || "";
-    $("#emailDeliveryWarning").hidden = settings.delivery_configured;
-    $("#emailTestButton").disabled = !settings.notification_email || !settings.delivery_configured;
+    renderEmailStatus(settings);
   } catch (error) {
     $("#emailError").textContent = error.message;
+  }
+}
+
+function renderEmailStatus(settings) {
+  const pending = Boolean(settings.notification_email) && !settings.email_verified;
+  const status = $("#emailVerificationStatus");
+  status.hidden = !settings.notification_email;
+  status.textContent = pending
+    ? `${settings.notification_email} is not confirmed yet. Open the link we emailed you; alerts start after that.`
+    : `${settings.notification_email} is confirmed.`;
+  $("#emailDeliveryWarning").hidden = settings.delivery_configured;
+  $("#emailVerifyButton").hidden = !pending;
+  $("#emailVerifyButton").disabled = !settings.delivery_configured;
+  $("#emailTestButton").disabled = !settings.email_verified || !settings.delivery_configured;
+}
+
+/* Finish the emailed confirmation link (/?verify_email=…) and drop the token from the address bar. */
+export async function confirmEmailFromLink() {
+  const url = new URL(window.location.href);
+  const token = url.searchParams.get("verify_email");
+  if (!token) return;
+  url.searchParams.delete("verify_email");
+  window.history.replaceState(window.history.state, "", url);
+  try {
+    await api("/notification-settings/email/verify", { method: "POST", body: JSON.stringify({ token }) });
+    showToast("Email confirmed. Price alerts will be emailed to you.");
+  } catch (error) {
+    showToast(error.message);
   }
 }
 
@@ -126,17 +165,31 @@ function bindAlertForm() {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     $("#alertError").textContent = "";
+    const alertId = form.get("alert_id");
     try {
-      await api(`/products/${form.get("product_id")}/alerts`, {
-        method: "POST",
+      await api(alertId ? `/alerts/${alertId}` : `/products/${form.get("product_id")}/alerts`, {
+        method: alertId ? "PUT" : "POST",
         body: JSON.stringify({ target_price: form.get("target_price"), currency: form.get("currency") }),
       });
       $("#alertDialog").close();
       const settings = await api("/notification-settings/email").catch(() => null);
       const target = money(form.get("target_price"), form.get("currency"));
-      showToast(settings && !settings.notification_email
-        ? `Alert set for ${target}. Add your email in the account menu to get notified.`
-        : `Alert set: we’ll email you when it drops to ${target} or lower.`);
+      const action = alertId ? "Alert updated" : "Alert set";
+      showToast(settings && !settings.email_verified
+        ? `${action} for ${target}. ${emailStatusNote(settings)}`
+        : `${action}: we’ll email you when it drops to ${target} or lower.`);
+      await loadTracked();
+    } catch (error) {
+      $("#alertError").textContent = error.message;
+    }
+  });
+  $("#alertRemoveButton").addEventListener("click", async () => {
+    const alertId = $("#alertForm").alert_id.value;
+    $("#alertError").textContent = "";
+    try {
+      await api(`/alerts/${alertId}`, { method: "DELETE" });
+      $("#alertDialog").close();
+      showToast("Alert removed. The phone stays on your watchlist.");
       await loadTracked();
     } catch (error) {
       $("#alertError").textContent = error.message;
@@ -159,13 +212,35 @@ function bindEmailForm() {
         body: JSON.stringify({ notification_email: email || null }),
       });
       state.notificationSettings = settings;
-      $("#emailDialog").close();
-      showToast(settings.notification_email
-        ? `Saved. Price alerts will be emailed to ${settings.notification_email}.`
-        : "Email alerts are turned off.");
+      renderEmailStatus(settings);
+      if (!settings.notification_email) {
+        $("#emailDialog").close();
+        showToast("Email alerts are turned off.");
+      } else if (settings.email_verified) {
+        $("#emailDialog").close();
+        showToast(`Saved. Price alerts will be emailed to ${settings.notification_email}.`);
+      } else if (settings.delivery_configured) {
+        await sendConfirmation();
+      }
     } catch (error) {
       setMessages(error.message);
     }
+  });
+  const sendConfirmation = async () => {
+    const button = $("#emailVerifyButton");
+    button.disabled = true;
+    try {
+      await api("/notification-settings/email/verification", { method: "POST" });
+      setMessages("", `We sent a confirmation link to ${state.notificationSettings.notification_email}. Check your inbox and spam folder.`);
+    } catch (error) {
+      setMessages(error.message);
+    } finally {
+      button.disabled = false;
+    }
+  };
+  $("#emailVerifyButton").addEventListener("click", () => {
+    setMessages();
+    sendConfirmation();
   });
   $("#emailTestButton").addEventListener("click", async () => {
     setMessages();

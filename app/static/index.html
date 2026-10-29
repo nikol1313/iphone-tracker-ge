@@ -12,10 +12,10 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/base.css?v=20261018-1">
   <link rel="stylesheet" href="/static/css/shell.css?v=20261018-5">
-  <link rel="stylesheet" href="/static/css/catalog.css?v=20261028-3">
+  <link rel="stylesheet" href="/static/css/catalog.css?v=20261029-1">
   <link rel="stylesheet" href="/static/css/overlays.css?v=20261028-2">
-  <link rel="stylesheet" href="/static/css/responsive.css?v=20261028-1">
-  <script type="module" src="/static/js/app.js?v=20261028-7"></script>
+  <link rel="stylesheet" href="/static/css/responsive.css?v=20261029-1">
+  <script type="module" src="/static/js/app.js?v=20261029-1"></script>
 </head>
 <body>
   <svg class="icon-sprite" aria-hidden="true">
@@ -222,6 +222,7 @@
         <p id="alertCurrentPrice" class="settings-note"></p>
       </div>
       <input type="hidden" name="product_id">
+      <input type="hidden" name="alert_id">
       <label for="alertTargetPrice">Target price</label>
       <div class="price-stepper">
         <button class="stepper-button" type="button" data-price-step="-1" aria-label="Lower target price by 100">−100</button>
@@ -235,7 +236,8 @@
       </select></label>
       <p id="alertEmailNote" class="settings-note"></p>
       <p id="alertError" class="form-error" role="alert"></p>
-      <button class="primary-button full" type="submit">Email me at this price</button>
+      <button class="primary-button full" id="alertSubmit" type="submit">Email me at this price</button>
+      <button class="small-button full" id="alertRemoveButton" type="button" hidden>Remove alert</button>
     </form>
   </dialog>
 
@@ -245,13 +247,15 @@
       <button class="icon-button" id="closeEmail" type="button" aria-label="Close"><svg><use href="#i-close"/></svg></button>
     </div>
     <form id="emailForm">
-      <p class="settings-help">When an iPhone you set an alert on drops to your target price or lower, we email this address once.</p>
+      <p class="settings-help">When an iPhone you set an alert on drops to your target price or lower, we email this address once. We first send a link to confirm the address is yours.</p>
       <label>Email for price alerts<input type="email" name="notification_email" maxlength="320" autocomplete="email" placeholder="you@example.com"></label>
       <p class="settings-note">Leave empty and save to turn email alerts off.</p>
+      <p id="emailVerificationStatus" class="settings-note" hidden></p>
       <p id="emailDeliveryWarning" class="form-error" hidden>Email sending is not set up on this server yet, so alerts wait until it is.</p>
       <p id="emailError" class="form-error" role="alert"></p>
       <p id="emailSuccess" class="form-success" role="status"></p>
       <button class="primary-button full" type="submit">Save email</button>
+      <button class="small-button full" id="emailVerifyButton" type="button" hidden>Resend confirmation email</button>
       <button class="small-button full" id="emailTestButton" type="button" disabled>Send test email</button>
     </form>
   </dialog>

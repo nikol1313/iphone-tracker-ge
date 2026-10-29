@@ -92,6 +92,7 @@ tbody tr:hover { background: #1a2035; }
 .tracked-row:last-child { border-bottom: 0; }
 .tracked-row h3 { margin: 0 0 4px; font-size: .9rem; }
 .tracked-row p { margin: 0; color: var(--muted); font-size: .72rem; }
+.tracked-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .alert-value { color: var(--green) !important; font-weight: 700; }
 
 :root[data-theme="light"] .product-card h3 { color: #252b3c; }

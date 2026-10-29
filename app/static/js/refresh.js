@@ -1,7 +1,7 @@
 /* Manual price refresh with the shared one-hour cooldown. */
 import { $, api, showToast, state } from "./core.js";
-import { loadProducts } from "./catalog.js?v=20261028-3";
-import { openAuth } from "./dialogs.js?v=20261028-4";
+import { loadProducts } from "./catalog.js?v=20261029-1";
+import { openAuth } from "./dialogs.js?v=20261029-1";
 
 const refresh = { lastRefreshedAt: null, availableAt: null, running: false };
 
