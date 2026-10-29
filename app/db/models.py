@@ -187,6 +187,13 @@ class User(Base):
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     # Where price alerts are emailed; None turns email alerts off.
     notification_email: Mapped[str | None] = mapped_column(String(320))
+    # Alerts are only emailed once the owner of notification_email clicks the link.
+    notification_email_verified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
+    verification_email_sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),
