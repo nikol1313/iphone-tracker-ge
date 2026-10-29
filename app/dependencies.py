@@ -9,7 +9,9 @@ from app.db.models import User
 from app.db.sess import get_conn
 from app.services.auth_service import decode_access_token
 
-SessionDep = Annotated[AsyncSession, Depends(get_conn)]
+# "function" scope commits before the response is sent, so a client's next request
+# (e.g. login right after register) always sees the write.
+SessionDep = Annotated[AsyncSession, Depends(get_conn, scope="function")]
 bearer = HTTPBearer(auto_error=False)
 
 
