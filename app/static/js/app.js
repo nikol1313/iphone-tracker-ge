@@ -1,8 +1,8 @@
 /* Connect the page controls to their feature modules. */
 import { $, $$, pageFromLocation, showPage, state } from "./core.js";
-import { applyFilters, loadProducts, renderProducts, selectProduct, updateSelectedActions } from "./catalog.js?v=20261028-3";
+import { applyFilters, loadProducts, renderProducts, selectProduct, updateSelectedActions } from "./catalog.js?v=20261029-1";
 import { loadTracked, logout, track } from "./account.js";
-import { bindDialogs, openAlert, openAuth, openEmailSettings } from "./dialogs.js?v=20261028-4";
+import { bindDialogs, confirmEmailFromLink, openAlert, openAuth, openEmailSettings } from "./dialogs.js?v=20261029-1";
 import { bindRefresh, loadRefreshStatus } from "./refresh.js?v=20261028-1";
 
 function bindSearchAndCatalog() {
@@ -76,6 +76,8 @@ function bindAccountMenu() {
   $("#trackedContent").addEventListener("click", event => {
     const untrack = event.target.closest("[data-untrack]");
     if (untrack) track(untrack.dataset.untrack);
+    const editAlert = event.target.closest("[data-edit-alert]");
+    if (editAlert) openAlert(editAlert.dataset.editAlert);
     if (event.target.closest("[data-open-auth]")) openAuth();
   });
   $("#accountButton").addEventListener("click", () => {
@@ -125,3 +127,4 @@ loadProducts();
 loadRefreshStatus();
 loadTracked();
 updateSelectedActions();
+confirmEmailFromLink();

@@ -49,6 +49,7 @@
   .account-panel { align-items: flex-start; flex-direction: column; padding: 19px; }
   .tracked-row { grid-template-columns: 1fr; gap: 11px; }
   .tracked-row .small-button { width: 100%; }
+  .tracked-actions { display: grid; grid-template-columns: 1fr 1fr; }
   footer { padding: 15px 2px 25px; flex-direction: column; }
   .toast { right: 14px; bottom: 88px; left: 14px; max-width: none; }
 }

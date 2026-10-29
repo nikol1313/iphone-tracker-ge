@@ -35,7 +35,10 @@ export function renderTracked() {
           ? `<p class="alert-value">Email me at ${escapeHtml(money(item.active_alert.target_price, item.active_alert.currency))} or lower${item.active_alert.is_triggered ? " · Reached" : ""}</p>`
           : "<p>No active alert</p>"}
       </div>
-      <button class="small-button" type="button" data-untrack="${item.product.id}">Stop tracking</button>
+      <div class="tracked-actions">
+        <button class="small-button" type="button" data-edit-alert="${item.product.id}">${item.active_alert ? "Edit alert" : "Set alert"}</button>
+        <button class="small-button" type="button" data-untrack="${item.product.id}">Stop tracking</button>
+      </div>
     </div>`).join("")}</div>`;
 }
 

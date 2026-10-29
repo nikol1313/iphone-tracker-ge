@@ -433,5 +433,9 @@ export function updateSelectedActions() {
   button.textContent = tracked ? "Stop tracking" : "Track";
   button.classList.toggle("tracked", tracked);
   button.disabled = state.selectedId == null;
-  $("#selectedAlertButton").disabled = state.selectedId == null;
+  const alertButton = $("#selectedAlertButton");
+  alertButton.disabled = state.selectedId == null;
+  alertButton.textContent = state.tracked.some(item => item.product.id === state.selectedId && item.active_alert)
+    ? "Edit alert"
+    : "Set alert";
 }
