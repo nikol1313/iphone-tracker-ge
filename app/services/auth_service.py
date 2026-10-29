@@ -15,6 +15,7 @@ from app.services.normalization import normalize_email
 
 PASSWORD_HASH = PasswordHash.recommended()
 JWT_ALGORITHM = "HS256"
+EMAIL_VERIFICATION_TOKEN_LIFETIME = timedelta(days=1)
 
 
 async def hash_password(password: str) -> str:
@@ -95,3 +96,32 @@ def decode_access_token(token: str) -> int:
     if not isinstance(subject, str) or not subject.isdigit():
         raise jwt.InvalidTokenError("invalid token subject")
     return int(subject)
+
+
+def create_email_verification_token(user_id: int, email: str) -> str:
+    issued_at = datetime.now(UTC)
+    payload = {
+        "sub": str(user_id),
+        "email": email,
+        "iat": issued_at,
+        "exp": issued_at + EMAIL_VERIFICATION_TOKEN_LIFETIME,
+        "type": "email_verification",
+    }
+    return jwt.encode(payload, settings.jwt_secret(), algorithm=JWT_ALGORITHM)
+
+
+def decode_email_verification_token(token: str) -> tuple[int, str]:
+    """Return the user id and the address the link was sent to."""
+    payload = jwt.decode(
+        token,
+        settings.jwt_secret(),
+        algorithms=[JWT_ALGORITHM],
+        options={"require": ["exp", "iat", "sub", "type", "email"]},
+    )
+    if payload.get("type") != "email_verification":
+        raise jwt.InvalidTokenError("incorrect token type")
+    subject = payload.get("sub")
+    email = payload.get("email")
+    if not isinstance(subject, str) or not subject.isdigit() or not isinstance(email, str):
+        raise jwt.InvalidTokenError("invalid verification token")
+    return int(subject), email
