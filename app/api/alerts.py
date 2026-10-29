@@ -9,6 +9,7 @@ from app.services.alert_service import (
     delete_alert,
     get_alert_response,
     list_alerts,
+    update_alert,
 )
 from app.services.errors import ConflictError, NotFoundError
 
@@ -55,6 +56,25 @@ async def get_alerts(
         limit=limit,
         offset=offset,
     )
+
+
+@router.put("/alerts/{alert_id}", response_model=AlertResponse)
+async def replace_alert(
+    alert_id: int,
+    data: AlertCreate,
+    session: SessionDep,
+    user: CurrentUser,
+) -> AlertResponse:
+    try:
+        alert = await update_alert(
+            session,
+            user_id=user.id,
+            alert_id=alert_id,
+            data=data,
+        )
+        return await get_alert_response(session, alert)
+    except NotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
 
 
 @router.delete("/alerts/{alert_id}", status_code=status.HTTP_204_NO_CONTENT)
