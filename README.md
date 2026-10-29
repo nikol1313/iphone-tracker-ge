@@ -10,8 +10,8 @@ A Georgian iPhone price comparison and tracking app. It imports retailer listing
 - Filter by model, storage, and stock; sort by price, store savings, or store count.
 - See price-drop and lowest-ever badges on catalog cards.
 - View price history for tracked products.
-- Register an account, track products, and configure target-price alerts.
-- Get price alerts by email (any address; send a test email from the account menu).
+- Register an account, track products, and set, edit, or remove target-price alerts.
+- Get price alerts by email once the address is confirmed through an emailed link.
 - Refresh the catalog from Zoommer, Alta, iSpace, Elit Electronics, Megatechnica, Extra.ge, and PCShop automatically every 12 hours and record crawl outcomes.
 - Refresh prices on demand from the catalog page (signed-in users, once per hour).
 - Explore the REST API using Swagger UI.
@@ -35,8 +35,10 @@ The app currently runs locally only; a hosted deployment is in progress.
 3. Open [http://localhost:8080](http://localhost:8080).
 
 Email alerts need an SMTP account: set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`,
-and `SMTP_FROM` in `.env` (see `.env.example` for Gmail). On a deployed server, set `PROD=true`:
-the backend then refuses to start without a `DATABASE_URL` and a non-placeholder `JWT_SECRET`.
+and `SMTP_FROM` in `.env` (see `.env.example` for Gmail). Confirmation links point at
+`PUBLIC_BASE_URL` (default `http://localhost:8080`). On a deployed server, set `PROD=true`:
+the backend then refuses to start without a `DATABASE_URL`, a `PUBLIC_BASE_URL`, and a
+non-placeholder `JWT_SECRET`.
 
 ## Development
 
@@ -47,6 +49,17 @@ uv sync                 # install app and dev dependencies
 uv run ruff check .     # lint
 uv run pytest -q        # tests (SQLite, no Postgres needed)
 ```
+
+Browser tests (`tests/test_e2e_browser.py`, marked `e2e`) click through the running
+site with Playwright. Plain `pytest` skips them. Start the app, then:
+
+```sh
+docker compose up -d
+uv run playwright install chromium   # once
+uv run pytest -m e2e                 # add --browser-channel chrome to use installed Chrome
+```
+
+They create throwaway `e2e…@example.com` accounts in the local database.
 
 CI runs lint, tests, and a Docker build on every push and pull request
 (`.github/workflows/ci.yml`).
