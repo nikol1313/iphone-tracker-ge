@@ -79,8 +79,14 @@ class EmailSettingsResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     notification_email: str | None
+    # Alerts are only emailed after the address is confirmed via its emailed link.
+    email_verified: bool = False
     # False until the server has SMTP settings, so the page can say so.
     delivery_configured: bool = False
+
+
+class EmailVerificationRequest(BaseModel):
+    token: str = Field(min_length=1, max_length=2000)
 
 
 class TokenResponse(BaseModel):
