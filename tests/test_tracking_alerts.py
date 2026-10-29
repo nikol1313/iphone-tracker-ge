@@ -5,7 +5,7 @@ import httpx
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.db.models import ProductListing, Store
+from app.db.models import PriceAlert, ProductListing, Store
 from tests.helpers import bearer, register_and_login
 from tests.test_products import create_admin_product
 
@@ -134,6 +134,39 @@ async def test_alert_validation_trigger_and_ownership(
             json={"target_price": "2300.00", "currency": "GEL"},
         )
     ).status_code == 409
+
+    async with session_factory() as session:
+        alert = await session.get(PriceAlert, alert_id)
+        assert alert is not None
+        alert.notified_at = now
+        await session.commit()
+    edited = await client.put(
+        f"/alerts/{alert_id}",
+        headers=bearer(user_token),
+        json={"target_price": "2300.00", "currency": "GEL"},
+    )
+    assert edited.status_code == 200, edited.text
+    assert edited.json()["target_price"] == "2300.00"
+    assert edited.json()["is_triggered"] is False
+    async with session_factory() as session:
+        alert = await session.get(PriceAlert, alert_id)
+        assert alert is not None
+        # A new target emails again once reached.
+        assert alert.notified_at is None
+    assert (
+        await client.put(
+            f"/alerts/{alert_id}",
+            headers=bearer(other_token),
+            json={"target_price": "1.00", "currency": "GEL"},
+        )
+    ).status_code == 404
+    assert (
+        await client.put(
+            f"/alerts/{alert_id}",
+            headers=bearer(user_token),
+            json={"target_price": "0", "currency": "GEL"},
+        )
+    ).status_code == 422
 
     mine = await client.get("/alerts", headers=bearer(user_token))
     other = await client.get("/alerts", headers=bearer(other_token))

@@ -277,12 +277,12 @@ async def list_alerts(
     return Page(items=items, total=total, limit=limit, offset=offset)
 
 
-async def delete_alert(
+async def _owned_alert(
     session: AsyncSession,
     *,
     user_id: int,
     alert_id: int,
-) -> None:
+) -> PriceAlert:
     alert = await session.scalar(
         select(PriceAlert).where(
             PriceAlert.id == alert_id,
@@ -291,12 +291,38 @@ async def delete_alert(
     )
     if alert is None:
         raise NotFoundError("Alert not found")
+    return alert
+
+
+async def update_alert(
+    session: AsyncSession,
+    *,
+    user_id: int,
+    alert_id: int,
+    data: AlertCreate,
+) -> PriceAlert:
+    alert = await _owned_alert(session, user_id=user_id, alert_id=alert_id)
+    alert.target_price = data.target_price
+    alert.currency = data.currency
+    # A new target is a new alert: email again when it is reached.
+    alert.notified_at = None
+    await session.flush()
+    return alert
+
+
+async def delete_alert(
+    session: AsyncSession,
+    *,
+    user_id: int,
+    alert_id: int,
+) -> None:
+    alert = await _owned_alert(session, user_id=user_id, alert_id=alert_id)
     await session.delete(alert)
     await session.flush()
 
 
 async def check_and_send_alert_notifications(session: AsyncSession) -> None:
-    """Email each newly triggered alert once to its owner's notification address."""
+    """Email each newly triggered alert once to its owner's verified notification address."""
     current_price = _lowest_price(Product.id, PriceAlert.currency)
 
     rows = (
@@ -313,6 +339,7 @@ async def check_and_send_alert_notifications(session: AsyncSession) -> None:
                 Product.is_active.is_(True),
                 User.is_active.is_(True),
                 User.notification_email.is_not(None),
+                User.notification_email_verified_at.is_not(None),
                 PriceAlert.notified_at.is_(None),
             )
         )
