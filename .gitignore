@@ -18,3 +18,4 @@ postgres_data/
 Thumbs.db
 st/
 .hidden/
+backups/

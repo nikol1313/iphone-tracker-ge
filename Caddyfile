@@ -1,0 +1,9 @@
+# Public entry point in production (compose profile "prod").
+# Caddy gets and renews the Let's Encrypt certificate and forwards to nginx.
+iphonetracker.ge {
+	reverse_proxy nginx:80
+}
+
+www.iphonetracker.ge {
+	redir https://iphonetracker.ge{uri} permanent
+}
