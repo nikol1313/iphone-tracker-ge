@@ -1,0 +1,14 @@
+# Frontend-only deploy: serves app/static and a demo API (netlify/functions/demo-api.mts)
+# with sample data. The full FastAPI backend runs via Docker Compose instead.
+[build]
+  publish = "app/static"
+  command = ""
+
+[functions]
+  directory = "netlify/functions"
+
+# The page requests assets under /static/, which nginx maps to app/static.
+[[redirects]]
+  from = "/static/*"
+  to = "/:splat"
+  status = 200
