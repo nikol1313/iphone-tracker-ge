@@ -204,3 +204,6 @@ def test_compare_two_phones_by_typing_their_models(page: Page):
     # Both phones get a list of where they beat the other, not only the pick.
     expect(page.locator(".compare-edge")).to_have_count(2)
     expect(page.locator(".compare-edge h3").first).to_contain_text("is better")
+    # The 16 only wins on weight, which gaming ignores: price alone doesn't make it the pick.
+    expect(page.locator(".compare-pick-headline")).to_contain_text("iPhone 17 Pro Max")
+    expect(page.locator(".compare-pick-headline")).to_contain_text("isn't better in anything that matters for gaming")

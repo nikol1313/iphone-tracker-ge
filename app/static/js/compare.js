@@ -54,7 +54,8 @@ const ROWS = [
 
 /*
  * What the phone is for. Each use re-weighs the rows (a row it doesn't name keeps its own
- * weight) and caps how much more, as a share of the cheaper price, a clear step up is worth.
+ * weight) and caps how much more, as a share of the cheaper price, a clear step up is worth
+ * while the cheaper phone has wins of its own.
  */
 const USES = [
   { key: "everyday", icon: "📱", weights: {}, maxExtra: 0.25 },
@@ -67,7 +68,8 @@ const USES = [
     weights: { video: 3, rear_cameras: 3, storage: 3, main_camera: 2, front_camera: 2, chip: 2, display_size: 1, ram: 1, refresh_rate: 1 },
   },
   { key: "longTerm", icon: "⏳", maxExtra: 0.3, weights: { release_year: 3, chip: 3, water_resistance: 1 } },
-  { key: "budget", icon: "💰", weights: {}, maxExtra: 0.1 },
+  // Saving money comes first: the cap holds even when the cheaper phone wins no spec.
+  { key: "budget", icon: "💰", weights: {}, maxExtra: 0.1, priceFirst: true },
 ];
 const weightFor = (row, use) => use.weights[row.key] ?? row.weight ?? 0;
 
@@ -124,6 +126,14 @@ function recommend(details, use) {
     return {
       side: cheaper,
       headline: t("pick.cheaperNoLoss", { name: fullName(details[cheaper].product), use: useFor, ...extra }),
+    };
+  }
+  // The cheaper phone is no better at anything this use needs: price alone doesn't make it the pick.
+  if (!wins[cheaper].length && total(wins[pricier]) >= 3 && !use.priceFirst) {
+    return {
+      side: pricier,
+      headline: t("pick.betterAtAll", { name: fullName(details[pricier].product), use: useFor, ...extra }),
+      tradeoff: t("pick.cheaperFallback", { name: fullName(details[cheaper].product), use: useFor, ...extra }),
     };
   }
   // Worth paying more only for a clear step up that costs no more extra than this use allows.
