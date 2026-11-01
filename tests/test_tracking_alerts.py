@@ -116,7 +116,12 @@ async def test_alert_validation_trigger_and_ownership(
         headers=bearer(user_token),
         json={"target_price": "2500.00", "currency": "GE1"},
     )
-    assert invalid_price.status_code == invalid_currency.status_code == 422
+    usd = await client.post(
+        f"/products/{product['id']}/alerts",
+        headers=bearer(user_token),
+        json={"target_price": "900.00", "currency": "USD"},
+    )
+    assert invalid_price.status_code == invalid_currency.status_code == usd.status_code == 422
 
     created = await client.post(
         f"/products/{product['id']}/alerts",

@@ -231,17 +231,13 @@
       </div>
       <input type="hidden" name="product_id">
       <input type="hidden" name="alert_id">
-      <label for="alertTargetPrice">Target price</label>
+      <label for="alertTargetPrice">Target price (₾)</label>
       <div class="price-stepper">
         <button class="stepper-button" type="button" data-price-step="-1" aria-label="Lower target price by 100">−100</button>
         <input id="alertTargetPrice" type="number" name="target_price" min="0.01" step="any" aria-describedby="alertPriceHelp" required>
         <button class="stepper-button" type="button" data-price-step="1" aria-label="Raise target price by 100">+100</button>
       </div>
       <p id="alertPriceHelp" class="settings-note">Use −100/+100, the scroll wheel, or ↑/↓, or type any amount.</p>
-      <label>Currency<select name="currency" required>
-        <option value="GEL">GEL (₾)</option>
-        <option value="USD">USD ($)</option>
-      </select></label>
       <p id="alertEmailNote" class="settings-note"></p>
       <p id="alertError" class="form-error" role="alert"></p>
       <button class="primary-button full" id="alertSubmit" type="submit">Email me at this price</button>

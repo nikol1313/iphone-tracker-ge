@@ -28,7 +28,6 @@ export function openAlert(productId) {
   const form = $("#alertForm");
   form.product_id.value = product.id;
   form.alert_id.value = alert?.id ?? "";
-  form.currency.value = alert?.currency || (product.currency === "USD" ? "USD" : "GEL");
   form.target_price.value = alert?.target_price || product.lowest_price || "";
   $("#alertSubmit").textContent = alert ? "Update alert" : "Email me at this price";
   $("#alertRemoveButton").hidden = !alert;
@@ -241,11 +240,11 @@ function bindAlertForm() {
     try {
       await api(alertId ? `/alerts/${alertId}` : `/products/${form.get("product_id")}/alerts`, {
         method: alertId ? "PUT" : "POST",
-        body: JSON.stringify({ target_price: form.get("target_price"), currency: form.get("currency") }),
+        body: JSON.stringify({ target_price: form.get("target_price") }),
       });
       $("#alertDialog").close();
       const settings = await api("/notification-settings/email").catch(() => null);
-      const target = money(form.get("target_price"), form.get("currency"));
+      const target = money(form.get("target_price"));
       const action = alertId ? "Alert updated" : "Alert set";
       showToast(settings && !settings.email_verified
         ? `${action} for ${target}. ${emailStatusNote(settings)}`

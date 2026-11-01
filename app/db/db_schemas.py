@@ -281,14 +281,15 @@ class TrackedProductCreated(BaseModel):
 
 class AlertCreate(BaseModel):
     target_price: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
-    currency: str
+    # Every store we track prices in lari, so alerts do too.
+    currency: str = "GEL"
 
     @field_validator("currency")
     @classmethod
     def currency_format(cls, value: str) -> str:
         normalized = value.strip().upper()
-        if len(normalized) != 3 or not normalized.isalpha() or not normalized.isascii():
-            raise ValueError("currency must contain exactly three ASCII letters")
+        if normalized != "GEL":
+            raise ValueError("alerts are set in GEL, the currency stores list prices in")
         return normalized
 
 
