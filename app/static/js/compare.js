@@ -381,6 +381,19 @@ let renderToken = 0;
 // The phones on screen, so choosing a use redraws the pick without refetching.
 let shownDetails = null;
 
+function drawComparison(details) {
+  shownDetails = details;
+  $("#compareResult").innerHTML = `
+    <div class="compare-cards">${details.map(summaryCard).join("")}</div>
+    <h2>${escapeHtml(t("compare.specs"))}</h2>
+    ${specTable(details)}
+    <h2>${escapeHtml(t("stores.title"))}</h2>
+    ${storeTable(details)}
+    ${pickBox(details)}
+    <h2>${escapeHtml(t("compare.history"))}</h2>
+    ${historyChart(details)}`;
+}
+
 async function renderComparison(ids) {
   const result = $("#compareResult");
   const products = ids.map(productById);
@@ -398,16 +411,7 @@ async function renderComparison(ids) {
     const details = await Promise.all(products.map(productDetails));
     // A newer pick replaced this one while it loaded.
     if (token !== renderToken) return;
-    shownDetails = details;
-    result.innerHTML = `
-      <div class="compare-cards">${details.map(summaryCard).join("")}</div>
-      <h2>${escapeHtml(t("compare.specs"))}</h2>
-      ${specTable(details)}
-      <h2>${escapeHtml(t("stores.title"))}</h2>
-      ${storeTable(details)}
-      ${pickBox(details)}
-      <h2>${escapeHtml(t("compare.history"))}</h2>
-      ${historyChart(details)}`;
+    drawComparison(details);
   } catch (error) {
     if (token === renderToken) result.innerHTML = `<p class="empty-inline">${escapeHtml(error.message)}</p>`;
   }
@@ -432,8 +436,15 @@ export function openCompareWith(productId) {
   $("#compare-b-search").focus();
 }
 
+// Redraw the phones already on screen in the new language. Refetching would swap in a
+// short "Loading…" line first, and the page shrinking under it scrolls you to the top.
 onLanguageChange(() => {
-  if (state.currentPage === "compare") renderComparePage();
+  if (state.currentPage !== "compare" || !state.products.length) return;
+  const ids = pickerIds();
+  SIDES.forEach((side, index) => renderPicker(side, ids[index]));
+  const shown = shownDetails?.map(detail => detail.product.id);
+  if (shown && shown.every((id, index) => id === ids[index])) drawComparison(shownDetails);
+  else renderComparison(ids);
 });
 
 export function bindCompare() {

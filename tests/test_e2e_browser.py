@@ -207,3 +207,11 @@ def test_compare_two_phones_by_typing_their_models(page: Page):
     # The 16 only wins on weight, which gaming ignores: price alone doesn't make it the pick.
     expect(page.locator(".compare-pick-headline")).to_contain_text("iPhone 17 Pro Max")
     expect(page.locator(".compare-pick-headline")).to_contain_text("isn't better in anything that matters for gaming")
+
+    # Switching language redraws the comparison in place, without jumping to the top.
+    page.locator("#comparePick").scroll_into_view_if_needed()
+    scrolled = page.evaluate("window.scrollY")
+    assert scrolled > 300
+    page.click("#langToggle")
+    expect(page.locator(".compare-pick h2")).to_have_text("ჩვენი რჩევა თამაშებისთვის")
+    assert abs(page.evaluate("window.scrollY") - scrolled) < 150
