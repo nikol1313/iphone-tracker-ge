@@ -186,6 +186,8 @@ class ProductSummary(ProductResponse):
     price_week_ago: Decimal | None = None
     lowest_price_ever: Decimal | None = None
     highest_price_ever: Decimal | None = None
+    # Cheapest advertised monthly payment across in-stock listings, if any store shows one.
+    lowest_installment_monthly: Decimal | None = None
 
 
 class ProductListingCreate(BaseModel):
@@ -198,6 +200,9 @@ class ProductListingCreate(BaseModel):
     last_seen_at: datetime | None = None
     variant_name: str | None = None
     external_product_id: str | None = None
+    # Set only when the store advertises a monthly price for this listing.
+    installment_monthly: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2)
+    installment_months: int | None = Field(default=None, gt=0, le=120)
 
     @field_validator("product_url")
     @classmethod
@@ -235,6 +240,8 @@ class ProductListingResponse(BaseModel):
     last_checked_at: datetime
     # The retailer's own title for this listing.
     variant_name: str | None = None
+    installment_monthly: Decimal | None = None
+    installment_months: int | None = None
 
 
 class PriceHistCreate(BaseModel):

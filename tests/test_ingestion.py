@@ -217,3 +217,29 @@ async def test_store_id_taken_from_merged_listing(
     assert listings["sage"].current_price == Decimal("2799.00")
     assert listings["sage"].is_active
     assert not listings[None].is_active
+
+
+@pytest.mark.asyncio
+async def test_advertised_monthly_payment_reaches_listings_and_catalog(
+    session_factory: async_sessionmaker[AsyncSession],
+    client,
+) -> None:
+    async with session_factory() as session, session.begin():
+        await ingest_zoommer(
+            session,
+            [
+                {**PRODUCT, "installment_monthly": 119.0, "installment_months": 36},
+                # A monthly price without its term is ignored rather than half-stored.
+                {**PRODUCT, "name": "Apple iPhone 17 Pro 512GB Black", "storage": "512GB",
+                 "url": "https://example.com/iphone-17-pro-512", "installment_monthly": 150.0},
+            ],
+        )
+
+    catalog = (await client.get("/products?limit=10")).json()["items"]
+    by_storage = {item["storage"]: item for item in catalog}
+    assert by_storage["256GB"]["lowest_installment_monthly"] == "119.00"
+    assert by_storage["512GB"]["lowest_installment_monthly"] is None
+
+    listings = (await client.get(f"/products/{by_storage['256GB']['id']}/listings")).json()["items"]
+    assert listings[0]["installment_monthly"] == "119.00"
+    assert listings[0]["installment_months"] == 36

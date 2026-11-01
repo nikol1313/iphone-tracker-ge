@@ -28,6 +28,7 @@
 .product-card.out-of-stock .card-price strong { color: var(--muted); font-size: 1.1rem; }
 .card-change { font-size: .8rem; font-weight: 600; }
 .card-change.drop { color: var(--good); }
+.card-installment { margin: 0 0 4px; color: var(--ink-2); font-size: .8rem; }
 .card-meta { margin: 0; color: var(--muted); font-size: .78rem; }
 .card-meta .savings { color: var(--good); font-weight: 600; }
 .card-tag { align-self: flex-start; margin-bottom: 8px; padding: 2px 8px; color: var(--accent); background: var(--accent-soft); border-radius: 4px; font-size: .74rem; font-weight: 700; }
@@ -86,6 +87,7 @@ tbody tr:hover { background: var(--surface-2); }
 tbody tr.best-offer td:first-child { box-shadow: inset 3px 0 0 var(--good); }
 .listing-title { display: block; max-width: 280px; margin-top: 2px; overflow: hidden; color: var(--muted); font-size: .78rem; text-overflow: ellipsis; white-space: nowrap; }
 .listing-price { font-weight: 700; white-space: nowrap; }
+.listing-installment { display: block; margin-top: 2px; color: var(--muted); font-size: .78rem; font-weight: 400; }
 .listing-diff { color: var(--muted); white-space: nowrap; }
 .best-tag { margin-left: 8px; color: var(--good); font-size: .78rem; font-weight: 600; }
 .status { color: var(--good); font-weight: 600; }

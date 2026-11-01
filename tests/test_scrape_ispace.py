@@ -16,6 +16,7 @@ def card(
     *,
     action_price: str | None = None,
     action: str = '<button class="button carousel-product_button">კალათაში</button>',
+    credit: str | None = None,
 ) -> str:
     discount = (
         f'<span class="carousel-product_price-value carousel-product_price-value__discount">{price}</span>'
@@ -35,6 +36,7 @@ def card(
       </div>
       <div class="carousel-product_price-wrapper">
         <p class="carousel-product_price">{discount}</p>
+        {f'<p class="carousel-product_credit-text"><span>{credit}</span></p>' if credit else ""}
         {action}
       </div>
     </div>"""
@@ -155,3 +157,24 @@ async def test_scrape_ispace_raises_after_retries() -> None:
             )
 
     assert attempts == 2
+
+
+def test_ispace_cards_carry_the_advertised_monthly_payment() -> None:
+    soup = BeautifulSoup(
+        page(
+            card(
+                "iPhone 18 Pro, 256 GB, Black",
+                "iphone-18-pro-256-gb-black-mjrp4af-a",
+                "4 599 ₾",
+                credit="119 ₾-დან /თვეში, 36 თვეზე",
+            ),
+            card("iPhone 17, 256 GB, Sage", "iphone-17-256-gb-sage-mg6j4af-a", "2 969 ₾"),
+        ),
+        "html.parser",
+    )
+
+    with_plan, without_plan = products_from_cards(soup)
+
+    assert with_plan["installment_monthly"] == 119
+    assert with_plan["installment_months"] == 36
+    assert "installment_monthly" not in without_plan

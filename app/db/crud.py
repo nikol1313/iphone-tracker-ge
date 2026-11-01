@@ -257,6 +257,8 @@ async def create_product_listing(
         last_seen_at=listing_data.last_seen_at or datetime.now(UTC),
         variant_name=normalize_optional_text(listing_data.variant_name),
         external_product_id=normalize_optional_text(listing_data.external_product_id),
+        installment_monthly=listing_data.installment_monthly,
+        installment_months=listing_data.installment_months,
     )
     session.add(listing)
     await session.flush()
@@ -337,6 +339,8 @@ async def upsert_product_listing(
     listing.last_seen_at = listing_data.last_seen_at or datetime.now(UTC)
     listing.variant_name = normalize_optional_text(listing_data.variant_name)
     listing.external_product_id = external_product_id
+    listing.installment_monthly = listing_data.installment_monthly
+    listing.installment_months = listing_data.installment_months
 
     if price_changed or record_unchanged_price:
         await create_price_history(

@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import re
 from urllib.parse import urljoin
 
 import httpx
@@ -21,6 +22,21 @@ LOGGER = logging.getLogger(__name__)
 
 class IspaceCrawlError(RuntimeError):
     """Raised when iSpace cannot be fetched after the retry policy."""
+
+
+# "119 ₾-დან /თვეში, 36 თვეზე": from 119 ₾ a month, over 36 months.
+INSTALLMENT_TEXT = re.compile(r"(\d[\d\s,.]*)\s*₾.*?(\d+)\s*თვე")
+
+
+def parse_installment(text: str) -> tuple[float, int] | None:
+    match = INSTALLMENT_TEXT.search(text)
+    if match is None:
+        return None
+    monthly = parse_price(match.group(1))
+    months = int(match.group(2))
+    if monthly is None or monthly <= 0 or months <= 0:
+        return None
+    return monthly, months
 
 
 def _is_open_box(product_path: str) -> bool:
@@ -57,19 +73,26 @@ def products_from_cards(soup: BeautifulSoup) -> list[dict[str, object]]:
         image_url = image_element.get("src") if image_element else None
         # "Notify me" is a link, buy/pre-order is a button.
         action = card.select_one(".carousel-product_button")
-
-        products.append(
-            {
-                "name": name,
-                "price": price,
-                "currency": "GEL",
-                "url": urljoin(BASE_URL, product_path),
-                "image_url": urljoin(BASE_URL, image_url) if image_url else None,
-                "store": "iSpace",
-                "is_available": action is not None and action.name == "button",
-                "external_product_id": product_path.rstrip("/").rsplit("/", 1)[-1],
-            }
+        credit_element = card.select_one(".carousel-product_credit-text")
+        installment = (
+            parse_installment(credit_element.get_text(" ", strip=True))
+            if credit_element
+            else None
         )
+
+        product: dict[str, object] = {
+            "name": name,
+            "price": price,
+            "currency": "GEL",
+            "url": urljoin(BASE_URL, product_path),
+            "image_url": urljoin(BASE_URL, image_url) if image_url else None,
+            "store": "iSpace",
+            "is_available": action is not None and action.name == "button",
+            "external_product_id": product_path.rstrip("/").rsplit("/", 1)[-1],
+        }
+        if installment is not None:
+            product["installment_monthly"], product["installment_months"] = installment
+        products.append(product)
 
     return products
 

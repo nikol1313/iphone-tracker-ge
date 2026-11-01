@@ -108,6 +108,9 @@ class ProductListing(Base):
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     variant_name: Mapped[str | None] = mapped_column(String(100))
     external_product_id: Mapped[str | None] = mapped_column(String(100))
+    # Cheapest monthly payment the store advertises ("from 119 ₾/month") and its term.
+    installment_monthly: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+    installment_months: Mapped[int | None] = mapped_column(Integer)
 
     store: Mapped["Store"] = relationship(back_populates="listings")
     product: Mapped["Product"] = relationship(back_populates="listings")

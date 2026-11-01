@@ -121,6 +121,19 @@ def _highest_available_price_expression():
     )
 
 
+def _lowest_installment_expression():
+    return (
+        select(func.min(ProductListing.installment_monthly))
+        .where(
+            ProductListing.product_id == Product.id,
+            ProductListing.is_active.is_(True),
+            ProductListing.is_available.is_(True),
+        )
+        .correlate(Product)
+        .scalar_subquery()
+    )
+
+
 def product_summary_select() -> Select:
     return select(
         Product,
@@ -129,6 +142,7 @@ def product_summary_select() -> Select:
         _listing_count_expression().label("listing_count"),
         _available_listing_count_expression().label("available_listing_count"),
         _highest_available_price_expression().label("highest_price"),
+        _lowest_installment_expression().label("lowest_installment_monthly"),
     )
 
 
@@ -139,6 +153,7 @@ def product_summary(
     listing_count: int,
     available_listing_count: int,
     highest_price: Decimal | None = None,
+    lowest_installment_monthly: Decimal | None = None,
 ) -> ProductSummary:
     return ProductSummary(
         id=product.id,
@@ -152,6 +167,7 @@ def product_summary(
         listing_count=listing_count,
         available_listing_count=available_listing_count,
         highest_price=highest_price,
+        lowest_installment_monthly=lowest_installment_monthly,
     )
 
 
@@ -467,6 +483,8 @@ async def list_product_listings(
             is_available=listing.is_available,
             last_checked_at=listing.last_checked_at,
             variant_name=listing.variant_name,
+            installment_monthly=listing.installment_monthly,
+            installment_months=listing.installment_months,
         )
         for listing, store_name in rows
     ]

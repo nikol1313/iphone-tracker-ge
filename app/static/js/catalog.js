@@ -203,6 +203,7 @@ export function renderProducts() {
       <h3>${escapeHtml(productName(product))}</h3>
       <p class="product-variant">${escapeHtml(variant(product))}</p>
       <p class="card-price"><strong>${escapeHtml(money(product.lowest_price, product.currency || "GEL"))}</strong>${weekDrop(product)}</p>
+      ${product.lowest_installment_monthly != null ? `<p class="card-installment">Installments from ${escapeHtml(money(product.lowest_installment_monthly))}/month</p>` : ""}
       <p class="card-meta">${cardMeta(product)}</p>
     </article>`;
   }).join("");
@@ -430,7 +431,7 @@ function renderListings(items) {
         <strong>${escapeHtml(item.store_name)}</strong>
         ${item.variant_name ? `<small class="listing-title">${escapeHtml(item.variant_name)}</small>` : ""}
       </td>
-      <td class="listing-price">${escapeHtml(money(item.current_price, item.currency))}${isBest && items.length > 1 ? '<span class="best-tag">Cheapest</span>' : ""}</td>
+      <td class="listing-price">${escapeHtml(money(item.current_price, item.currency))}${isBest && items.length > 1 ? '<span class="best-tag">Cheapest</span>' : ""}${item.installment_monthly != null ? `<small class="listing-installment">or from ${escapeHtml(money(item.installment_monthly))}/month${item.installment_months ? ` for ${item.installment_months} months` : ""}</small>` : ""}</td>
       <td class="listing-diff">${difference ? `+${escapeHtml(money(difference, item.currency))}` : isBest ? "—" : ""}</td>
       <td><span class="status ${item.is_available ? "" : "unavailable"}">${item.is_available ? "In stock" : "Out of stock"}</span></td>
       <td title="${escapeHtml(dateTime(item.last_checked_at))}">${escapeHtml(relativeTime(item.last_checked_at))}</td>

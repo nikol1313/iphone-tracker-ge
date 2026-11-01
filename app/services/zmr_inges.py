@@ -117,6 +117,21 @@ def _product_create(item: Mapping[str, object]) -> ProductCreate:
     )
 
 
+def _installment(item: Mapping[str, object]) -> tuple[Decimal | None, int | None]:
+    """Monthly payment and term when the store advertises one; partial data is dropped."""
+    monthly = item.get("installment_monthly")
+    months = item.get("installment_months")
+    if monthly is None or not isinstance(months, int):
+        return None, None
+    try:
+        amount = Decimal(str(monthly))
+    except InvalidOperation:
+        return None, None
+    if not amount.is_finite() or amount <= 0 or not 0 < months <= 120:
+        return None, None
+    return amount, months
+
+
 def _preferred_offer(item: Mapping[str, object]) -> tuple[bool, Decimal]:
     return item.get("is_available") is False, _price(item)
 
@@ -159,6 +174,7 @@ async def _ingest_store(
 
     for product_data, item in offers.values():
         product = await get_or_create_product(session, product_data)
+        installment_monthly, installment_months = _installment(item)
         image_url = _optional_text(item, "image_url")
         if image_url:
             product.image_url = image_url
@@ -181,6 +197,8 @@ async def _ingest_store(
                     else None
                 ),
                 variant_name=_required_text(item, "name")[:VARIANT_NAME_LENGTH],
+                installment_monthly=installment_monthly,
+                installment_months=installment_months,
             ),
         )
         listings_created += int(result.created)
