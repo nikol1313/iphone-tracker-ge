@@ -1,6 +1,6 @@
 /* Compare page: two phones side by side, specs row by row, and a reasoned pick at the end. */
 import { $, api, dayDate, escapeHtml, money, productName, safeUrl, showPage, state, variant } from "./core.js";
-import { bestPriceSeries, inStock, searchSuggestions } from "./catalog.js";
+import { bestPriceSeries, inStock, openProductInCatalog, searchSuggestions } from "./catalog.js";
 import { attachSuggestions } from "./combobox.js";
 import { onLanguageChange, t } from "./i18n.js";
 
@@ -268,11 +268,27 @@ function historyChart(details) {
     </svg></div>`;
 }
 
+// The recommended phone, with links to it in All iPhones and at its cheapest store.
+function pickedPhone(detail) {
+  const { product } = detail;
+  // Listings come in-stock first, cheapest first.
+  const offer = detail.listings.find(listing => listing.is_available);
+  return `
+    <div class="compare-pick-phone">
+      <p><strong>${escapeHtml(productName(product))}</strong> <span>${escapeHtml(variant(product))}</span></p>
+      <div class="compare-pick-actions">
+        <button class="primary-button" type="button" data-open-product="${product.id}">${escapeHtml(t("pick.viewInCatalog"))}</button>
+        ${offer ? `<a class="small-button compare-pick-store" href="${escapeHtml(safeUrl(offer.product_url))}" target="_blank" rel="noopener noreferrer">${escapeHtml(t("pick.openAtStore", { store: offer.store_name, price: money(offer.current_price, offer.currency) }))} <svg aria-hidden="true"><use href="#i-external"/></svg></a>` : ""}
+      </div>
+    </div>`;
+}
+
 function pickBox(details) {
   const pick = recommend(details);
   return `
     <section class="compare-pick" aria-labelledby="comparePickTitle">
       <h2 id="comparePickTitle">${escapeHtml(t("pick.title"))}</h2>
+      ${pick.side != null ? pickedPhone(details[pick.side]) : ""}
       <p class="compare-pick-headline">${escapeHtml(pick.headline)}</p>
       ${pick.reasons.length ? `<ul>${pick.reasons.map(reason => `<li>${escapeHtml(reason.text)}</li>`).join("")}</ul>` : ""}
       ${pick.tradeoff ? `<p class="muted">${escapeHtml(pick.tradeoff)}</p>` : ""}
@@ -305,9 +321,9 @@ async function renderComparison(ids) {
       ${specTable(details)}
       <h2>${escapeHtml(t("stores.title"))}</h2>
       ${storeTable(details)}
+      ${pickBox(details)}
       <h2>${escapeHtml(t("compare.history"))}</h2>
-      ${historyChart(details)}
-      ${pickBox(details)}`;
+      ${historyChart(details)}`;
   } catch (error) {
     if (token === renderToken) result.innerHTML = `<p class="empty-inline">${escapeHtml(error.message)}</p>`;
   }
@@ -358,6 +374,10 @@ export function bindCompare() {
           && product.storage === current.storage && product.color === chip.dataset.color);
       if (next) setSide(side, next.id);
     });
+  });
+  $("#compareResult").addEventListener("click", event => {
+    const button = event.target.closest("[data-open-product]");
+    if (button) openProductInCatalog(button.dataset.openProduct);
   });
   $("#selectedCompareButton").addEventListener("click", () => {
     if (state.selectedId != null) openCompareWith(state.selectedId);

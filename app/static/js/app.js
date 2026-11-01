@@ -1,6 +1,6 @@
 /* Connect the page controls to their feature modules. */
 import { $, $$, pageFromLocation, showPage, state } from "./core.js";
-import { applyFilters, loadProducts, renderOverview, renderProducts, searchSuggestions, selectProduct, updateSelectedActions } from "./catalog.js";
+import { applyFilters, loadProducts, openProductInCatalog, renderOverview, renderProducts, searchSuggestions, selectProduct, updateSelectedActions } from "./catalog.js";
 import { attachSuggestions } from "./combobox.js";
 import { loadTracked, logout, track } from "./account.js";
 import { bindDialogs, confirmEmailFromLink, openAlert, openAuth, openEmailSettings, openPasswordResetFromLink } from "./dialogs.js";
@@ -65,14 +65,7 @@ function bindSearchAndCatalog() {
     }
   });
   // Today page: a model row opens the catalog filtered to that model, on its cheapest variant.
-  const openModel = row => {
-    $("#searchInput").value = "";
-    state.searchQuery = "";
-    $("#modelFilter").value = row.dataset.model;
-    showPage("products", true);
-    applyFilters();
-    selectProduct(row.dataset.productId, { scroll: true });
-  };
+  const openModel = row => openProductInCatalog(row.dataset.productId);
   $("#modelPricesToggle").addEventListener("click", () => {
     state.modelsExpanded = !state.modelsExpanded;
     renderOverview();

@@ -144,8 +144,14 @@ tbody tr.best-offer td:first-child { box-shadow: inset 3px 0 0 var(--good); }
 .compare-line-b, .compare-key-b::before { stroke: #4ea1ff; background: #4ea1ff; }
 .compare-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 8px; padding: 0; list-style: none; color: var(--ink-2); font-size: .85rem; }
 .compare-legend li::before { display: inline-block; width: 14px; height: 3px; margin: 0 6px 3px 0; content: ""; border-radius: 2px; vertical-align: middle; }
-.compare-pick { margin-top: 28px; padding: 18px 20px; background: var(--good-soft); border: 1px solid color-mix(in srgb, var(--good) 40%, transparent); border-radius: 10px; }
+.compare-pick { margin-top: 24px; padding: 18px 20px; background: var(--good-soft); border: 1px solid color-mix(in srgb, var(--good) 40%, transparent); border-radius: 10px; }
 .compare-pick h2 { margin: 0 0 6px; color: var(--good); font-size: .85rem; text-transform: uppercase; letter-spacing: .04em; }
+.compare-pick-phone { display: grid; gap: 10px; margin: 0 0 12px; }
+.compare-pick-phone p { margin: 0; font-size: 1.3rem; }
+.compare-pick-phone p span { color: var(--ink-2); font-size: 1rem; }
+.compare-pick-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.compare-pick-store { display: inline-flex; align-items: center; gap: 6px; min-height: 42px; text-decoration: none; }
+.compare-pick-store svg { width: 14px; height: 14px; }
 .compare-pick-headline { margin: 0 0 8px; font-size: 1.05rem; font-weight: 700; }
 .compare-pick ul { margin: 0 0 8px; padding-left: 20px; }
 .compare-pick li { margin: 2px 0; }

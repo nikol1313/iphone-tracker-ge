@@ -1,5 +1,5 @@
 /* Catalog search, offer cards, charts, and retailer comparison. */
-import { $, $$, api, dateTime, dayDate, escapeHtml, money, productName, relativeTime, safeUrl, shortDate, state, variant, showToast } from "./core.js";
+import { $, $$, api, dateTime, dayDate, escapeHtml, money, productName, relativeTime, safeUrl, shortDate, showPage, state, variant, showToast } from "./core.js";
 import { onLanguageChange, t } from "./i18n.js";
 
 const PAGE_LIMIT = 100;
@@ -276,6 +276,18 @@ export function renderProducts() {
     image.closest(".product-image")?.classList.add("no-image");
     image.remove();
   }, { once: true }));
+}
+
+/* Open one phone in All iPhones: list filtered to its model, the phone selected and in view. */
+export function openProductInCatalog(productId) {
+  const product = state.products.find(item => item.id === Number(productId));
+  if (!product) return;
+  $("#searchInput").value = "";
+  state.searchQuery = "";
+  $("#modelFilter").value = product.model;
+  showPage("products", true);
+  applyFilters();
+  selectProduct(product.id, { scroll: true });
 }
 
 export async function selectProduct(productId, { scroll = false } = {}) {
