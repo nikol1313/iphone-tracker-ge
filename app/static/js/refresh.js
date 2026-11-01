@@ -1,18 +1,9 @@
 /* Manual price refresh with the shared one-hour cooldown. */
-import { $, api, showToast, state } from "./core.js";
-import { loadProducts } from "./catalog.js?v=20261029-1";
-import { openAuth } from "./dialogs.js?v=20261029-1";
+import { $, api, relativeTime as relative, showToast, state } from "./core.js";
+import { loadProducts, renderOverview } from "./catalog.js";
+import { openAuth } from "./dialogs.js";
 
 const refresh = { lastRefreshedAt: null, availableAt: null, running: false };
-
-const relative = value => {
-  const minutes = Math.round((new Date(value) - Date.now()) / 60000);
-  if (Math.abs(minutes) < 1) return "just now";
-  const format = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-  return Math.abs(minutes) < 60
-    ? format.format(minutes, "minute")
-    : format.format(Math.round(minutes / 60), "hour");
-};
 
 function renderRefresh() {
   const button = $("#refreshButton");
@@ -28,7 +19,9 @@ function renderRefresh() {
 function applyStatus(status) {
   refresh.lastRefreshedAt = status.last_refreshed_at;
   refresh.availableAt = status.next_manual_refresh_at;
+  state.lastRefreshedAt = status.last_refreshed_at;
   renderRefresh();
+  renderOverview();
 }
 
 export async function loadRefreshStatus() {

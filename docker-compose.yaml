@@ -28,11 +28,12 @@ services:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-iphone_monitor}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-iphone_monitor}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
       JWT_ACCESS_TOKEN_EXPIRE_SECONDS: ${JWT_ACCESS_TOKEN_EXPIRE_SECONDS:-86400}
+    # Only nginx can reach the backend, so its X-Forwarded-For (the visitor's IP) is trusted.
     command:
       [
         "/bin/sh",
         "-c",
-        "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8080",
+        "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8080 --forwarded-allow-ips '*'",
       ]
     expose:
       - "8080"
@@ -43,8 +44,9 @@ services:
 
   nginx:
     image: nginx:1.28-alpine
+    # Loopback only: locally you open http://localhost:8080; in production Caddy is the public entry.
     ports:
-      - "${HTTP_PORT:-8080}:80"
+      - "127.0.0.1:${HTTP_PORT:-8080}:80"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./app/static:/usr/share/nginx/html:ro
@@ -58,5 +60,24 @@ services:
       retries: 3
     restart: unless-stopped
 
+  # HTTPS for iphonetracker.ge. Only starts with the "prod" profile (COMPOSE_PROFILES=prod in .env).
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["prod"]
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      nginx:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   postgres_data:
+  caddy_data:
+  caddy_config:

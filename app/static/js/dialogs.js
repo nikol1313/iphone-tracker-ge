@@ -101,14 +101,86 @@ function closeAccountMenu() {
   $("#accountButton").setAttribute("aria-expanded", "false");
 }
 
+/* Finish the emailed reset link (/?reset_password=…): drop the token from the address bar and ask for a new password. */
+export function openPasswordResetFromLink() {
+  const url = new URL(window.location.href);
+  const token = url.searchParams.get("reset_password");
+  if (!token) return;
+  url.searchParams.delete("reset_password");
+  window.history.replaceState(window.history.state, "", url);
+  state.resetToken = token;
+  $("#resetError").textContent = "";
+  $("#resetDialog").showModal();
+}
+
+function setAuthMode(mode) {
+  state.authMode = mode;
+  const registering = mode === "register";
+  $("#authTitle").textContent = registering ? "Create account" : "Sign in";
+  $("#authForm button[type=submit]").textContent = registering ? "Create account" : "Sign in";
+  $("#authForm [name=password]").autocomplete = registering ? "new-password" : "current-password";
+  $("#authMode").textContent = registering ? "Already have an account? Sign in" : "Create an account";
+  $("#forgotPasswordButton").hidden = registering;
+  $("#authError").textContent = "";
+}
+
+function bindPasswordReset() {
+  $("#forgotPasswordButton").addEventListener("click", () => {
+    const email = $("#authForm [name=email]").value;
+    $("#authDialog").close();
+    $("#forgotForm [name=email]").value = email;
+    $("#forgotError").textContent = "";
+    $("#forgotSuccess").textContent = "";
+    $("#forgotDialog").showModal();
+  });
+  $("#forgotForm").addEventListener("submit", async event => {
+    event.preventDefault();
+    const email = new FormData(event.currentTarget).get("email").trim();
+    const submit = $("button[type=submit]", event.currentTarget);
+    submit.disabled = true;
+    $("#forgotError").textContent = "";
+    $("#forgotSuccess").textContent = "";
+    try {
+      await api("/auth/password-reset", { method: "POST", body: JSON.stringify({ email }) });
+      $("#forgotSuccess").textContent = `If ${email} has an account, a reset link is on its way. It works for 1 hour. Check your spam folder too.`;
+    } catch (error) {
+      $("#forgotError").textContent = error.message;
+    } finally {
+      submit.disabled = false;
+    }
+  });
+  $("#resetForm").addEventListener("submit", async event => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    if (form.get("password") !== form.get("confirm")) {
+      $("#resetError").textContent = "The two passwords don't match.";
+      return;
+    }
+    const submit = $("button[type=submit]", event.currentTarget);
+    submit.disabled = true;
+    $("#resetError").textContent = "";
+    try {
+      await api("/auth/password-reset/confirm", {
+        method: "POST",
+        body: JSON.stringify({ token: state.resetToken, password: form.get("password") }),
+      });
+      state.resetToken = null;
+      event.currentTarget.reset();
+      $("#resetDialog").close();
+      setAuthMode("login");
+      openAuth();
+      showToast("Password changed. Sign in with your new password.");
+    } catch (error) {
+      $("#resetError").textContent = error.message;
+    } finally {
+      submit.disabled = false;
+    }
+  });
+}
+
 function bindAuthentication() {
   $("#authMode").addEventListener("click", () => {
-    state.authMode = state.authMode === "login" ? "register" : "login";
-    const registering = state.authMode === "register";
-    $("#authTitle").textContent = registering ? "Create account" : "Sign in";
-    $("#authForm button[type=submit]").textContent = registering ? "Create account" : "Sign in";
-    $("#authMode").textContent = registering ? "Already have an account? Sign in" : "Create an account";
-    $("#authError").textContent = "";
+    setAuthMode(state.authMode === "login" ? "register" : "login");
   });
   $("#authForm").addEventListener("submit", async event => {
     event.preventDefault();
@@ -261,7 +333,10 @@ export function bindDialogs() {
   $("#closeAuth").addEventListener("click", () => $("#authDialog").close());
   $("#closeAlert").addEventListener("click", () => $("#alertDialog").close());
   $("#closeEmail").addEventListener("click", () => $("#emailDialog").close());
+  $("#closeForgot").addEventListener("click", () => $("#forgotDialog").close());
+  $("#closeReset").addEventListener("click", () => $("#resetDialog").close());
   bindAuthentication();
+  bindPasswordReset();
   bindAlertForm();
   bindEmailForm();
 }

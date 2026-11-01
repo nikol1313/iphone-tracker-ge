@@ -330,6 +330,8 @@ def test_openapi_contains_all_requested_routes():
         "/",
         "/auth/register",
         "/auth/login",
+        "/auth/password-reset",
+        "/auth/password-reset/confirm",
         "/search",
         "/products",
         "/products/{product_id}",

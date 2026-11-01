@@ -23,17 +23,17 @@ export async function loadTracked() {
 export function renderTracked() {
   const content = $("#trackedContent");
   if (!state.tracked.length) {
-    content.innerHTML = "<p>You are signed in. Track a product to keep it in this list.</p>";
+    content.innerHTML = '<p>Nothing here yet. Open a phone on <a href="/?page=products" data-page-link="products">All iPhones</a> and press Track.</p>';
     return;
   }
   content.innerHTML = `<div class="tracked-list">${state.tracked.map(item => `
     <div class="tracked-row">
       <div><h3>${escapeHtml(productName(item.product))}</h3><p>${escapeHtml(variant(item.product))}</p></div>
       <div>
-        <p>${escapeHtml(money(item.product.lowest_price, item.product.currency || "GEL"))} ${item.product.available_listing_count > 0 ? "best available" : "last listed"}</p>
+        <p><span class="tracked-price">${escapeHtml(money(item.product.lowest_price, item.product.currency || "GEL"))}</span> ${item.product.available_listing_count > 0 ? "cheapest now" : "last listed, out of stock"}</p>
         ${item.active_alert
-          ? `<p class="alert-value">Email me at ${escapeHtml(money(item.active_alert.target_price, item.active_alert.currency))} or lower${item.active_alert.is_triggered ? " · Reached" : ""}</p>`
-          : "<p>No active alert</p>"}
+          ? `<p class="alert-value${item.active_alert.is_triggered ? " reached" : ""}">Alert at ${escapeHtml(money(item.active_alert.target_price, item.active_alert.currency))} or lower${item.active_alert.is_triggered ? " · reached" : ""}</p>`
+          : "<p>No price alert</p>"}
       </div>
       <div class="tracked-actions">
         <button class="small-button" type="button" data-edit-alert="${item.product.id}">${item.active_alert ? "Edit alert" : "Set alert"}</button>
@@ -45,28 +45,19 @@ export function renderTracked() {
 export function updateAccount() {
   const button = $("#accountButton");
   const menuName = $("#accountMenuName");
-  const menuEmail = $("#accountMenuEmail");
-  const avatar = $("#accountMenuAvatar");
-  const signOut = $("#signOutButton");
-  const signIn = $("#signInMenuButton");
   if (state.token) {
     const name = state.email || "Account";
-    button.innerHTML = `<span class="profile-avatar" aria-hidden="true">${escapeHtml(name.slice(0, 1).toUpperCase())}</span>`;
-    button.setAttribute("aria-label", `Account: ${name}`);
+    button.innerHTML = `<span class="profile-avatar" aria-hidden="true">${escapeHtml(name.slice(0, 1).toUpperCase())}</span><svg aria-hidden="true"><use href="#i-chevron"/></svg>`;
+    button.classList.add("signed-in");
+    button.setAttribute("aria-label", `Account menu for ${name}`);
+    button.setAttribute("aria-haspopup", "true");
     menuName.textContent = name;
-    menuEmail.textContent = "Signed in";
-    avatar.textContent = name.slice(0, 1).toUpperCase();
-    signOut.hidden = false;
-    signIn.hidden = true;
   } else {
-    button.innerHTML = '<span class="profile-avatar" aria-hidden="true"><svg><use href="#i-user"/></svg></span>';
-    button.setAttribute("aria-label", "Account: sign in");
-    menuName.textContent = "Guest";
-    menuEmail.textContent = "Sign in to manage your account";
-    avatar.textContent = "?";
-    signOut.hidden = true;
-    signIn.hidden = false;
-    $("#trackedContent").innerHTML = '<p>Sign in to track products and create price alerts.</p><button class="primary-button" type="button" data-open-auth>Sign in</button>';
+    button.innerHTML = '<svg aria-hidden="true"><use href="#i-user"/></svg><span>Sign in</span>';
+    button.classList.remove("signed-in");
+    button.removeAttribute("aria-label");
+    button.removeAttribute("aria-haspopup");
+    $("#trackedContent").innerHTML = '<p>Sign in to track phones and get an email when the price drops.</p><button class="primary-button" type="button" data-open-auth>Sign in</button>';
   }
 }
 
@@ -74,14 +65,14 @@ export async function track(productId) {
   if (!state.token) {
     $("#authError").textContent = "";
     $("#authDialog").showModal();
-    showToast("Sign in before tracking a product.");
+    showToast("Sign in to track phones.");
     return;
   }
   const tracked = state.tracked.some(item => item.product.id === Number(productId));
   try {
     if (tracked) await api(`/tracked-products/${productId}`, { method: "DELETE" });
     else await api("/tracked-products", { method: "POST", body: JSON.stringify({ product_id: Number(productId) }) });
-    showToast(tracked ? "Product removed from tracking." : "Product is now tracked.");
+    showToast(tracked ? "Removed from your watchlist." : "Added to your watchlist.");
     await loadTracked();
   } catch (error) {
     showToast(error.message);

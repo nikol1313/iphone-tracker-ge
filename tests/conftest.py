@@ -2,6 +2,7 @@ from collections.abc import AsyncIterator
 from pathlib import Path
 
 import httpx
+import pytest
 import pytest_asyncio
 from pydantic import SecretStr
 from sqlalchemy import event
@@ -11,12 +12,20 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+from app.api import auth
 from app.conf import settings
 from app.db.sess import Base, get_conn
 from app.main import app
 
 settings.JWT_SECRET = SecretStr("test-secret-that-is-at-least-32-characters")
 settings.REFRESH_SCHEDULER_ENABLED = False
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limits() -> None:
+    # Limiters are process-wide; every test starts with no recorded attempts.
+    for limiter in auth.RATE_LIMITERS:
+        limiter.reset()
 
 
 @pytest_asyncio.fixture

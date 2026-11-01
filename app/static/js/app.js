@@ -1,9 +1,9 @@
 /* Connect the page controls to their feature modules. */
 import { $, $$, pageFromLocation, showPage, state } from "./core.js";
-import { applyFilters, loadProducts, renderProducts, selectProduct, updateSelectedActions } from "./catalog.js?v=20261029-1";
+import { applyFilters, loadProducts, renderProducts, selectProduct, updateSelectedActions } from "./catalog.js";
 import { loadTracked, logout, track } from "./account.js";
-import { bindDialogs, confirmEmailFromLink, openAlert, openAuth, openEmailSettings } from "./dialogs.js?v=20261029-1";
-import { bindRefresh, loadRefreshStatus } from "./refresh.js?v=20261028-1";
+import { bindDialogs, confirmEmailFromLink, openAlert, openAuth, openEmailSettings, openPasswordResetFromLink } from "./dialogs.js";
+import { bindRefresh, loadRefreshStatus } from "./refresh.js";
 
 function bindSearchAndCatalog() {
   const search = () => {
@@ -47,6 +47,25 @@ function bindSearchAndCatalog() {
       selectProduct(event.target.dataset.productId, { scroll: true });
     }
   });
+  // Today page: a model row opens the catalog filtered to that model, on its cheapest variant.
+  const openModel = row => {
+    $("#searchInput").value = "";
+    state.searchQuery = "";
+    $("#modelFilter").value = row.dataset.model;
+    showPage("products", true);
+    applyFilters();
+    selectProduct(row.dataset.productId, { scroll: true });
+  };
+  $("#modelPrices").addEventListener("click", event => {
+    const row = event.target.closest(".model-price");
+    if (row) openModel(row);
+  });
+  $("#modelPrices").addEventListener("keydown", event => {
+    if ((event.key === "Enter" || event.key === " ") && event.target.matches(".model-price")) {
+      event.preventDefault();
+      openModel(event.target);
+    }
+  });
   $("#selectedTrackButton").addEventListener("click", () => state.selectedId && track(state.selectedId));
   $("#selectedAlertButton").addEventListener("click", () => state.selectedId && openAlert(state.selectedId));
 }
@@ -81,16 +100,16 @@ function bindAccountMenu() {
     if (event.target.closest("[data-open-auth]")) openAuth();
   });
   $("#accountButton").addEventListener("click", () => {
+    // Signed out, the button is just "Sign in"; the menu is for signed-in accounts.
+    if (!state.token) {
+      openAuth();
+      return;
+    }
     const menu = $("#accountMenu");
     menu.hidden = !menu.hidden;
     $("#accountButton").setAttribute("aria-expanded", String(!menu.hidden));
   });
   $("#signOutButton").addEventListener("click", () => logout());
-  $("#signInMenuButton").addEventListener("click", () => {
-    $("#accountMenu").hidden = true;
-    $("#accountButton").setAttribute("aria-expanded", "false");
-    openAuth();
-  });
   $("[data-notification=email]").addEventListener("click", openEmailSettings);
   document.addEventListener("click", event => {
     if (!event.target.closest(".account-actions")) {
@@ -128,3 +147,4 @@ loadRefreshStatus();
 loadTracked();
 updateSelectedActions();
 confirmEmailFromLink();
+openPasswordResetFromLink();

@@ -132,24 +132,44 @@ async def send_price_alert_notification(
 async def send_test_email(email: str) -> None:
     await send_email(
         to=email,
-        subject="Price Monitor: email alerts are working",
-        text="This test email confirms Price Monitor can send your price alerts.",
-        html="<p>This test email confirms Price Monitor can send your price alerts.</p>",
+        subject="iPhone Tracker: email alerts are working",
+        text="This test email confirms iPhone Tracker can send your price alerts.",
+        html="<p>This test email confirms iPhone Tracker can send your price alerts.</p>",
     )
 
 
 async def send_verification_email(email: str, link: str) -> None:
     await send_email(
         to=email,
-        subject="Price Monitor: confirm your email for price alerts",
+        subject="iPhone Tracker: confirm your email for price alerts",
         text=(
-            "Confirm this address to receive Price Monitor price alerts:\n\n"
+            "Confirm this address to receive iPhone Tracker price alerts:\n\n"
             f"{link}\n\n"
             "The link expires in 24 hours. If you did not ask for this, ignore this email."
         ),
         html=(
-            "<p>Confirm this address to receive Price Monitor price alerts.</p>"
+            "<p>Confirm this address to receive iPhone Tracker price alerts.</p>"
             f'<p><a href="{escape(link, quote=True)}">Confirm email address</a></p>'
             "<p>The link expires in 24 hours. If you did not ask for this, ignore this email.</p>"
+        ),
+    )
+
+
+async def send_password_reset_email(email: str, link: str) -> None:
+    await send_email(
+        to=email,
+        subject="iPhone Tracker: reset your password",
+        text=(
+            "Someone asked to reset the password for your iPhone Tracker account.\n"
+            "Choose a new password here:\n\n"
+            f"{link}\n\n"
+            "The link expires in 1 hour and works once. "
+            "If you did not ask for this, ignore this email; your password stays the same."
+        ),
+        html=(
+            "<p>Someone asked to reset the password for your iPhone Tracker account.</p>"
+            f'<p><a href="{escape(link, quote=True)}">Choose a new password</a></p>'
+            "<p>The link expires in 1 hour and works once. "
+            "If you did not ask for this, ignore this email; your password stays the same.</p>"
         ),
     )

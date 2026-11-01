@@ -1,6 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Generic, Literal, TypeVar
+from typing import Annotated, Generic, Literal, TypeVar
 
 from pydantic import (
     BaseModel,
@@ -47,9 +47,12 @@ class StoreResponse(StoreCreate):
     id: int
 
 
+Password = Annotated[str, Field(min_length=8, max_length=130)]
+
+
 class UserCredentials(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=8, max_length=130)
+    password: Password
 
     @field_validator("email")
     @classmethod
@@ -87,6 +90,15 @@ class EmailSettingsResponse(BaseModel):
 
 class EmailVerificationRequest(BaseModel):
     token: str = Field(min_length=1, max_length=2000)
+
+
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetConfirm(BaseModel):
+    token: str = Field(min_length=1, max_length=2000)
+    password: Password
 
 
 class TokenResponse(BaseModel):

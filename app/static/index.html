@@ -3,86 +3,66 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Compare iPhone prices from Georgian stores, explore price history, and get notified when prices drop.">
-  <meta name="theme-color" content="#111a2b">
-  <title>Price Monitor — iPhone deals in Georgia</title>
+  <meta name="description" content="Cheapest iPhone prices across Georgian stores — Zoommer, Alta, iSpace, Elit, Megatechnica, Extra and PCShop — with price history and drop alerts.">
+  <meta name="theme-color" content="#1b1c1e">
+  <title>iPhone prices in Georgia — iPhone Tracker</title>
   <script>try { document.documentElement.dataset.theme = localStorage.getItem("priceMonitorTheme") === "light" ? "light" : "dark"; } catch { document.documentElement.dataset.theme = "dark"; }</script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/base.css?v=20261018-1">
-  <link rel="stylesheet" href="/static/css/shell.css?v=20261018-5">
-  <link rel="stylesheet" href="/static/css/catalog.css?v=20261029-1">
-  <link rel="stylesheet" href="/static/css/overlays.css?v=20261028-2">
-  <link rel="stylesheet" href="/static/css/responsive.css?v=20261029-1">
-  <script type="module" src="/static/js/app.js?v=20261029-1"></script>
+  <link rel="stylesheet" href="/static/css/base.css?v=20261101-3">
+  <link rel="stylesheet" href="/static/css/shell.css?v=20261101-3">
+  <link rel="stylesheet" href="/static/css/catalog.css?v=20261101-3">
+  <link rel="stylesheet" href="/static/css/overlays.css?v=20261101-3">
+  <link rel="stylesheet" href="/static/css/responsive.css?v=20261101-3">
+  <script type="module" src="/static/js/app.js?v=20261101-3"></script>
 </head>
 <body>
   <svg class="icon-sprite" aria-hidden="true">
-    <symbol id="i-activity" viewBox="0 0 24 24"><path d="M3 12h4l2-8 4 16 2-8h6"/></symbol>
     <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
-    <symbol id="i-box" viewBox="0 0 24 24"><path d="M4 7h16v13H4zM8 4h8M9 11h6"/></symbol>
-    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7M10 20h4"/></symbol>
-    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 19V5M4 19h17M7 15l4-4 3 2 6-7"/></symbol>
     <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c.7-5 3.4-7 8-7s7.3 2 8 7"/></symbol>
-    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
-    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
     <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M19 13v7H4V5h7"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
     <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
-    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 5H4v14h6M14 8l4 4-4 4M8 12h10"/></symbol>
     <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 6v5h-5M4 18v-5h5M18 9a7 7 0 0 0-12-2M6 15a7 7 0 0 0 12 2"/></symbol>
-    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
     <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></symbol>
     <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.5 8.5 0 1 0 20.2 15.4Z"/></symbol>
   </svg>
 
   <header class="topbar">
-    <a class="brand" href="/?page=overview" data-page-link="overview" aria-label="Price Monitor home">
-      <span class="brand-mark"><svg><use href="#i-activity"/></svg></span>
-      <span class="brand-copy"><strong>Price Monitor</strong></span>
-    </a>
+    <a class="brand" href="/?page=overview" data-page-link="overview">iPhone Tracker<span>.ge</span></a>
     <nav aria-label="Primary navigation">
-      <a class="nav-link active" href="/?page=overview" data-page-link="overview"><svg><use href="#i-chart"/></svg>Discover</a>
-      <a class="nav-link" href="/?page=products" data-page-link="products"><svg><use href="#i-box"/></svg>iPhones</a>
-      <a class="nav-link" href="/?page=alerts" data-page-link="alerts"><svg><use href="#i-bell"/></svg>Watchlist</a>
+      <a class="nav-link active" href="/?page=overview" data-page-link="overview">Today</a>
+      <a class="nav-link" href="/?page=products" data-page-link="products">All iPhones</a>
+      <a class="nav-link" href="/?page=alerts" data-page-link="alerts">Watchlist</a>
     </nav>
     <div class="account-actions">
-      <span class="api-status" id="apiStatus" data-state="connecting" role="status" aria-label="Connecting to API" title="Connecting to API"><span aria-hidden="true"></span></span>
       <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to light theme" title="Switch to light theme"><svg aria-hidden="true"><use href="#i-sun"/></svg></button>
-      <button class="account-button" id="accountButton" type="button" aria-label="Sign in" aria-haspopup="true" aria-expanded="false"><svg><use href="#i-user"/></svg></button>
+      <button class="account-button" id="accountButton" type="button" aria-expanded="false"><svg aria-hidden="true"><use href="#i-user"/></svg><span>Sign in</span></button>
       <section class="account-menu" id="accountMenu" aria-label="Account menu" hidden>
         <div class="account-menu-heading">
-          <span class="account-avatar-small" id="accountMenuAvatar">?</span>
-          <div><strong id="accountMenuName">Guest</strong><span id="accountMenuEmail">Sign in to manage your account</span></div>
+          <strong id="accountMenuName"></strong>
+          <span id="accountMenuEmail">Signed in</span>
         </div>
-        <p class="menu-label">NOTIFICATIONS</p>
-        <button class="notification-option" type="button" data-notification="email">
-          <span class="notification-icon email-icon"><svg><use href="#i-user"/></svg></span>
-          <span><strong>Email alerts</strong><small>Choose where price alerts are sent</small></span>
-          <span class="option-arrow">›</span>
-        </button>
-        <button class="signout-button" id="signOutButton" type="button" hidden><svg><use href="#i-logout"/></svg>Sign out</button>
-        <button class="signin-menu-button" id="signInMenuButton" type="button">Sign in to your account</button>
+        <button class="menu-item" type="button" data-notification="email">Email alerts <small>Where alerts are sent</small></button>
+        <button class="menu-item danger" id="signOutButton" type="button">Sign out</button>
       </section>
     </div>
   </header>
 
   <main id="mainContent">
     <div class="page-view" data-page-view="overview" aria-labelledby="overviewTitle">
-      <section class="overview-hero">
-        <div class="overview-intro">
-          <p class="hero-tagline">IPHONE PRICE TRACKER · GEORGIA</p>
-          <h1 class="hero-title" id="overviewTitle">Your next iPhone.<br><span>At the right price.</span></h1>
-          <p class="hero-lead">Compare current iPhone listings from Georgian retailers, track prices over time, and know when it’s the right moment to buy.</p>
-          <a class="primary-button overview-cta" href="/?page=products" data-page-link="products" data-focus-search>
-            Explore iPhones <svg><use href="#i-external"/></svg>
-          </a>
-          <div class="overview-metrics" aria-label="Catalog coverage">
-            <div class="overview-metric"><strong>7</strong><span>retailers monitored</span><small>Zoommer · Alta · iSpace · Elit · Megatechnica · Extra · PCShop</small></div>
-            <div class="overview-metric"><strong id="overviewModelCount">—</strong><span>iPhone models</span><small>in the catalog</small></div>
-            <div class="overview-metric"><strong id="overviewListingCount">—</strong><span>store listings</span><small>to compare</small></div>
+      <section class="intro">
+        <h1 id="overviewTitle">iPhone prices across Georgian stores</h1>
+        <p class="intro-lead">We check Zoommer, Alta, iSpace, Elit, Megatechnica, Extra.ge and PCShop every 12 hours and show where each iPhone is cheapest right now.</p>
+        <p class="intro-stats" id="overviewStats">Loading prices…</p>
+      </section>
+      <section class="section">
+        <div class="section-heading">
+          <div>
+            <h2>Cheapest price per model</h2>
+            <p class="section-description">Lowest in-stock price for any storage or color. Pick a model to compare stores.</p>
           </div>
+          <a class="text-button" href="/?page=products" data-page-link="products">See all iPhones →</a>
         </div>
+        <ul id="modelPrices" class="model-prices" aria-live="polite"></ul>
       </section>
     </div>
 
@@ -99,9 +79,8 @@
       <section class="section">
         <div class="section-heading">
           <div>
-            <p class="section-kicker">THE LINEUP</p>
-            <h1 id="productsTitle">Find your iPhone</h1>
-            <p class="section-description">One card per phone. Prices from every store, cheapest first.</p>
+            <h1 id="productsTitle">All iPhones</h1>
+            <p class="section-description">Best in-stock price for each phone, from every store we track.</p>
           </div>
           <div class="catalog-meta">
             <button class="small-button refresh-button" id="refreshButton" type="button"><svg aria-hidden="true"><use href="#i-refresh"/></svg><span>Refresh prices</span></button>
@@ -116,14 +95,14 @@
             <option value="model">Newest model</option>
             <option value="price-asc">Price: low to high</option>
             <option value="price-desc">Price: high to low</option>
-            <option value="savings">Biggest store savings</option>
+            <option value="savings">Biggest gap between stores</option>
             <option value="stores">Most stores in stock</option>
           </select></label>
           <label class="filter-toggle"><input type="checkbox" id="inStockFilter"><span>In stock only</span></label>
           <button class="text-button" id="clearFilters" type="button" hidden>Clear filters</button>
         </div>
         <div id="productGrid" class="product-grid" aria-live="polite">
-          <div class="loading-state">Loading products from the API…</div>
+          <div class="loading-state">Loading prices…</div>
         </div>
         <div class="catalog-controls">
           <button class="show-more-button" id="showMoreButton" type="button" aria-controls="productGrid" hidden>Show more</button>
@@ -131,7 +110,7 @@
         </div>
       </section>
 
-      <section class="section data-panel" id="historySection" hidden>
+      <section class="section" id="historySection" hidden>
         <div class="section-heading compact">
           <div class="history-product">
             <div id="historyProductImage" class="history-product-image no-image" aria-hidden="true"><span>iPhone</span></div>
@@ -152,26 +131,26 @@
           <svg id="priceChart" role="img" aria-label="Price history chart"></svg>
           <div id="chartEmpty" class="chart-empty" hidden>No recorded price history for this product.</div>
         </div>
-        <div class="all-time-prices" aria-label="All-time price range">
-          <div class="all-time-price"><span>All-time low</span><strong id="allTimeLow">—</strong></div>
-          <div class="all-time-price"><span>All-time high</span><strong id="allTimeHigh">—</strong></div>
+        <div class="all-time-prices" aria-label="Price range we have recorded">
+          <div class="all-time-price"><span>Lowest we've seen</span><strong id="allTimeLow">—</strong></div>
+          <div class="all-time-price"><span>Highest we've seen</span><strong id="allTimeHigh">—</strong></div>
         </div>
       </section>
 
-      <section class="section data-panel" id="storesSection" hidden>
+      <section class="section" id="storesSection" hidden>
         <div class="section-heading compact">
           <div>
-            <h2>Store comparison</h2>
-            <p class="section-description">The same phone at every store we track, cheapest in-stock offer first.</p>
+            <h2>Prices by store</h2>
+            <p class="section-description">Cheapest in-stock offer first. Always confirm the price on the store's site.</p>
           </div>
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Store</th><th>Price</th><th>vs best</th><th>Status</th><th>Last checked</th><th><span class="sr-only">Open</span></th></tr></thead>
+            <thead><tr><th>Store</th><th>Price</th><th>vs cheapest</th><th>Stock</th><th>Checked</th><th><span class="sr-only">Open</span></th></tr></thead>
             <tbody id="storesBody"></tbody>
           </table>
         </div>
-        <div id="storesEmpty" class="empty-inline" hidden>No current store listings for this product.</div>
+        <div id="storesEmpty" class="empty-inline" hidden>No store lists this phone right now.</div>
       </section>
     </div>
 
@@ -179,13 +158,12 @@
       <section class="section">
         <div class="section-heading">
           <div>
-            <p class="section-kicker">YOUR SAVED PICKS</p>
-            <h1 id="alertsTitle">Your watchlist</h1>
-            <p class="section-description">Keep an eye on the iPhones you want and the prices you’re waiting for.</p>
+            <h1 id="alertsTitle">Watchlist</h1>
+            <p class="section-description">Phones you track, and the prices you're waiting for.</p>
           </div>
         </div>
         <div id="trackedContent" class="account-panel">
-          <p>Sign in to track products and create price alerts.</p>
+          <p>Sign in to track phones and get an email when the price drops.</p>
           <button class="primary-button" type="button" data-open-auth>Sign in</button>
         </div>
       </section>
@@ -193,7 +171,8 @@
   </main>
 
   <footer>
-    <span>Made by Nikusha Avsajanishvili.</span>
+    <span>Prices are collected from store websites and may be out of date. Check the store before you buy.</span>
+    <span>Made by Nikusha Avsajanishvili</span>
   </footer>
 
   <dialog id="authDialog">
@@ -207,7 +186,37 @@
       <p id="authError" class="form-error" role="alert"></p>
       <button class="primary-button full" type="submit">Sign in</button>
     </form>
-    <button class="text-button" id="authMode" type="button">Create an account</button>
+    <div class="dialog-links">
+      <button class="text-button" id="authMode" type="button">Create an account</button>
+      <button class="text-button" id="forgotPasswordButton" type="button">Forgot password?</button>
+    </div>
+  </dialog>
+
+  <dialog id="forgotDialog">
+    <div class="dialog-head">
+      <h2>Reset your password</h2>
+      <button class="icon-button" id="closeForgot" type="button" aria-label="Close"><svg><use href="#i-close"/></svg></button>
+    </div>
+    <form id="forgotForm">
+      <p class="settings-help">Enter the email you signed up with. We'll send a link to choose a new password.</p>
+      <label>Email<input type="email" name="email" required autocomplete="email"></label>
+      <p id="forgotError" class="form-error" role="alert"></p>
+      <p id="forgotSuccess" class="form-success" role="status"></p>
+      <button class="primary-button full" type="submit">Send reset link</button>
+    </form>
+  </dialog>
+
+  <dialog id="resetDialog">
+    <div class="dialog-head">
+      <h2>Choose a new password</h2>
+      <button class="icon-button" id="closeReset" type="button" aria-label="Close"><svg><use href="#i-close"/></svg></button>
+    </div>
+    <form id="resetForm">
+      <label>New password<input type="password" name="password" minlength="8" maxlength="128" required autocomplete="new-password"></label>
+      <label>Repeat new password<input type="password" name="confirm" minlength="8" maxlength="128" required autocomplete="new-password"></label>
+      <p id="resetError" class="form-error" role="alert"></p>
+      <button class="primary-button full" type="submit">Save new password</button>
+    </form>
   </dialog>
 
   <dialog id="alertDialog">
@@ -217,8 +226,7 @@
     </div>
     <form id="alertForm">
       <div class="alert-explainer">
-        <strong>How it works</strong>
-        <p>Pick the most you want to pay. When this iPhone’s best price at any store drops to <b>your target or lower</b>, we email you once.</p>
+        <p>When this iPhone's best price at any store drops to <b>your target or lower</b>, we email you once.</p>
         <p id="alertCurrentPrice" class="settings-note"></p>
       </div>
       <input type="hidden" name="product_id">
@@ -229,10 +237,10 @@
         <input id="alertTargetPrice" type="number" name="target_price" min="0.01" step="any" aria-describedby="alertPriceHelp" required>
         <button class="stepper-button" type="button" data-price-step="1" aria-label="Raise target price by 100">+100</button>
       </div>
-      <p id="alertPriceHelp" class="settings-note">Tap −100/+100, scroll, or use ↑/↓ to move in steps of 100. You can also type any amount.</p>
+      <p id="alertPriceHelp" class="settings-note">Use −100/+100, the scroll wheel, or ↑/↓, or type any amount.</p>
       <label>Currency<select name="currency" required>
-        <option value="GEL">GEL — Georgian lari</option>
-        <option value="USD">USD — US dollar</option>
+        <option value="GEL">GEL (₾)</option>
+        <option value="USD">USD ($)</option>
       </select></label>
       <p id="alertEmailNote" class="settings-note"></p>
       <p id="alertError" class="form-error" role="alert"></p>
@@ -241,13 +249,13 @@
     </form>
   </dialog>
 
-  <dialog id="emailDialog" class="settings-dialog">
+  <dialog id="emailDialog">
     <div class="dialog-head">
-      <div><p class="section-kicker">PRICE ALERTS</p><h2>Email notifications</h2></div>
+      <h2>Email alerts</h2>
       <button class="icon-button" id="closeEmail" type="button" aria-label="Close"><svg><use href="#i-close"/></svg></button>
     </div>
     <form id="emailForm">
-      <p class="settings-help">When an iPhone you set an alert on drops to your target price or lower, we email this address once. We first send a link to confirm the address is yours.</p>
+      <p class="settings-help">When a phone you set an alert on drops to your target price, we email this address once. We first send a link to confirm the address is yours.</p>
       <label>Email for price alerts<input type="email" name="notification_email" maxlength="320" autocomplete="email" placeholder="you@example.com"></label>
       <p class="settings-note">Leave empty and save to turn email alerts off.</p>
       <p id="emailVerificationStatus" class="settings-note" hidden></p>

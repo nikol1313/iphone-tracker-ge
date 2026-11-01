@@ -1,42 +1,45 @@
-/* Shared theme tokens and browser defaults. */
+/* Shared theme tokens and browser defaults. Dark is the default theme. */
 :root {
   color-scheme: dark;
-  --canvas: #0a0f1d;
-  --paper: #11182a;
-  --paper-soft: #1a2238;
-  --ink: #eef0fa;
-  --ink-soft: #c5cae0;
-  --muted: #8992b1;
-  --line: #252e49;
-  --line-strong: #374261;
-  --green: #a18aff;
-  --green-dark: #111a34;
-  --lime: #c3b5ff;
-  --lime-soft: #25203d;
-  --orange: #ed8a59;
-  --danger: #ff777e;
-  --font: "DM Sans", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --mono: "DM Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
-  --shadow: 0 18px 54px rgba(0, 0, 0, .34);
+  --bg: #121314;
+  --surface: #1b1c1e;
+  --surface-2: #26272a;
+  --ink: #ececea;
+  --ink-2: #c4c4c0;
+  --muted: #95979c;
+  --line: #2e2f33;
+  --line-strong: #44454a;
+  /* Georgian flag red: the one brand color. */
+  --accent: #ef4250;
+  --accent-hover: #ff6370;
+  --accent-soft: #3a1b1f;
+  --on-accent: #ffffff;
+  --good: #4fc97a;
+  --good-soft: #17301f;
+  --danger: #ff7b72;
+  --shadow: 0 12px 32px rgba(0, 0, 0, .45);
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Georgian", "Helvetica Neue", Arial, sans-serif;
+  --radius: 8px;
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --canvas: #f4f6fb;
-  --paper: #ffffff;
-  --paper-soft: #eef1f8;
-  --ink: #22283a;
-  --ink-soft: #4a5268;
-  --muted: #707991;
-  --line: #e2e6ef;
-  --line-strong: #cbd2e1;
-  --green: #7259d1;
-  --green-dark: #34265f;
-  --lime: #d6ccff;
-  --lime-soft: #f0edfb;
-  --orange: #bd5a2c;
-  --danger: #bd3545;
-  --shadow: 0 18px 54px rgba(30, 42, 75, .14);
+  --bg: #f6f6f3;
+  --surface: #ffffff;
+  --surface-2: #efefeb;
+  --ink: #16181d;
+  --ink-2: #3d424d;
+  --muted: #676d78;
+  --line: #e2e2dc;
+  --line-strong: #cbcbc3;
+  --accent: #c8102e;
+  --accent-hover: #a30d25;
+  --accent-soft: #fbe9ec;
+  --on-accent: #ffffff;
+  --good: #157a3c;
+  --good-soft: #e5f4ea;
+  --danger: #b42318;
+  --shadow: 0 12px 32px rgba(22, 24, 29, .14);
 }
 
 * { box-sizing: border-box; }
@@ -46,17 +49,18 @@ body {
   margin: 0;
   overflow-x: clip;
   color: var(--ink);
-  background: var(--canvas);
+  background: var(--bg);
   font-family: var(--font);
   font-size: 15px;
   font-variant-numeric: tabular-nums;
-  line-height: 1.55;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
-button, input { font: inherit; }
+button, input, select { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 a { color: inherit; }
-svg { width: 1.1em; height: 1.1em; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+svg { width: 1.1em; height: 1.1em; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .icon-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
-h1, h2, p { margin-top: 0; }
+h1, h2, h3, p { margin-top: 0; }

@@ -25,9 +25,8 @@ def make_new_email():
 
 
 def create_account(page: Page):
-    # Open the account menu and choose "Sign in".
+    # The "Sign in" button in the top bar opens the sign-in form.
     page.click("#accountButton")
-    page.click("#signInMenuButton")
 
     # Switch the dialog from "Sign in" to "Create account".
     page.click("#authMode")
@@ -52,7 +51,7 @@ def open_first_iphone(page: Page):
 def test_home_page_opens(page: Page):
     page.goto(SITE_URL)
 
-    expect(page).to_have_title("Discover — Price Monitor")
+    expect(page).to_have_title("iPhone prices in Georgia — iPhone Tracker")
     expect(page.locator("#accountButton")).to_be_visible()
 
 
@@ -82,7 +81,7 @@ def test_set_edit_and_remove_an_alert(page: Page):
 
     # 4. The watchlist shows the new price.
     page.goto(SITE_URL + "/?page=alerts")
-    expect(page.locator("#trackedContent .alert-value")).to_contain_text("900.00")
+    expect(page.locator("#trackedContent .alert-value")).to_contain_text("900 ₾")
 
     # 5. Remove the alert from the watchlist.
     page.click("#trackedContent [data-edit-alert]")

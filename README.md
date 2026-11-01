@@ -1,4 +1,4 @@
-# iPhone Price Monitor Georgia
+# iPhone Tracker (iphonetracker.ge)
 
 A Georgian iPhone price comparison and tracking app. It imports retailer listings, records price changes, and lets shoppers track products and set target-price alerts.
 
@@ -8,10 +8,13 @@ A Georgian iPhone price comparison and tracking app. It imports retailer listing
 - Compare one phone across retailers: titles like "Apple iPhone 17 (8GB/256GB) - Sage" and
   "iPhone 17, 256 GB, Sage" are parsed into the same model, storage, and color.
 - Filter by model, storage, and stock; sort by price, store savings, or store count.
-- See price-drop and lowest-ever badges on catalog cards.
+- See the cheapest in-stock price per model on the Today page, plus weekly drops and lowest-recorded tags on catalog cards.
 - View price history for tracked products.
 - Register an account, track products, and set, edit, or remove target-price alerts.
 - Get price alerts by email once the address is confirmed through an emailed link.
+- Reset a forgotten password with a one-hour, single-use emailed link.
+- Login, sign-up, and password-reset attempts are rate limited per IP, and an account locks
+  for 15 minutes after 5 wrong passwords. Counts are kept in memory, so run one uvicorn worker.
 - Refresh the catalog from Zoommer, Alta, iSpace, Elit Electronics, Megatechnica, Extra.ge, and PCShop automatically every 12 hours and record crawl outcomes.
 - Refresh prices on demand from the catalog page (signed-in users, once per hour).
 - Explore the REST API using Swagger UI.
@@ -39,6 +42,20 @@ and `SMTP_FROM` in `.env` (see `.env.example` for Gmail). Confirmation links poi
 `PUBLIC_BASE_URL` (default `http://localhost:8080`). On a deployed server, set `PROD=true`:
 the backend then refuses to start without a `DATABASE_URL`, a `PUBLIC_BASE_URL`, and a
 non-placeholder `JWT_SECRET`.
+
+## Deploying
+
+Production runs the same compose stack on one Linux VM, with Caddy in front for HTTPS
+(`Caddyfile`, certificates from Let's Encrypt).
+
+1. Point the `A` records for `iphonetracker.ge` and `www.iphonetracker.ge` at the server's IP,
+   and open TCP 22, 80 and 443 (plus UDP 443).
+2. Install Docker (`curl -fsSL https://get.docker.com | sh`) and clone the repo.
+3. Create `.env` from `.env.example` with `PROD=true`,
+   `PUBLIC_BASE_URL=https://iphonetracker.ge`, `COMPOSE_PROFILES=prod`, fresh secrets, and SMTP.
+4. Run `docker compose up -d --build`.
+5. Schedule `scripts/backup-db.sh` daily in cron (see the script header). Dumps stay on the
+   server, so copy them elsewhere or turn on the host's VM backups too.
 
 ## Development
 

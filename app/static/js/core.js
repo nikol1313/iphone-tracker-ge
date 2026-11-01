@@ -8,6 +8,8 @@ export const state = {
   visibleCount: 12,
   currentPage: "overview",
   notificationSettings: null,
+  lastRefreshedAt: null,
+  resetToken: null,
   token: sessionStorage.getItem("priceMonitorToken"),
   email: sessionStorage.getItem("priceMonitorEmail"),
   authMode: "login",
@@ -17,10 +19,25 @@ export const state = {
 export const $ = (selector, root = document) => root.querySelector(selector);
 export const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 export const pages = new Set(["overview", "products", "alerts"]);
-export const pageTitles = { overview: "Discover", products: "iPhones", alerts: "Watchlist" };
-export const money = (value, currency = "GEL") => value == null
-  ? "No price"
-  : new Intl.NumberFormat("en", { style: "currency", currency }).format(Number(value));
+export const pageTitles = { overview: "iPhone prices in Georgia", products: "All iPhones", alerts: "Watchlist" };
+// "3,199 ₾" the way Georgian stores write it; tetri only when there are any.
+export const money = (value, currency = "GEL") => {
+  if (value == null) return "No price";
+  const number = Number(value);
+  const amount = new Intl.NumberFormat("en", {
+    minimumFractionDigits: Number.isInteger(number) ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(number);
+  return currency === "GEL" ? `${amount} ₾` : `${amount} ${currency}`;
+};
+export const relativeTime = value => {
+  const minutes = Math.round((new Date(value) - Date.now()) / 60000);
+  if (Math.abs(minutes) < 1) return "just now";
+  const format = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+  if (Math.abs(minutes) < 60) return format.format(minutes, "minute");
+  if (Math.abs(minutes) < 48 * 60) return format.format(Math.round(minutes / 60), "hour");
+  return format.format(Math.round(minutes / 1440), "day");
+};
 export const dateTime = value => value
   ? new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value))
   : "Not available";
@@ -63,7 +80,7 @@ export function showPage(page, updateHistory = false) {
     if (isCurrent) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
   });
-  document.title = `${pageTitles[nextPage]} — Price Monitor`;
+  document.title = `${pageTitles[nextPage]} — iPhone Tracker`;
   if (updateHistory) {
     const url = new URL(window.location.href);
     url.searchParams.set("page", nextPage);

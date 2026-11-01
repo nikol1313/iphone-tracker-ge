@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 from datetime import UTC, datetime, timedelta
 
 import jwt
@@ -16,6 +17,7 @@ from app.services.normalization import normalize_email
 PASSWORD_HASH = PasswordHash.recommended()
 JWT_ALGORITHM = "HS256"
 EMAIL_VERIFICATION_TOKEN_LIFETIME = timedelta(days=1)
+PASSWORD_RESET_TOKEN_LIFETIME = timedelta(hours=1)
 
 
 async def hash_password(password: str) -> str:
@@ -125,3 +127,48 @@ def decode_email_verification_token(token: str) -> tuple[int, str]:
     if not isinstance(subject, str) or not subject.isdigit() or not isinstance(email, str):
         raise jwt.InvalidTokenError("invalid verification token")
     return int(subject), email
+
+
+def _password_fingerprint(password_hash: str) -> str:
+    # Changes with the password, so a reset link stops working once it has been used.
+    return hashlib.sha256(password_hash.encode()).hexdigest()[:32]
+
+
+def create_password_reset_token(user: User) -> str:
+    issued_at = datetime.now(UTC)
+    payload = {
+        "sub": str(user.id),
+        "pwd": _password_fingerprint(user.password_hash),
+        "iat": issued_at,
+        "exp": issued_at + PASSWORD_RESET_TOKEN_LIFETIME,
+        "type": "password_reset",
+    }
+    return jwt.encode(payload, settings.jwt_secret(), algorithm=JWT_ALGORITHM)
+
+
+async def find_active_user(session: AsyncSession, email: str) -> User | None:
+    user = await session.scalar(select(User).where(User.email == normalize_email(email)))
+    return user if user is not None and user.is_active else None
+
+
+async def reset_password(session: AsyncSession, token: str, password: str) -> User:
+    """Set a new password from an emailed reset token; raise InvalidTokenError if it is unusable."""
+    payload = jwt.decode(
+        token,
+        settings.jwt_secret(),
+        algorithms=[JWT_ALGORITHM],
+        options={"require": ["exp", "iat", "sub", "type", "pwd"]},
+    )
+    subject = payload.get("sub")
+    if payload.get("type") != "password_reset" or not isinstance(subject, str) or not subject.isdigit():
+        raise jwt.InvalidTokenError("invalid password reset token")
+    user = await session.get(User, int(subject))
+    if (
+        user is None
+        or not user.is_active
+        or payload.get("pwd") != _password_fingerprint(user.password_hash)
+    ):
+        raise jwt.InvalidTokenError("password reset token no longer valid")
+    user.password_hash = await hash_password(password)
+    await session.flush()
+    return user
