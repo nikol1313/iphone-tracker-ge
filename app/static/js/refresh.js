@@ -2,6 +2,7 @@
 import { $, api, relativeTime as relative, showToast, state } from "./core.js";
 import { loadProducts, renderOverview } from "./catalog.js";
 import { openAuth } from "./dialogs.js";
+import { t } from "./i18n.js";
 
 const refresh = { lastRefreshedAt: null, availableAt: null, running: false };
 
@@ -9,10 +10,10 @@ function renderRefresh() {
   const button = $("#refreshButton");
   const coolingDown = refresh.availableAt && new Date(refresh.availableAt) > Date.now();
   button.disabled = refresh.running || Boolean(coolingDown);
-  $("span", button).textContent = refresh.running ? "Refreshing…" : "Refresh prices";
+  $("span", button).textContent = refresh.running ? t("refresh.running") : t("refresh.button");
   const parts = [];
-  if (refresh.lastRefreshedAt) parts.push(`Updated ${relative(refresh.lastRefreshedAt)}`);
-  if (coolingDown && !refresh.running) parts.push(`next refresh ${relative(refresh.availableAt)}`);
+  if (refresh.lastRefreshedAt) parts.push(t("refresh.updated", { time: relative(refresh.lastRefreshedAt) }));
+  if (coolingDown && !refresh.running) parts.push(t("refresh.next", { time: relative(refresh.availableAt) }));
   $("#refreshStatus").textContent = parts.join(" · ");
 }
 
@@ -34,7 +35,7 @@ export async function loadRefreshStatus() {
 
 async function refreshPrices() {
   if (!state.token) {
-    showToast("Sign in to refresh prices");
+    showToast(t("refresh.signIn"));
     openAuth();
     return;
   }
@@ -44,8 +45,8 @@ async function refreshPrices() {
     const result = await api("/refresh", { method: "POST" });
     applyStatus(result);
     showToast(result.failed_stores.length
-      ? `Prices updated · ${result.failed_stores.join(", ")} unavailable`
-      : "Prices updated from all stores");
+      ? t("refresh.partial", { stores: result.failed_stores.join(", ") })
+      : t("refresh.done"));
     loadProducts();
   } catch (error) {
     showToast(error.message);

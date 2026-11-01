@@ -1,6 +1,7 @@
 /* Authentication, price alert, and notification forms. */
 import { $, $$, api, money, showToast, state } from "./core.js";
 import { loadTracked } from "./account.js";
+import { t } from "./i18n.js";
 
 export function openAuth() {
   $("#authError").textContent = "";
@@ -9,31 +10,31 @@ export function openAuth() {
 
 /* Explain where alert emails go, or what is missing before they can be sent. */
 export function emailStatusNote(settings) {
-  if (!settings.notification_email) return "Add your email in the account menu (Email alerts) so we can reach you.";
-  if (!settings.email_verified) return `Confirm ${settings.notification_email} using the link we emailed you (account menu → Email alerts to resend).`;
-  return `We’ll email ${settings.notification_email}.`;
+  if (!settings.notification_email) return t("alert.needEmail");
+  if (!settings.email_verified) return t("alert.needConfirm", { email: settings.notification_email });
+  return t("alert.willEmail", { email: settings.notification_email });
 }
 
 export function openAlert(productId) {
   if (!state.token) {
     openAuth();
-    showToast("Sign in before creating an alert.");
+    showToast(t("alert.signIn"));
     return;
   }
   const product = state.products.find(item => item.id === Number(productId))
     || state.tracked.find(item => item.product.id === Number(productId))?.product;
   if (!product) return;
   const alert = activeAlert(product.id);
-  $("#alertTitle").textContent = `${product.model} ${alert ? "alert" : "target"}`;
+  $("#alertTitle").textContent = t(alert ? "alert.titleEdit" : "alert.titleNew", { model: product.model });
   const form = $("#alertForm");
   form.product_id.value = product.id;
   form.alert_id.value = alert?.id ?? "";
   form.target_price.value = alert?.target_price || product.lowest_price || "";
-  $("#alertSubmit").textContent = alert ? "Update alert" : "Email me at this price";
+  $("#alertSubmit").textContent = alert ? t("alert.submitEdit") : t("alert.submitNew");
   $("#alertRemoveButton").hidden = !alert;
   $("#alertCurrentPrice").textContent = product.lowest_price == null
-    ? "No store has a price for this iPhone right now."
-    : `Best price right now: ${money(product.lowest_price, product.currency || "GEL")}. Set a lower target to wait for a drop.`;
+    ? t("alert.noPrice")
+    : t("alert.bestNow", { price: money(product.lowest_price, product.currency || "GEL") });
   $("#alertEmailNote").textContent = "";
   $("#alertError").textContent = "";
   $("#alertDialog").showModal();
@@ -49,7 +50,7 @@ export async function openEmailSettings() {
   closeAccountMenu();
   if (!state.token) {
     openAuth();
-    showToast("Sign in to set up email alerts.");
+    showToast(t("email.signIn"));
     return;
   }
   const form = $("#emailForm");
@@ -72,8 +73,8 @@ function renderEmailStatus(settings) {
   const status = $("#emailVerificationStatus");
   status.hidden = !settings.notification_email;
   status.textContent = pending
-    ? `${settings.notification_email} is not confirmed yet. Open the link we emailed you; alerts start after that.`
-    : `${settings.notification_email} is confirmed.`;
+    ? t("email.pending", { email: settings.notification_email })
+    : t("email.confirmed", { email: settings.notification_email });
   $("#emailDeliveryWarning").hidden = settings.delivery_configured;
   $("#emailVerifyButton").hidden = !pending;
   $("#emailVerifyButton").disabled = !settings.delivery_configured;
@@ -89,7 +90,7 @@ export async function confirmEmailFromLink() {
   window.history.replaceState(window.history.state, "", url);
   try {
     await api("/notification-settings/email/verify", { method: "POST", body: JSON.stringify({ token }) });
-    showToast("Email confirmed. Price alerts will be emailed to you.");
+    showToast(t("email.verified"));
   } catch (error) {
     showToast(error.message);
   }
@@ -115,10 +116,10 @@ export function openPasswordResetFromLink() {
 function setAuthMode(mode) {
   state.authMode = mode;
   const registering = mode === "register";
-  $("#authTitle").textContent = registering ? "Create account" : "Sign in";
-  $("#authForm button[type=submit]").textContent = registering ? "Create account" : "Sign in";
+  $("#authTitle").textContent = registering ? t("auth.createAccount") : t("auth.signIn");
+  $("#authForm button[type=submit]").textContent = registering ? t("auth.createAccount") : t("auth.signIn");
   $("#authForm [name=password]").autocomplete = registering ? "new-password" : "current-password";
-  $("#authMode").textContent = registering ? "Already have an account? Sign in" : "Create an account";
+  $("#authMode").textContent = registering ? t("auth.haveAccount") : t("auth.createAnAccount");
   $("#forgotPasswordButton").hidden = registering;
   $("#authError").textContent = "";
 }
@@ -141,7 +142,7 @@ function bindPasswordReset() {
     $("#forgotSuccess").textContent = "";
     try {
       await api("/auth/password-reset", { method: "POST", body: JSON.stringify({ email }) });
-      $("#forgotSuccess").textContent = `If ${email} has an account, a reset link is on its way. It works for 1 hour. Check your spam folder too.`;
+      $("#forgotSuccess").textContent = t("forgot.sent", { email });
     } catch (error) {
       $("#forgotError").textContent = error.message;
     } finally {
@@ -152,7 +153,7 @@ function bindPasswordReset() {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     if (form.get("password") !== form.get("confirm")) {
-      $("#resetError").textContent = "The two passwords don't match.";
+      $("#resetError").textContent = t("reset.mismatch");
       return;
     }
     const submit = $("button[type=submit]", event.currentTarget);
@@ -168,7 +169,7 @@ function bindPasswordReset() {
       $("#resetDialog").close();
       setAuthMode("login");
       openAuth();
-      showToast("Password changed. Sign in with your new password.");
+      showToast(t("reset.done"));
     } catch (error) {
       $("#resetError").textContent = error.message;
     } finally {
@@ -196,7 +197,7 @@ function bindAuthentication() {
       sessionStorage.setItem("priceMonitorToken", state.token);
       sessionStorage.setItem("priceMonitorEmail", state.email);
       $("#authDialog").close();
-      showToast(state.authMode === "register" ? "Account created and signed in." : "Signed in.");
+      showToast(state.authMode === "register" ? t("auth.created") : t("auth.signedIn"));
       await loadTracked();
     } catch (error) {
       $("#authError").textContent = error.message;
@@ -245,10 +246,10 @@ function bindAlertForm() {
       $("#alertDialog").close();
       const settings = await api("/notification-settings/email").catch(() => null);
       const target = money(form.get("target_price"));
-      const action = alertId ? "Alert updated" : "Alert set";
+      const action = alertId ? t("alert.updated") : t("alert.set");
       showToast(settings && !settings.email_verified
-        ? `${action} for ${target}. ${emailStatusNote(settings)}`
-        : `${action}: we’ll email you when it drops to ${target} or lower.`);
+        ? t("alert.savedPending", { action, target, note: emailStatusNote(settings) })
+        : t("alert.saved", { action, target }));
       await loadTracked();
     } catch (error) {
       $("#alertError").textContent = error.message;
@@ -260,7 +261,7 @@ function bindAlertForm() {
     try {
       await api(`/alerts/${alertId}`, { method: "DELETE" });
       $("#alertDialog").close();
-      showToast("Alert removed. The phone stays on your watchlist.");
+      showToast(t("alert.removed"));
       await loadTracked();
     } catch (error) {
       $("#alertError").textContent = error.message;
@@ -286,10 +287,10 @@ function bindEmailForm() {
       renderEmailStatus(settings);
       if (!settings.notification_email) {
         $("#emailDialog").close();
-        showToast("Email alerts are turned off.");
+        showToast(t("email.off"));
       } else if (settings.email_verified) {
         $("#emailDialog").close();
-        showToast(`Saved. Price alerts will be emailed to ${settings.notification_email}.`);
+        showToast(t("email.saved", { email: settings.notification_email }));
       } else if (settings.delivery_configured) {
         await sendConfirmation();
       }
@@ -302,7 +303,7 @@ function bindEmailForm() {
     button.disabled = true;
     try {
       await api("/notification-settings/email/verification", { method: "POST" });
-      setMessages("", `We sent a confirmation link to ${state.notificationSettings.notification_email}. Check your inbox and spam folder.`);
+      setMessages("", t("email.linkSent", { email: state.notificationSettings.notification_email }));
     } catch (error) {
       setMessages(error.message);
     } finally {
@@ -319,7 +320,7 @@ function bindEmailForm() {
     button.disabled = true;
     try {
       await api("/notification-settings/email/test", { method: "POST" });
-      setMessages("", `Test email sent to ${state.notificationSettings.notification_email}. Check your inbox and spam folder.`);
+      setMessages("", t("email.testSent", { email: state.notificationSettings.notification_email }));
     } catch (error) {
       setMessages(error.message);
     } finally {

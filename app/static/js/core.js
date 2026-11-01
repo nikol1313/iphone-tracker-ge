@@ -1,4 +1,6 @@
 /* Shared state and browser-level helpers. */
+import { locale, t, translateServerMessage } from "./i18n.js";
+
 export const state = {
   products: [],
   visibleProducts: [],
@@ -19,10 +21,10 @@ export const state = {
 export const $ = (selector, root = document) => root.querySelector(selector);
 export const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 export const pages = new Set(["overview", "products", "alerts"]);
-export const pageTitles = { overview: "iPhone prices in Georgia", products: "All iPhones", alerts: "Watchlist" };
+const pageTitleKeys = { overview: "title.overview", products: "title.products", alerts: "title.alerts" };
 // "3,199 ₾" the way Georgian stores write it; tetri only when there are any.
 export const money = (value, currency = "GEL") => {
-  if (value == null) return "No price";
+  if (value == null) return t("noPrice");
   const number = Number(value);
   const amount = new Intl.NumberFormat("en", {
     minimumFractionDigits: Number.isInteger(number) ? 0 : 2,
@@ -30,17 +32,45 @@ export const money = (value, currency = "GEL") => {
   }).format(number);
   return currency === "GEL" ? `${amount} ₾` : `${amount} ${currency}`;
 };
+// Browsers without Georgian locale data fall back to English in Intl; spell Georgian out ourselves.
+const georgianFallback = locale === "ka" && Intl.RelativeTimeFormat.supportedLocalesOf(["ka"]).length === 0;
+const GEORGIAN_MONTHS = ["იან", "თებ", "მარ", "აპრ", "მაი", "ივნ", "ივლ", "აგვ", "სექ", "ოქტ", "ნოე", "დეკ"];
+const GEORGIAN_UNITS = { minute: ["წუთის წინ", "წუთში"], hour: ["საათის წინ", "საათში"], day: ["დღის წინ", "დღეში"] };
+const relativeUnit = (amount, unit) => {
+  if (!georgianFallback) return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(amount, unit);
+  const [past, future] = GEORGIAN_UNITS[unit];
+  return `${Math.abs(amount)} ${amount < 0 ? past : future}`;
+};
 export const relativeTime = value => {
   const minutes = Math.round((new Date(value) - Date.now()) / 60000);
-  if (Math.abs(minutes) < 1) return "just now";
-  const format = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-  if (Math.abs(minutes) < 60) return format.format(minutes, "minute");
-  if (Math.abs(minutes) < 48 * 60) return format.format(Math.round(minutes / 60), "hour");
-  return format.format(Math.round(minutes / 1440), "day");
+  if (Math.abs(minutes) < 1) return georgianFallback ? "ახლახან" : new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(0, "minute");
+  if (Math.abs(minutes) < 60) return relativeUnit(minutes, "minute");
+  if (Math.abs(minutes) < 48 * 60) return relativeUnit(Math.round(minutes / 60), "hour");
+  return relativeUnit(Math.round(minutes / 1440), "day");
 };
-export const dateTime = value => value
-  ? new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value))
-  : "Not available";
+// "1 Nov" / "1 ნოე"
+export const shortDate = value => {
+  const date = new Date(value);
+  return georgianFallback
+    ? `${date.getDate()} ${GEORGIAN_MONTHS[date.getMonth()]}`
+    : date.toLocaleDateString(locale, { day: "numeric", month: "short" });
+};
+// "1 Nov 2026" / "1 ნოე 2026"
+export const dayDate = value => {
+  const date = new Date(value);
+  return georgianFallback
+    ? `${shortDate(date)} ${date.getFullYear()}`
+    : date.toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" });
+};
+export const dateTime = value => {
+  if (!value) return t("notAvailable");
+  const date = new Date(value);
+  if (!georgianFallback) {
+    return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(date);
+  }
+  const time = `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+  return `${dayDate(date)}, ${time}`;
+};
 export const safeUrl = value => {
   try {
     const url = new URL(value);
@@ -62,8 +92,8 @@ export const productName = product => {
   return `iPhone ${fullName}`;
 };
 export const variant = product => product
-  ? [product.storage, product.color].filter(Boolean).join(" · ") || "Storage and color not specified"
-  : "Storage and color not specified";
+  ? [product.storage, product.color].filter(Boolean).join(" · ") || t("variant.unknown")
+  : t("variant.unknown");
 
 export function pageFromLocation() {
   const requestedPage = new URLSearchParams(window.location.search).get("page");
@@ -80,7 +110,7 @@ export function showPage(page, updateHistory = false) {
     if (isCurrent) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
   });
-  document.title = `${pageTitles[nextPage]} — iPhone Tracker`;
+  document.title = `${t(pageTitleKeys[nextPage])} — iPhone Tracker`;
   if (updateHistory) {
     const url = new URL(window.location.href);
     url.searchParams.set("page", nextPage);
@@ -100,8 +130,8 @@ export async function api(path, options = {}) {
   if (!response.ok) {
     const detail = Array.isArray(data.detail)
       ? data.detail.map(item => item.msg).join(", ")
-      : data.detail || "Unknown error";
-    const error = new Error(detail || `Request failed (${response.status})`);
+      : data.detail || t("error.unknown");
+    const error = new Error(translateServerMessage(detail || t("error.unknown")));
     error.status = response.status;
     throw error;
   }

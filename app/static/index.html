@@ -1,22 +1,25 @@
 <!doctype html>
-<html lang="en">
+<html lang="ka">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Cheapest iPhone prices across Georgian stores — Zoommer, Alta, iSpace, Elit, Megatechnica, Extra, PCShop and Metromart — with price history and drop alerts.">
+  <meta name="description" content="iPhone-ის ყველაზე დაბალი ფასები საქართველოს მაღაზიებში — Zoommer, Alta, iSpace, Elit, Megatechnica, Extra, PCShop და Metromart — ფასის ისტორიით და დაკლების შეტყობინებებით.">
   <meta name="theme-color" content="#1b1c1e">
-  <title>iPhone prices in Georgia — iPhone Tracker</title>
-  <script>try { document.documentElement.dataset.theme = localStorage.getItem("priceMonitorTheme") === "light" ? "light" : "dark"; } catch { document.documentElement.dataset.theme = "dark"; }</script>
+  <title>iPhone-ის ფასები საქართველოში — iPhone Tracker</title>
+  <script>
+    try { document.documentElement.dataset.theme = localStorage.getItem("priceMonitorTheme") === "light" ? "light" : "dark"; } catch { document.documentElement.dataset.theme = "dark"; }
+    try { if (localStorage.getItem("iphoneTrackerLang") === "en") document.documentElement.lang = "en"; } catch {}
+  </script>
   <link rel="icon" href="/static/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16.png">
   <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
-  <link rel="stylesheet" href="/static/css/base.css?v=20261101-3">
-  <link rel="stylesheet" href="/static/css/shell.css?v=20261101-3">
-  <link rel="stylesheet" href="/static/css/catalog.css?v=20261101-3">
-  <link rel="stylesheet" href="/static/css/overlays.css?v=20261101-3">
-  <link rel="stylesheet" href="/static/css/responsive.css?v=20261101-3">
-  <script type="module" src="/static/js/app.js?v=20261101-3"></script>
+  <link rel="stylesheet" href="/static/css/base.css?v=20261101-4">
+  <link rel="stylesheet" href="/static/css/shell.css?v=20261101-4">
+  <link rel="stylesheet" href="/static/css/catalog.css?v=20261101-4">
+  <link rel="stylesheet" href="/static/css/overlays.css?v=20261101-4">
+  <link rel="stylesheet" href="/static/css/responsive.css?v=20261101-4">
+  <script type="module" src="/static/js/app.js?v=20261101-4"></script>
 </head>
 <body>
   <svg class="icon-sprite" aria-hidden="true">
@@ -32,21 +35,22 @@
 
   <header class="topbar">
     <a class="brand" href="/?page=overview" data-page-link="overview"><img class="brand-logo" src="/static/logo-mark.png" alt="" width="32" height="32"><span class="brand-name">iPhone Tracker<span>.ge</span></span></a>
-    <nav aria-label="Primary navigation">
-      <a class="nav-link active" href="/?page=overview" data-page-link="overview">Today</a>
-      <a class="nav-link" href="/?page=products" data-page-link="products">All iPhones</a>
-      <a class="nav-link" href="/?page=alerts" data-page-link="alerts">Watchlist</a>
+    <nav aria-label="მთავარი ნავიგაცია" data-i18n-attr="aria-label:nav.label">
+      <a class="nav-link active" href="/?page=overview" data-page-link="overview" data-i18n="nav.today">დღეს</a>
+      <a class="nav-link" href="/?page=products" data-page-link="products" data-i18n="nav.products">ყველა iPhone</a>
+      <a class="nav-link" href="/?page=alerts" data-page-link="alerts" data-i18n="nav.alerts">ჩემი სია</a>
     </nav>
     <div class="account-actions">
-      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to light theme" title="Switch to light theme"><svg aria-hidden="true"><use href="#i-sun"/></svg></button>
-      <button class="account-button" id="accountButton" type="button" aria-expanded="false"><svg aria-hidden="true"><use href="#i-user"/></svg><span>Sign in</span></button>
-      <section class="account-menu" id="accountMenu" aria-label="Account menu" hidden>
+      <button class="lang-toggle" id="langToggle" type="button" data-i18n="lang.switch" data-i18n-attr="aria-label:lang.switchLabel;title:lang.switchLabel">EN</button>
+      <button class="theme-toggle" id="themeToggle" type="button"><svg aria-hidden="true"><use href="#i-sun"/></svg></button>
+      <button class="account-button" id="accountButton" type="button" aria-expanded="false"><svg aria-hidden="true"><use href="#i-user"/></svg><span>შესვლა</span></button>
+      <section class="account-menu" id="accountMenu" data-i18n-attr="aria-label:account.menu" hidden>
         <div class="account-menu-heading">
           <strong id="accountMenuName"></strong>
-          <span id="accountMenuEmail">Signed in</span>
+          <span id="accountMenuEmail" data-i18n="account.signedIn">ანგარიშზე შესული ხართ</span>
         </div>
-        <button class="menu-item" type="button" data-notification="email">Email alerts <small>Where alerts are sent</small></button>
-        <button class="menu-item danger" id="signOutButton" type="button">Sign out</button>
+        <button class="menu-item" type="button" data-notification="email"><span data-i18n="account.emailAlerts">ელფოსტით შეტყობინებები</span> <small data-i18n="account.emailAlertsHint">სად მოვიდეს შეტყობინება</small></button>
+        <button class="menu-item danger" id="signOutButton" type="button" data-i18n="account.signOut">გასვლა</button>
       </section>
     </div>
   </header>
@@ -54,63 +58,63 @@
   <main id="mainContent">
     <div class="page-view" data-page-view="overview" aria-labelledby="overviewTitle">
       <section class="intro">
-        <h1 id="overviewTitle">iPhone prices across Georgian stores</h1>
-        <p class="intro-lead">We check Zoommer, Alta, iSpace, Elit, Megatechnica, Extra.ge, PCShop and Metromart every 12 hours and show where each iPhone is cheapest right now.</p>
-        <p class="intro-stats" id="overviewStats">Loading prices…</p>
+        <h1 id="overviewTitle" data-i18n="intro.title">iPhone-ის ფასები საქართველოს მაღაზიებში</h1>
+        <p class="intro-lead" data-i18n="intro.lead">ყოველ 12 საათში ვამოწმებთ Zoommer-ს, Alta-ს, iSpace-ს, Elit-ს, Megatechnica-ს, Extra.ge-ს, PCShop-სა და Metromart-ს და გაჩვენებთ, სად ღირს თითოეული iPhone ყველაზე იაფად ახლა.</p>
+        <p class="intro-stats" id="overviewStats" data-i18n="loadingPrices">ფასები იტვირთება…</p>
       </section>
       <section class="section">
         <div class="section-heading">
           <div>
-            <h2>Cheapest price per model</h2>
-            <p class="section-description">Lowest in-stock price for any storage or color. Pick a model to compare stores.</p>
+            <h2 data-i18n="models.title">ყველაზე დაბალი ფასი თითოეულ მოდელზე</h2>
+            <p class="section-description" data-i18n="models.description">მარაგში არსებული ყველაზე დაბალი ფასი ნებისმიერი მეხსიერებითა და ფერით. აირჩიეთ მოდელი მაღაზიების შესადარებლად.</p>
           </div>
-          <a class="text-button" href="/?page=products" data-page-link="products">See all iPhones →</a>
+          <a class="text-button" href="/?page=products" data-page-link="products" data-i18n="models.seeAll">ყველა iPhone →</a>
         </div>
         <ul id="modelPrices" class="model-prices" aria-live="polite"></ul>
       </section>
     </div>
 
     <div class="page-view" data-page-view="products" aria-labelledby="productsTitle" hidden>
-      <section class="search-band" aria-label="Product search">
+      <section class="search-band" data-i18n-attr="aria-label:search.label">
         <form id="searchForm" class="search-form">
           <svg><use href="#i-search"/></svg>
-          <label class="sr-only" for="searchInput">Search iPhone models</label>
-          <input id="searchInput" name="q" type="search" minlength="2" placeholder="Search, e.g. 17 Pro 256GB blue" autocomplete="off">
-          <button class="primary-button" type="submit">Search</button>
+          <label class="sr-only" for="searchInput" data-i18n="search.label">iPhone მოდელების ძებნა</label>
+          <input id="searchInput" name="q" type="search" minlength="2" placeholder="ძებნა, მაგ. 17 Pro 256GB blue" data-i18n-attr="placeholder:search.placeholder" autocomplete="off">
+          <button class="primary-button" type="submit" data-i18n="search.button">ძებნა</button>
         </form>
       </section>
 
       <section class="section">
         <div class="section-heading">
           <div>
-            <h1 id="productsTitle">All iPhones</h1>
-            <p class="section-description">Best in-stock price for each phone, from every store we track.</p>
+            <h1 id="productsTitle" data-i18n="products.title">ყველა iPhone</h1>
+            <p class="section-description" data-i18n="products.description">თითოეული ტელეფონის საუკეთესო ფასი ყველა მაღაზიიდან, სადაც მარაგშია.</p>
           </div>
           <div class="catalog-meta">
-            <button class="small-button refresh-button" id="refreshButton" type="button"><svg aria-hidden="true"><use href="#i-refresh"/></svg><span>Refresh prices</span></button>
+            <button class="small-button refresh-button" id="refreshButton" type="button"><svg aria-hidden="true"><use href="#i-refresh"/></svg><span data-i18n="refresh.button">ფასების განახლება</span></button>
             <p id="refreshStatus" class="count-label" role="status"></p>
-            <p id="productCount" class="count-label">Loading…</p>
+            <p id="productCount" class="count-label" data-i18n="loading">იტვირთება…</p>
           </div>
         </div>
-        <div class="catalog-filters" role="group" aria-label="Filter and sort iPhones">
-          <label class="filter-field"><span>Model</span><select id="modelFilter"><option value="">All models</option></select></label>
-          <label class="filter-field"><span>Storage</span><select id="storageFilter"><option value="">Any storage</option></select></label>
-          <label class="filter-field"><span>Sort by</span><select id="sortSelect">
-            <option value="model">Newest model</option>
-            <option value="price-asc">Price: low to high</option>
-            <option value="price-desc">Price: high to low</option>
-            <option value="savings">Biggest gap between stores</option>
-            <option value="stores">Most stores in stock</option>
+        <div class="catalog-filters" role="group" data-i18n-attr="aria-label:filters.label">
+          <label class="filter-field"><span data-i18n="filters.model">მოდელი</span><select id="modelFilter"><option value="" data-i18n="filters.allModels">ყველა მოდელი</option></select></label>
+          <label class="filter-field"><span data-i18n="filters.storage">მეხსიერება</span><select id="storageFilter"><option value="" data-i18n="filters.anyStorage">ნებისმიერი</option></select></label>
+          <label class="filter-field"><span data-i18n="filters.sort">დალაგება</span><select id="sortSelect">
+            <option value="model" data-i18n="sort.model">ჯერ ახალი მოდელები</option>
+            <option value="price-asc" data-i18n="sort.priceAsc">ფასი: იაფიდან ძვირისკენ</option>
+            <option value="price-desc" data-i18n="sort.priceDesc">ფასი: ძვირიდან იაფისკენ</option>
+            <option value="savings" data-i18n="sort.savings">მაღაზიებს შორის ყველაზე დიდი სხვაობა</option>
+            <option value="stores" data-i18n="sort.stores">ყველაზე მეტ მაღაზიაში მარაგშია</option>
           </select></label>
-          <label class="filter-toggle"><input type="checkbox" id="inStockFilter"><span>In stock only</span></label>
-          <button class="text-button" id="clearFilters" type="button" hidden>Clear filters</button>
+          <label class="filter-toggle"><input type="checkbox" id="inStockFilter"><span data-i18n="filters.inStock">მხოლოდ მარაგში</span></label>
+          <button class="text-button" id="clearFilters" type="button" data-i18n="filters.clear" hidden>ფილტრების გასუფთავება</button>
         </div>
         <div id="productGrid" class="product-grid" aria-live="polite">
-          <div class="loading-state">Loading prices…</div>
+          <div class="loading-state" data-i18n="loadingPrices">ფასები იტვირთება…</div>
         </div>
         <div class="catalog-controls">
-          <button class="show-more-button" id="showMoreButton" type="button" aria-controls="productGrid" hidden>Show more</button>
-          <button class="show-less-button" id="showLessButton" type="button" aria-controls="productGrid" hidden>Show fewer</button>
+          <button class="show-more-button" id="showMoreButton" type="button" aria-controls="productGrid" hidden></button>
+          <button class="show-less-button" id="showLessButton" type="button" aria-controls="productGrid" data-i18n="showLess" hidden>ნაკლების ჩვენება</button>
         </div>
       </section>
 
@@ -119,42 +123,49 @@
           <div class="history-product">
             <div id="historyProductImage" class="history-product-image no-image" aria-hidden="true"><span>iPhone</span></div>
             <div class="history-product-copy">
-              <h2 id="historyTitle">Price history</h2>
+              <h2 id="historyTitle"></h2>
               <p id="historyVariant" class="muted"></p>
             </div>
           </div>
           <div class="history-tools">
             <div id="historySummary" class="summary-strip"></div>
             <div class="selected-actions">
-              <button class="small-button" id="selectedTrackButton" type="button">Track</button>
-              <button class="small-button" id="selectedAlertButton" type="button">Set alert</button>
+              <button class="small-button" id="selectedTrackButton" type="button" data-i18n="detail.track">სიაში დამატება</button>
+              <button class="small-button" id="selectedAlertButton" type="button" data-i18n="detail.setAlert">შეტყობინების დაყენება</button>
             </div>
           </div>
         </div>
         <div class="chart-wrap">
-          <svg id="priceChart" role="img" aria-label="Price history chart"></svg>
-          <div id="chartEmpty" class="chart-empty" hidden>No recorded price history for this product.</div>
+          <svg id="priceChart" role="img" data-i18n-attr="aria-label:chart.label"></svg>
+          <div id="chartEmpty" class="chart-empty" data-i18n="chart.empty" hidden></div>
         </div>
-        <div class="all-time-prices" aria-label="Price range we have recorded">
-          <div class="all-time-price"><span>Lowest we've seen</span><strong id="allTimeLow">—</strong></div>
-          <div class="all-time-price"><span>Highest we've seen</span><strong id="allTimeHigh">—</strong></div>
+        <div class="all-time-prices" data-i18n-attr="aria-label:extremes.label">
+          <div class="all-time-price"><span data-i18n="extremes.low">ყველაზე დაბალი, რაც გვინახავს</span><strong id="allTimeLow">—</strong></div>
+          <div class="all-time-price"><span data-i18n="extremes.high">ყველაზე მაღალი, რაც გვინახავს</span><strong id="allTimeHigh">—</strong></div>
         </div>
       </section>
 
       <section class="section" id="storesSection" hidden>
         <div class="section-heading compact">
           <div>
-            <h2>Prices by store</h2>
-            <p class="section-description">Cheapest in-stock offer first. Always confirm the price on the store's site.</p>
+            <h2 data-i18n="stores.title">ფასები მაღაზიების მიხედვით</h2>
+            <p class="section-description" data-i18n="stores.description">ჯერ მარაგში არსებული ყველაზე იაფი შეთავაზება. ყიდვამდე ფასი გადაამოწმეთ მაღაზიის საიტზე.</p>
           </div>
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Store</th><th>Price</th><th>vs cheapest</th><th>Stock</th><th>Checked</th><th><span class="sr-only">Open</span></th></tr></thead>
+            <thead><tr>
+              <th data-i18n="stores.store">მაღაზია</th>
+              <th data-i18n="stores.price">ფასი</th>
+              <th data-i18n="stores.diff">სხვაობა</th>
+              <th data-i18n="stores.stock">მარაგი</th>
+              <th data-i18n="stores.checked">შემოწმდა</th>
+              <th><span class="sr-only" data-i18n="stores.open">გახსნა</span></th>
+            </tr></thead>
             <tbody id="storesBody"></tbody>
           </table>
         </div>
-        <div id="storesEmpty" class="empty-inline" hidden>No store lists this phone right now.</div>
+        <div id="storesEmpty" class="empty-inline" data-i18n="stores.empty" hidden>ეს ტელეფონი ახლა არცერთ მაღაზიაში არ იყიდება.</div>
       </section>
     </div>
 
@@ -162,109 +173,106 @@
       <section class="section">
         <div class="section-heading">
           <div>
-            <h1 id="alertsTitle">Watchlist</h1>
-            <p class="section-description">Phones you track, and the prices you're waiting for.</p>
+            <h1 id="alertsTitle" data-i18n="alerts.title">ჩემი სია</h1>
+            <p class="section-description" data-i18n="alerts.description">ტელეფონები, რომლებსაც თვალს ადევნებთ, და ფასები, რომლებსაც ელოდებით.</p>
           </div>
         </div>
-        <div id="trackedContent" class="account-panel">
-          <p>Sign in to track phones and get an email when the price drops.</p>
-          <button class="primary-button" type="button" data-open-auth>Sign in</button>
-        </div>
+        <div id="trackedContent" class="account-panel"></div>
       </section>
     </div>
   </main>
 
   <footer>
-    <span>Prices are collected from store websites and may be out of date. Check the store before you buy.</span>
-    <span>Made by Nikusha Avsajanishvili</span>
+    <span data-i18n="footer.disclaimer">ფასები აღებულია მაღაზიების საიტებიდან და შეიძლება მოძველებული იყოს. ყიდვამდე გადაამოწმეთ მაღაზიაში.</span>
+    <span data-i18n="footer.author">ავტორი: ნიკუშა ავსაჯანიშვილი</span>
   </footer>
 
   <dialog id="authDialog">
     <div class="dialog-head">
-      <h2 id="authTitle">Sign in</h2>
-      <button class="icon-button" id="closeAuth" type="button" aria-label="Close"><svg><use href="#i-close"/></svg></button>
+      <h2 id="authTitle" data-i18n="auth.signIn">შესვლა</h2>
+      <button class="icon-button" id="closeAuth" type="button" data-i18n-attr="aria-label:close"><svg><use href="#i-close"/></svg></button>
     </div>
     <form id="authForm">
-      <label>Email<input type="email" name="email" required autocomplete="email"></label>
-      <label>Password<input type="password" name="password" minlength="8" maxlength="128" required autocomplete="current-password"></label>
+      <label><span data-i18n="auth.email">ელფოსტა</span><input type="email" name="email" required autocomplete="email"></label>
+      <label><span data-i18n="auth.password">პაროლი</span><input type="password" name="password" minlength="8" maxlength="128" required autocomplete="current-password"></label>
       <p id="authError" class="form-error" role="alert"></p>
-      <button class="primary-button full" type="submit">Sign in</button>
+      <button class="primary-button full" type="submit" data-i18n="auth.signIn">შესვლა</button>
     </form>
     <div class="dialog-links">
-      <button class="text-button" id="authMode" type="button">Create an account</button>
-      <button class="text-button" id="forgotPasswordButton" type="button">Forgot password?</button>
+      <button class="text-button" id="authMode" type="button" data-i18n="auth.createAnAccount">ანგარიშის შექმნა</button>
+      <button class="text-button" id="forgotPasswordButton" type="button" data-i18n="auth.forgot">დაგავიწყდათ პაროლი?</button>
     </div>
   </dialog>
 
   <dialog id="forgotDialog">
     <div class="dialog-head">
-      <h2>Reset your password</h2>
-      <button class="icon-button" id="closeForgot" type="button" aria-label="Close"><svg><use href="#i-close"/></svg></button>
+      <h2 data-i18n="forgot.title">პაროლის აღდგენა</h2>
+      <button class="icon-button" id="closeForgot" type="button" data-i18n-attr="aria-label:close"><svg><use href="#i-close"/></svg></button>
     </div>
     <form id="forgotForm">
-      <p class="settings-help">Enter the email you signed up with. We'll send a link to choose a new password.</p>
-      <label>Email<input type="email" name="email" required autocomplete="email"></label>
+      <p class="settings-help" data-i18n="forgot.help">შეიყვანეთ ელფოსტა, რომლითაც დარეგისტრირდით. გამოგიგზავნით ბმულს ახალი პაროლის ასარჩევად.</p>
+      <label><span data-i18n="auth.email">ელფოსტა</span><input type="email" name="email" required autocomplete="email"></label>
       <p id="forgotError" class="form-error" role="alert"></p>
       <p id="forgotSuccess" class="form-success" role="status"></p>
-      <button class="primary-button full" type="submit">Send reset link</button>
+      <button class="primary-button full" type="submit" data-i18n="forgot.send">ბმულის გაგზავნა</button>
     </form>
   </dialog>
 
   <dialog id="resetDialog">
     <div class="dialog-head">
-      <h2>Choose a new password</h2>
-      <button class="icon-button" id="closeReset" type="button" aria-label="Close"><svg><use href="#i-close"/></svg></button>
+      <h2 data-i18n="reset.title">ახალი პაროლის არჩევა</h2>
+      <button class="icon-button" id="closeReset" type="button" data-i18n-attr="aria-label:close"><svg><use href="#i-close"/></svg></button>
     </div>
     <form id="resetForm">
-      <label>New password<input type="password" name="password" minlength="8" maxlength="128" required autocomplete="new-password"></label>
-      <label>Repeat new password<input type="password" name="confirm" minlength="8" maxlength="128" required autocomplete="new-password"></label>
+      <label><span data-i18n="reset.password">ახალი პაროლი</span><input type="password" name="password" minlength="8" maxlength="128" required autocomplete="new-password"></label>
+      <label><span data-i18n="reset.repeat">გაიმეორეთ ახალი პაროლი</span><input type="password" name="confirm" minlength="8" maxlength="128" required autocomplete="new-password"></label>
       <p id="resetError" class="form-error" role="alert"></p>
-      <button class="primary-button full" type="submit">Save new password</button>
+      <button class="primary-button full" type="submit" data-i18n="reset.save">პაროლის შენახვა</button>
     </form>
   </dialog>
 
   <dialog id="alertDialog">
     <div class="dialog-head">
-      <h2 id="alertTitle">Set target price</h2>
-      <button class="icon-button" id="closeAlert" type="button" aria-label="Close"><svg><use href="#i-close"/></svg></button>
+      <h2 id="alertTitle"></h2>
+      <button class="icon-button" id="closeAlert" type="button" data-i18n-attr="aria-label:close"><svg><use href="#i-close"/></svg></button>
     </div>
     <form id="alertForm">
       <div class="alert-explainer">
-        <p>When this iPhone's best price at any store drops to <b>your target or lower</b>, we email you once.</p>
+        <p data-i18n-html="alert.explainer">როცა ამ iPhone-ის საუკეთესო ფასი რომელიმე მაღაზიაში <b>თქვენს სამიზნე ფასამდე ან უფრო დაბლა</b> ჩამოვა, ერთხელ მოგწერთ ელფოსტაზე.</p>
         <p id="alertCurrentPrice" class="settings-note"></p>
       </div>
       <input type="hidden" name="product_id">
       <input type="hidden" name="alert_id">
-      <label for="alertTargetPrice">Target price (₾)</label>
+      <label for="alertTargetPrice" data-i18n="alert.target">სამიზნე ფასი (₾)</label>
       <div class="price-stepper">
-        <button class="stepper-button" type="button" data-price-step="-1" aria-label="Lower target price by 100">−100</button>
+        <button class="stepper-button" type="button" data-price-step="-1" data-i18n-attr="aria-label:alert.stepDown">−100</button>
         <input id="alertTargetPrice" type="number" name="target_price" min="0.01" step="any" aria-describedby="alertPriceHelp" required>
-        <button class="stepper-button" type="button" data-price-step="1" aria-label="Raise target price by 100">+100</button>
+        <button class="stepper-button" type="button" data-price-step="1" data-i18n-attr="aria-label:alert.stepUp">+100</button>
       </div>
-      <p id="alertPriceHelp" class="settings-note">Use −100/+100, the scroll wheel, or ↑/↓, or type any amount.</p>
+      <p id="alertPriceHelp" class="settings-note" data-i18n="alert.help">გამოიყენეთ −100/+100, მაუსის ბორბალი ან ↑/↓, ან ჩაწერეთ ნებისმიერი თანხა.</p>
       <p id="alertEmailNote" class="settings-note"></p>
       <p id="alertError" class="form-error" role="alert"></p>
-      <button class="primary-button full" id="alertSubmit" type="submit">Email me at this price</button>
-      <button class="small-button full" id="alertRemoveButton" type="button" hidden>Remove alert</button>
+      <button class="primary-button full" id="alertSubmit" type="submit"></button>
+      <button class="small-button full" id="alertRemoveButton" type="button" data-i18n="alert.remove" hidden>შეტყობინების წაშლა</button>
     </form>
   </dialog>
 
   <dialog id="emailDialog">
     <div class="dialog-head">
-      <h2>Email alerts</h2>
-      <button class="icon-button" id="closeEmail" type="button" aria-label="Close"><svg><use href="#i-close"/></svg></button>
+      <h2 data-i18n="email.title">ელფოსტით შეტყობინებები</h2>
+      <button class="icon-button" id="closeEmail" type="button" data-i18n-attr="aria-label:close"><svg><use href="#i-close"/></svg></button>
     </div>
     <form id="emailForm">
-      <p class="settings-help">When a phone you set an alert on drops to your target price, we email this address once. We first send a link to confirm the address is yours.</p>
-      <label>Email for price alerts<input type="email" name="notification_email" maxlength="320" autocomplete="email" placeholder="you@example.com"></label>
-      <p class="settings-note">Leave empty and save to turn email alerts off.</p>
+      <p class="settings-help" data-i18n="email.help">როცა ტელეფონის ფასი, რომელზეც შეტყობინება გაქვთ, სამიზნე ფასამდე ჩამოვა, ერთხელ მოგწერთ ამ მისამართზე. ჯერ გამოგიგზავნით ბმულს, რომ დაადასტუროთ, რომ მისამართი თქვენია.</p>
+      <label><span data-i18n="email.label">ელფოსტა შეტყობინებებისთვის</span><input type="email" name="notification_email" maxlength="320" autocomplete="email" placeholder="you@example.com"></label>
+      <p class="settings-note" data-i18n="email.offNote">დატოვეთ ცარიელი და შეინახეთ, რომ შეტყობინებები გამოირთოს.</p>
       <p id="emailVerificationStatus" class="settings-note" hidden></p>
-      <p id="emailDeliveryWarning" class="form-error" hidden>Email sending is not set up on this server yet, so alerts wait until it is.</p>
+      <p id="emailDeliveryWarning" class="form-error" data-i18n="email.noDelivery" hidden>ამ სერვერზე ელფოსტის გაგზავნა ჯერ არ არის გამართული, ამიტომ შეტყობინებები მოიცდის.</p>
       <p id="emailError" class="form-error" role="alert"></p>
       <p id="emailSuccess" class="form-success" role="status"></p>
-      <button class="primary-button full" type="submit">Save email</button>
-      <button class="small-button full" id="emailVerifyButton" type="button" hidden>Resend confirmation email</button>
-      <button class="small-button full" id="emailTestButton" type="button" disabled>Send test email</button>
+      <button class="primary-button full" type="submit" data-i18n="email.save">შენახვა</button>
+      <button class="small-button full" id="emailVerifyButton" type="button" data-i18n="email.resend" hidden>დადასტურების წერილის ხელახლა გაგზავნა</button>
+      <button class="small-button full" id="emailTestButton" type="button" data-i18n="email.test" disabled>სატესტო წერილის გაგზავნა</button>
     </form>
   </dialog>
 

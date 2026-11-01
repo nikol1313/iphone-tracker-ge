@@ -1,5 +1,6 @@
 /* Catalog search, offer cards, charts, and retailer comparison. */
-import { $, $$, api, dateTime, escapeHtml, money, productName, relativeTime, safeUrl, state, variant, showToast } from "./core.js";
+import { $, $$, api, dateTime, dayDate, escapeHtml, money, productName, relativeTime, safeUrl, shortDate, state, variant, showToast } from "./core.js";
+import { t } from "./i18n.js";
 
 const PAGE_LIMIT = 100;
 const INITIAL_VISIBLE = 12;
@@ -58,8 +59,8 @@ function populateFilters() {
   const models = [...new Set(state.products.map(product => product.model))].sort((a, b) => naturalOrder.compare(b, a));
   const storages = [...new Set(state.products.map(product => product.storage).filter(Boolean))]
     .sort((a, b) => storageSize(a) - storageSize(b));
-  fillSelect($("#modelFilter"), models, "All models");
-  fillSelect($("#storageFilter"), storages, "Any storage");
+  fillSelect($("#modelFilter"), models, t("filters.allModels"));
+  fillSelect($("#storageFilter"), storages, t("filters.anyStorage"));
 }
 
 // Every whitespace-separated term must appear in the name, storage or color.
@@ -95,7 +96,7 @@ export function applyFilters({ resetVisible = true } = {}) {
 
 export async function loadProducts() {
   const grid = $("#productGrid");
-  if (!state.products.length) grid.innerHTML = '<div class="loading-state">Loading prices…</div>';
+  if (!state.products.length) grid.innerHTML = `<div class="loading-state">${t("loadingPrices")}</div>`;
   try {
     state.products = await fetchCatalog();
     renderOverview();
@@ -108,21 +109,20 @@ export async function loadProducts() {
       selectProduct(priced.id);
     }
   } catch (error) {
-    $("#overviewStats").textContent = "Prices could not be loaded. Try again in a minute.";
-    grid.innerHTML = `<div class="empty-state">Could not load prices.<br>${escapeHtml(error.message)}</div>`;
-    $("#productCount").textContent = "Unavailable";
+    $("#overviewStats").textContent = t("intro.failed");
+    grid.innerHTML = `<div class="empty-state">${t("products.loadFailed")}<br>${escapeHtml(error.message)}</div>`;
+    $("#productCount").textContent = t("products.unavailable");
   }
 }
 
 const inStock = product => product.available_listing_count > 0 && product.lowest_price != null;
-const storeCount = count => `${count} ${count === 1 ? "store" : "stores"}`;
 
 // "−150 ₾ this week" when the best price fell by at least 1% over the last week.
 function weekDrop(product) {
   if (!inStock(product) || product.price_week_ago == null) return "";
   const drop = Number(product.price_week_ago) - Number(product.lowest_price);
   if (drop < Number(product.price_week_ago) * 0.01) return "";
-  return `<span class="card-change drop">−${escapeHtml(money(drop, product.currency || "GEL"))} this week</span>`;
+  return `<span class="card-change drop">${escapeHtml(t("card.weekDrop", { amount: money(drop, product.currency || "GEL") }))}</span>`;
 }
 
 // Price extremes span every store, so require the best price itself to have just fallen.
@@ -132,12 +132,12 @@ const isLowestEver = product => inStock(product)
   && Number(product.lowest_price) <= Number(product.lowest_price_ever);
 
 function cardMeta(product) {
-  if (!inStock(product)) return "Out of stock everywhere · last listed price";
+  if (!inStock(product)) return t("card.outOfStock");
   const saved = savings(product);
   const gap = saved >= 1 && product.available_listing_count > 1
-    ? ` · <span class="savings">${escapeHtml(money(saved, product.currency || "GEL"))} cheaper than the priciest</span>`
+    ? ` · <span class="savings">${escapeHtml(t("card.cheaperThan", { amount: money(saved, product.currency || "GEL") }))}</span>`
     : "";
-  return `In stock at ${storeCount(product.available_listing_count)}${gap}`;
+  return `${t("card.inStockAt", { count: product.available_listing_count })}${gap}`;
 }
 
 // Today page: the cheapest in-stock variant of each model, newest model first.
@@ -151,10 +151,10 @@ export function renderOverview() {
   }
   const listings = state.products.reduce((total, product) => total + Number(product.listing_count || 0), 0);
   const stats = [
-    state.lastRefreshedAt ? `Updated <strong>${escapeHtml(relativeTime(state.lastRefreshedAt))}</strong>` : "",
-    `<strong>${state.products.length.toLocaleString()}</strong> phones`,
-    `<strong>${listings.toLocaleString()}</strong> store listings`,
-    `<strong>${cheapest.size}</strong> models in stock`,
+    state.lastRefreshedAt ? t("intro.updated", { time: escapeHtml(relativeTime(state.lastRefreshedAt)) }) : "",
+    t("intro.phones", { count: state.products.length }),
+    t("intro.listings", { count: listings }),
+    t("intro.models", { count: cheapest.size }),
   ].filter(Boolean);
   $("#overviewStats").innerHTML = stats.join(" · ");
   const models = [...cheapest.values()].sort(byModel);
@@ -163,24 +163,24 @@ export function renderOverview() {
       <li class="model-price" data-model="${escapeHtml(product.model)}" data-product-id="${product.id}" tabindex="0">
         <span class="model-price-name">${escapeHtml(productName(product))}<small>${escapeHtml(variant(product))}</small></span>
         <span class="model-price-value">${escapeHtml(money(product.lowest_price, product.currency || "GEL"))}</span>
-        <span class="model-price-meta">In stock at ${storeCount(product.available_listing_count)}${weekDrop(product) ? ` · ${weekDrop(product)}` : ""}</span>
+        <span class="model-price-meta">${t("card.inStockAt", { count: product.available_listing_count })}${weekDrop(product) ? ` · ${weekDrop(product)}` : ""}</span>
       </li>`).join("")
-    : '<li class="empty-state">No iPhone is in stock at any store we track right now.</li>';
+    : `<li class="empty-state">${t("models.empty")}</li>`;
 }
 
 export function renderProducts() {
   const products = state.visibleProducts;
   const total = products.length;
   $("#productCount").textContent = total === state.products.length
-    ? `${total} ${total === 1 ? "product" : "products"}`
-    : `${total} of ${state.products.length} products`;
+    ? t("products.count", { count: total })
+    : t("products.countOf", { shown: total, total: state.products.length });
   const grid = $("#productGrid");
   const showMore = $("#showMoreButton");
   const showLess = $("#showLessButton");
   if (!total) {
     grid.innerHTML = `<div class="empty-state">${state.products.length
-      ? "No iPhones match these filters. Try another model or clear the filters."
-      : "No iPhones are in the catalog yet. Products will appear after a retailer crawl succeeds."}</div>`;
+      ? t("products.noMatch")
+      : t("products.empty")}</div>`;
     showMore.hidden = true;
     showLess.hidden = true;
     return;
@@ -188,22 +188,22 @@ export function renderProducts() {
   const visibleProducts = products.slice(0, state.visibleCount);
   showMore.hidden = state.visibleCount >= total;
   showLess.hidden = state.visibleCount <= INITIAL_VISIBLE;
-  showMore.textContent = `Show more · ${total - state.visibleCount} remaining`;
+  showMore.textContent = t("showMore", { count: total - state.visibleCount });
   grid.innerHTML = visibleProducts.map(product => {
     const tag = state.dealIds?.has(product.id)
-      ? "Big gap between stores"
-      : isLowestEver(product) ? "Lowest price we've recorded" : "";
+      ? t("card.bigGap")
+      : isLowestEver(product) ? t("card.lowestEver") : "";
     return `
     <article class="product-card${product.id === state.selectedId ? " selected" : ""}${state.dealIds?.has(product.id) ? " top-deal" : ""}${inStock(product) ? "" : " out-of-stock"}" data-product-id="${product.id}" tabindex="0">
       <div class="product-image${product.image_url ? "" : " no-image"}">
         ${product.image_url ? `<img src="${escapeHtml(safeUrl(product.image_url))}" alt="${escapeHtml(productName(product))}" loading="lazy" referrerpolicy="no-referrer">` : ""}
-        <span class="product-image-fallback">No photo</span>
+        <span class="product-image-fallback">${t("card.noPhoto")}</span>
       </div>
       ${tag ? `<span class="card-tag">${tag}</span>` : ""}
       <h3>${escapeHtml(productName(product))}</h3>
       <p class="product-variant">${escapeHtml(variant(product))}</p>
       <p class="card-price"><strong>${escapeHtml(money(product.lowest_price, product.currency || "GEL"))}</strong>${weekDrop(product)}</p>
-      ${product.lowest_installment_monthly != null ? `<p class="card-installment">Installments from ${escapeHtml(money(product.lowest_installment_monthly))}/month</p>` : ""}
+      ${product.lowest_installment_monthly != null ? `<p class="card-installment">${escapeHtml(t("card.installments", { amount: money(product.lowest_installment_monthly) }))}</p>` : ""}
       <p class="card-meta">${cardMeta(product)}</p>
     </article>`;
   }).join("");
@@ -231,12 +231,12 @@ export async function selectProduct(productId, { scroll = false } = {}) {
   }, { once: true });
   $("#historyTitle").textContent = productName(product);
   $("#historyVariant").textContent = variant(product);
-  $("#allTimeLow").textContent = "Loading…";
-  $("#allTimeHigh").textContent = "Loading…";
+  $("#allTimeLow").textContent = t("loading");
+  $("#allTimeHigh").textContent = t("loading");
   updateSelectedActions();
   $("#historySummary").innerHTML = `
-    <div class="summary-item"><span>${inStock(product) ? "Cheapest now" : "Last listed"}</span><strong>${escapeHtml(money(product.lowest_price, product.currency || "GEL"))}</strong></div>
-    <div class="summary-item"><span>In stock</span><strong>${product.available_listing_count} of ${storeCount(product.listing_count)}</strong></div>`;
+    <div class="summary-item"><span>${inStock(product) ? t("detail.cheapestNow") : t("detail.lastListed")}</span><strong>${escapeHtml(money(product.lowest_price, product.currency || "GEL"))}</strong></div>
+    <div class="summary-item"><span>${t("detail.inStock")}</span><strong>${t("detail.storesInStock", { available: product.available_listing_count, count: product.listing_count })}</strong></div>`;
   try {
     const currency = product.currency || "GEL";
     const [prices, listings, extremes] = await Promise.all([
@@ -259,7 +259,7 @@ export async function selectProduct(productId, { scroll = false } = {}) {
 
 function renderAllTimePrices(extremes) {
   const formatPrice = value => value == null
-    ? "No recorded price"
+    ? t("extremes.none")
     : money(value, extremes.currency);
   $("#allTimeLow").textContent = formatPrice(extremes.lowest_price);
   $("#allTimeHigh").textContent = formatPrice(extremes.highest_price);
@@ -267,7 +267,6 @@ function renderAllTimePrices(extremes) {
 
 // Records from one crawl (all stores) land within minutes; treat them as one moment.
 const CRAWL_WINDOW_MS = 15 * 60 * 1000;
-const shortDate = value => new Date(value).toLocaleDateString("en", { day: "numeric", month: "short" });
 
 // Best in-stock price across stores over time, one point per change.
 function bestPriceSeries(items, currency) {
@@ -310,7 +309,7 @@ export function renderChart(items, product) {
       renderCurrentSnapshot(svg, product);
     } else {
       svg.innerHTML = "";
-      empty.textContent = "Price history will appear after the first price is recorded.";
+      empty.textContent = t("chart.noHistoryYet");
       empty.hidden = false;
     }
     return;
@@ -354,12 +353,12 @@ export function renderChart(items, product) {
       <circle class="chart-snapshot chart-snapshot-large" cx="${lastX}" cy="${lastY}" r="13"><title>${escapeHtml(last.store_name)} — ${escapeHtml(money(last.price, currency))} — ${escapeHtml(dateTime(last.recorded_at))}</title></circle>
       <rect class="chart-tooltip" x="${tooltipX}" y="${tooltipY}" width="${tooltipWidth}" height="${tooltipHeight}" rx="12"/>
       <text class="chart-tooltip-price" x="${tooltipX + 16}" y="${tooltipY + 33}">${escapeHtml(money(last.price, currency))}</text>
-      <text class="chart-tooltip-date" x="${tooltipX + 16}" y="${tooltipY + 59}">Recorded ${lastDate.toLocaleDateString()}</text>
-      <text class="chart-label chart-annotation" text-anchor="middle" x="${left + plotW / 2}" y="${lastY + 42}">The trend line starts after the next price change</text>` : `
+      <text class="chart-tooltip-date" x="${tooltipX + 16}" y="${tooltipY + 59}">${escapeHtml(t("chart.recorded", { date: dayDate(lastDate) }))}</text>
+      <text class="chart-label chart-annotation" text-anchor="middle" x="${left + plotW / 2}" y="${lastY + 42}">${t("chart.trendStarts")}</text>` : `
       <circle class="chart-snapshot" cx="${lastX}" cy="${lastY}" r="5"><title>${escapeHtml(last.store_name)} — ${escapeHtml(money(last.price, currency))} — ${escapeHtml(dateTime(last.recorded_at))}</title></circle>
       <text class="chart-note" x="${lastX + 13}" y="${lastY + 4}">${escapeHtml(money(last.price, currency))}</text>`}
-    <text class="chart-label" x="${left}" y="${H - 12}">${firstDate.toLocaleDateString()}</text>
-    ${singleRecord ? "" : `<text class="chart-label" text-anchor="end" x="${W - right}" y="${H - 12}">${lastDate.toLocaleDateString()}</text>`}`;
+    <text class="chart-label" x="${left}" y="${H - 12}">${escapeHtml(dayDate(firstDate))}</text>
+    ${singleRecord ? "" : `<text class="chart-label" text-anchor="end" x="${W - right}" y="${H - 12}">${escapeHtml(dayDate(lastDate))}</text>`}`;
 }
 
 function renderTrend(svg, series) {
@@ -397,7 +396,7 @@ function renderTrend(svg, series) {
     <path class="chart-line" d="${path}"/>
     ${labels}
     <text class="chart-label" x="${left}" y="${H - 8}">${escapeHtml(shortDate(start))}</text>
-    <text class="chart-label" text-anchor="end" x="${W - right}" y="${H - 8}">Today</text>`;
+    <text class="chart-label" text-anchor="end" x="${W - right}" y="${H - 8}">${t("chart.today")}</text>`;
 }
 
 function renderCurrentSnapshot(svg, product) {
@@ -408,7 +407,7 @@ function renderCurrentSnapshot(svg, product) {
     <line class="chart-line" x1="${left}" y1="${centerY}" x2="${W - right}" y2="${centerY}"/>
     <circle class="chart-snapshot" cx="${W - right}" cy="${centerY}" r="5"/>
     <text class="chart-note" x="${W - right + 14}" y="${centerY + 4}">${escapeHtml(label)}</text>
-    <text class="chart-label" x="${left}" y="${centerY + 28}">${product.available_listing_count > 0 ? "Current listed price · history starts with the next change" : "Last listed price · currently unavailable"}</text>`;
+    <text class="chart-label" x="${left}" y="${centerY + 28}">${product.available_listing_count > 0 ? t("chart.currentOnly") : t("chart.lastOnly")}</text>`;
 }
 
 function renderListings(items) {
@@ -431,11 +430,13 @@ function renderListings(items) {
         <strong>${escapeHtml(item.store_name)}</strong>
         ${item.variant_name ? `<small class="listing-title">${escapeHtml(item.variant_name)}</small>` : ""}
       </td>
-      <td class="listing-price">${escapeHtml(money(item.current_price, item.currency))}${isBest && items.length > 1 ? '<span class="best-tag">Cheapest</span>' : ""}${item.installment_monthly != null ? `<small class="listing-installment">or from ${escapeHtml(money(item.installment_monthly))}/month${item.installment_months ? ` for ${item.installment_months} months` : ""}</small>` : ""}</td>
+      <td class="listing-price">${escapeHtml(money(item.current_price, item.currency))}${isBest && items.length > 1 ? `<span class="best-tag">${t("stores.cheapest")}</span>` : ""}${item.installment_monthly != null ? `<small class="listing-installment">${escapeHtml(item.installment_months
+          ? t("stores.installmentTerm", { amount: money(item.installment_monthly), months: item.installment_months })
+          : t("stores.installment", { amount: money(item.installment_monthly) }))}</small>` : ""}</td>
       <td class="listing-diff">${difference ? `+${escapeHtml(money(difference, item.currency))}` : isBest ? "—" : ""}</td>
-      <td><span class="status ${item.is_available ? "" : "unavailable"}">${item.is_available ? "In stock" : "Out of stock"}</span></td>
+      <td><span class="status ${item.is_available ? "" : "unavailable"}">${item.is_available ? t("stores.inStock") : t("stores.outOfStock")}</span></td>
       <td title="${escapeHtml(dateTime(item.last_checked_at))}">${escapeHtml(relativeTime(item.last_checked_at))}</td>
-      <td><a class="store-link" href="${escapeHtml(safeUrl(item.product_url))}" target="_blank" rel="noopener noreferrer" aria-label="Open listing at ${escapeHtml(item.store_name)}"><svg><use href="#i-external"/></svg></a></td>
+      <td><a class="store-link" href="${escapeHtml(safeUrl(item.product_url))}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(t("stores.openAt", { store: item.store_name }))}"><svg><use href="#i-external"/></svg></a></td>
     </tr>`;
   }).join("");
 }
@@ -443,12 +444,12 @@ function renderListings(items) {
 export function updateSelectedActions() {
   const tracked = state.tracked.some(item => item.product.id === state.selectedId);
   const button = $("#selectedTrackButton");
-  button.textContent = tracked ? "Stop tracking" : "Track";
+  button.textContent = tracked ? t("detail.stopTracking") : t("detail.track");
   button.classList.toggle("tracked", tracked);
   button.disabled = state.selectedId == null;
   const alertButton = $("#selectedAlertButton");
   alertButton.disabled = state.selectedId == null;
   alertButton.textContent = state.tracked.some(item => item.product.id === state.selectedId && item.active_alert)
-    ? "Edit alert"
-    : "Set alert";
+    ? t("detail.editAlert")
+    : t("detail.setAlert");
 }

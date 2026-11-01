@@ -22,6 +22,8 @@ nav { display: flex; align-items: center; gap: 4px; }
 .account-actions { position: relative; justify-self: end; display: flex; align-items: center; gap: 8px; }
 .theme-toggle { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; color: var(--ink-2); background: transparent; border: 1px solid var(--line); border-radius: var(--radius); cursor: pointer; }
 .theme-toggle:hover { color: var(--ink); background: var(--surface-2); }
+.lang-toggle { min-width: 36px; height: 36px; padding: 0 8px; color: var(--ink-2); background: transparent; border: 1px solid var(--line); border-radius: var(--radius); font-size: .82rem; font-weight: 700; cursor: pointer; }
+.lang-toggle:hover { color: var(--ink); background: var(--surface-2); }
 .theme-toggle svg { width: 17px; height: 17px; }
 /* Signed out: a plain "Sign in" button. Signed in: initial + chevron that opens the account menu. */
 .account-button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; color: var(--ink); background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); font-size: .88rem; font-weight: 600; cursor: pointer; }

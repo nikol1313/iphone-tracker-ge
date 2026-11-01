@@ -19,6 +19,12 @@ SITE_URL = "http://localhost:8080"
 PASSWORD = "password123"
 
 
+@pytest.fixture(autouse=True)
+def english(page: Page):
+    # The site opens in Georgian; these tests read the English text.
+    page.add_init_script("localStorage.setItem('iphoneTrackerLang', 'en')")
+
+
 def make_new_email():
     # A different email every run, so "Create account" never says it already exists.
     return f"e2e{int(time.time() * 1000)}@example.com"
@@ -109,3 +115,16 @@ def test_fake_confirmation_link_shows_an_error(page: Page):
     page.goto(SITE_URL + "/?verify_email=not-a-real-token")
 
     expect(page.locator("#toast")).to_contain_text("invalid or has expired")
+
+
+def test_site_opens_in_georgian_and_switches_to_english(browser):
+    # A fresh browser with no saved choice, so the default language shows.
+    page = browser.new_page()
+    page.goto(SITE_URL)
+    expect(page.locator("html")).to_have_attribute("lang", "ka")
+    expect(page.locator("#overviewTitle")).to_have_text("iPhone-ის ფასები საქართველოს მაღაზიებში")
+
+    page.click("#langToggle")
+    expect(page.locator("#overviewTitle")).to_have_text("iPhone prices across Georgian stores")
+    expect(page.locator("#langToggle")).to_have_text("ქართ")
+    page.close()

@@ -4,6 +4,7 @@ import { applyFilters, loadProducts, renderProducts, selectProduct, updateSelect
 import { loadTracked, logout, track } from "./account.js";
 import { bindDialogs, confirmEmailFromLink, openAlert, openAuth, openEmailSettings, openPasswordResetFromLink } from "./dialogs.js";
 import { bindRefresh, loadRefreshStatus } from "./refresh.js";
+import { switchLanguage, t, translatePage } from "./i18n.js";
 
 function bindSearchAndCatalog() {
   const search = () => {
@@ -75,8 +76,9 @@ function bindThemeToggle() {
   const applyTheme = theme => {
     const isDark = theme === "dark";
     document.documentElement.dataset.theme = isDark ? "dark" : "light";
-    button.setAttribute("aria-label", `Switch to ${isDark ? "light" : "dark"} theme`);
-    button.title = `Switch to ${isDark ? "light" : "dark"} theme`;
+    const label = t(isDark ? "theme.toLight" : "theme.toDark");
+    button.setAttribute("aria-label", label);
+    button.title = label;
     button.innerHTML = `<svg aria-hidden="true"><use href="#${isDark ? "i-sun" : "i-moon"}"/></svg>`;
   };
   applyTheme(document.documentElement.dataset.theme === "light" ? "light" : "dark");
@@ -135,6 +137,8 @@ function bindNavigation() {
   window.addEventListener("popstate", () => showPage(pageFromLocation()));
 }
 
+translatePage();
+$("#langToggle").addEventListener("click", switchLanguage);
 bindSearchAndCatalog();
 bindThemeToggle();
 bindAccountMenu();
