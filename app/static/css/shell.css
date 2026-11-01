@@ -12,8 +12,9 @@
   background: var(--surface);
   border-bottom: 1px solid var(--line);
 }
-.brand { width: fit-content; color: var(--ink); font-size: 1.05rem; font-weight: 700; letter-spacing: -.01em; text-decoration: none; }
-.brand span { color: var(--accent); }
+.brand { display: inline-flex; align-items: center; gap: 8px; width: fit-content; color: var(--ink); font-size: 1.05rem; font-weight: 700; letter-spacing: -.01em; text-decoration: none; }
+.brand-name span { color: var(--accent); }
+.brand-logo { width: 32px; height: 32px; }
 nav { display: flex; align-items: center; gap: 4px; }
 .nav-link { padding: 8px 12px; color: var(--muted); font-size: .9rem; font-weight: 600; text-decoration: none; border-radius: var(--radius); }
 .nav-link:hover { color: var(--ink); background: var(--surface-2); }
