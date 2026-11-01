@@ -216,14 +216,18 @@ def test_compare_two_phones_by_typing_their_models(page: Page):
     expect(page.locator(".compare-pick h2")).to_have_text("ჩვენი რჩევა თამაშებისთვის")
     assert abs(page.evaluate("window.scrollY") - scrolled) < 150
 
-    # Another storage swaps the comparison in place: it never blanks out to "Loading…".
+    # Another storage swaps the comparison in place: no frame shows "Loading…" or a blank image.
     other_storage = page.locator('[data-storage][aria-pressed="false"]').first
     if other_storage.count():
-        page.evaluate("""() => { window.blanks = 0; new MutationObserver(() => {
-          if (!document.querySelector('#compareResult .compare-cards')) window.blanks++;
-        }).observe(document.querySelector('#compareResult'), { childList: true, subtree: true }); }""")
+        page.evaluate("""() => { window.blanks = 0; const tick = () => {
+          const result = document.querySelector('#compareResult');
+          if (!result.querySelector('.compare-cards')
+            || [...result.querySelectorAll('img')].some(image => !image.complete || !image.naturalWidth)) window.blanks++;
+          requestAnimationFrame(tick);
+        }; requestAnimationFrame(tick); }""")
         storage = other_storage.get_attribute("data-storage")
         other_storage.click()
         expect(page.locator(f'[data-storage="{storage}"]').first).to_have_attribute("aria-pressed", "true")
         expect(page.locator("#compareResult")).not_to_have_attribute("aria-busy", "true")
+        page.wait_for_timeout(200)
         assert page.evaluate("window.blanks") == 0

@@ -381,9 +381,24 @@ let renderToken = 0;
 // The phones on screen, so choosing a use redraws the pick without refetching.
 let shownDetails = null;
 
-function drawComparison(details) {
+/*
+ * Build the comparison off-screen and wait for its images to decode before showing it:
+ * swapping in fresh <img>s directly paints them blank for a frame, so the result blinks.
+ */
+async function drawComparison(details, token = ++renderToken) {
+  const next = document.createElement("div");
+  next.innerHTML = comparisonHtml(details);
+  const decoded = [...next.querySelectorAll("img")].map(image => image.decode().catch(() => {}));
+  await Promise.race([Promise.all(decoded), new Promise(resolve => setTimeout(resolve, 1000))]);
+  if (token !== renderToken) return;
   shownDetails = details;
-  $("#compareResult").innerHTML = `
+  const result = $("#compareResult");
+  result.removeAttribute("aria-busy");
+  result.replaceChildren(...next.childNodes);
+}
+
+function comparisonHtml(details) {
+  return `
     <div class="compare-cards">${details.map(summaryCard).join("")}</div>
     <h2>${escapeHtml(t("compare.specs"))}</h2>
     ${specTable(details)}
@@ -421,8 +436,7 @@ async function renderComparison(ids) {
       shownDetails?.find(detail => detail.product === product) ?? productDetails(product)));
     // A newer pick replaced this one while it loaded.
     if (token !== renderToken) return;
-    result.removeAttribute("aria-busy");
-    drawComparison(details);
+    await drawComparison(details, token);
   } catch (error) {
     if (token === renderToken) showMessage(error.message);
   }
