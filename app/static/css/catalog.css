@@ -178,10 +178,19 @@ tbody tr.best-offer td:first-child { box-shadow: inset 3px 0 0 var(--good); }
 .compare-pick ul { margin: 0 0 12px; padding-left: 20px; }
 .compare-pick li { margin: 4px 0; line-height: 1.45; }
 .compare-pick .muted { margin: 8px 0 0; line-height: 1.6; }
+/* Where each phone beats the other, two columns. */
+.compare-edges { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 18px; padding-top: 18px; border-top: 1px solid color-mix(in srgb, var(--good) 30%, transparent); }
+.compare-edge h3 { margin: 0 0 8px; font-size: .95rem; font-weight: 700; line-height: 1.35; }
+.compare-edge ul { margin: 0; }
+.compare-edge .muted { margin: 0; }
+.edge-minor { color: var(--muted); }
+.edge-tag { display: inline-block; margin-left: 4px; padding: 1px 8px; color: var(--good); border: 1px solid color-mix(in srgb, var(--good) 50%, transparent); border-radius: 999px; font-size: .75rem; font-weight: 600; white-space: nowrap; }
+.edge-note { font-size: .82rem; }
 @media (max-width: 700px) {
   .compare-pickers { grid-template-columns: 1fr; }
   .compare-pick { padding: 20px; }
   .compare-pick-actions { grid-template-columns: 1fr; }
+  .compare-edges { grid-template-columns: 1fr; }
   .compare-pick-phone p { font-size: 1.25rem; }
   .compare-vs { margin: 0; justify-self: center; }
   .compare-cards { grid-template-columns: 1fr; }

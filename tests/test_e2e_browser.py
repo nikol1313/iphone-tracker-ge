@@ -201,3 +201,6 @@ def test_compare_two_phones_by_typing_their_models(page: Page):
     expect(page.locator('.compare-pick [data-use="gaming"]')).to_have_attribute("aria-pressed", "true")
     expect(page.locator(".compare-pick-headline")).to_be_visible()
     assert "use=gaming" in page.url
+    # Both phones get a list of where they beat the other, not only the pick.
+    expect(page.locator(".compare-edge")).to_have_count(2)
+    expect(page.locator(".compare-edge h3").first).to_contain_text("is better")

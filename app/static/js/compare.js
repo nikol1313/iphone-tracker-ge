@@ -78,17 +78,24 @@ function rowWinner(row, details) {
   return (row.better === "higher") === (a > b) ? 0 : 1;
 }
 
-// Side-by-side wins for one side that matter for this use, most important first.
-function advantages(details, side, use) {
+/*
+ * Every spec where one phone beats the other, for both phones, whether or not it counts
+ * for this use: key ones (the use boosts them) first, ones that matter less for it last.
+ * Price isn't a spec here: the pick's headline already weighs it.
+ */
+function edges(details, side, use) {
   return ROWS
-    .filter(row => weightFor(row, use) > 0 && rowWinner(row, details) === side)
+    .filter(row => row.key !== "price" && rowWinner(row, details) === side)
     .map(row => ({
       weight: weightFor(row, use),
+      key: (use.weights[row.key] ?? 0) >= 3,
       text: t(`why.${row.key}`, { mine: row.show(details[side]), theirs: row.show(details[1 - side]) }),
     }))
     .sort((x, y) => y.weight - x.weight);
 }
 
+// The wins that count for this use: what the pick weighs.
+const advantages = (details, side, use) => edges(details, side, use).filter(edge => edge.weight > 0);
 const total = reasons => reasons.reduce((sum, reason) => sum + reason.weight, 0);
 const fullName = product => `${productName(product)} ${variant(product)}`;
 
@@ -97,16 +104,17 @@ function recommend(details, use) {
   const [a, b] = details.map(detail => detail.product);
   if (!inStock(a) || !inStock(b)) {
     const available = inStock(a) ? 0 : inStock(b) ? 1 : null;
-    if (available == null) return { side: null, headline: t("pick.neitherInStock"), reasons: [] };
-    return { side: available, headline: t("pick.onlyInStock", { name: fullName(details[available].product) }), reasons: [] };
+    if (available == null) return { side: null, headline: t("pick.neitherInStock") };
+    return { side: available, headline: t("pick.onlyInStock", { name: fullName(details[available].product) }) };
   }
   const wins = [advantages(details, 0, use), advantages(details, 1, use)];
+  const useFor = t(`use.${use.key}.for`);
   const gap = Math.abs(priceOf(a) - priceOf(b));
   if (gap < 1) {
     const side = total(wins[0]) === total(wins[1]) ? null : total(wins[0]) > total(wins[1]) ? 0 : 1;
     return side == null
-      ? { side: null, headline: t("pick.equal"), reasons: [] }
-      : { side, headline: t("pick.samePriceBetter", { name: fullName(details[side].product) }), reasons: wins[side] };
+      ? { side: null, headline: t(SIDES.some((_, side) => edges(details, side, use).length) ? "pick.equalForUse" : "pick.equal", { use: useFor }) }
+      : { side, headline: t("pick.samePriceBetter", { name: fullName(details[side].product), use: useFor }) };
   }
   const cheaper = priceOf(a) < priceOf(b) ? 0 : 1;
   const pricier = 1 - cheaper;
@@ -115,26 +123,20 @@ function recommend(details, use) {
   if (!wins[pricier].length) {
     return {
       side: cheaper,
-      headline: t("pick.cheaperNoLoss", { name: fullName(details[cheaper].product), ...extra }),
-      reasons: wins[cheaper],
+      headline: t("pick.cheaperNoLoss", { name: fullName(details[cheaper].product), use: useFor, ...extra }),
     };
   }
   // Worth paying more only for a clear step up that costs no more extra than this use allows.
   if (total(wins[pricier]) >= total(wins[cheaper]) + 3 && share <= use.maxExtra) {
     return {
       side: pricier,
-      headline: t("pick.worthMore", { name: fullName(details[pricier].product), ...extra }),
-      reasons: wins[pricier],
+      headline: t("pick.worthMore", { name: fullName(details[pricier].product), use: useFor, ...extra }),
     };
   }
   return {
     side: cheaper,
-    headline: t("pick.bestValue", { name: fullName(details[cheaper].product), ...extra }),
-    reasons: wins[cheaper],
-    tradeoff: t("pick.tradeoff", {
-      name: fullName(details[pricier].product),
-      gains: wins[pricier].map(reason => reason.text).join(", "),
-    }),
+    headline: t("pick.bestValue", { name: fullName(details[cheaper].product), use: useFor, ...extra }),
+    tradeoff: t("pick.tradeoff", { name: fullName(details[pricier].product), use: useFor, ...extra }),
   };
 }
 
@@ -327,6 +329,25 @@ function usePicker(chosen) {
     </fieldset>`;
 }
 
+// Where each phone is better than the other, side by side.
+function edgeLists(details, use) {
+  const useFor = t(`use.${use.key}.for`);
+  const item = edge => `
+    <li class="${edge.weight ? "" : "edge-minor"}">${escapeHtml(edge.text)}${edge.key
+      ? ` <span class="edge-tag">${escapeHtml(t("pick.keyFor", { use: useFor }))}</span>`
+      : edge.weight ? "" : ` <span class="edge-note">(${escapeHtml(t("pick.minorFor", { use: useFor }))})</span>`}</li>`;
+  return `
+    <div class="compare-edges">${details.map((detail, side) => {
+      const list = edges(details, side, use);
+      return `
+      <div class="compare-edge">
+        <h3>${escapeHtml(t("pick.betterAt", { name: fullName(detail.product) }))}</h3>
+        ${list.length ? `<ul>${list.map(item).join("")}</ul>` : `<p class="muted">${escapeHtml(t("pick.noEdge"))}</p>`}
+      </div>`;
+    }).join("")}
+    </div>`;
+}
+
 // The pick waits until the visitor says what the phone is for.
 function pickBox(details) {
   const use = chosenUse();
@@ -334,8 +355,8 @@ function pickBox(details) {
   const result = pick ? `
       ${pick.side != null ? pickedPhone(details[pick.side]) : ""}
       <p class="compare-pick-headline">${escapeHtml(pick.headline)}</p>
-      ${pick.reasons.length ? `<ul>${pick.reasons.map(reason => `<li>${escapeHtml(reason.text)}</li>`).join("")}</ul>` : ""}
       ${pick.tradeoff ? `<p class="muted">${escapeHtml(pick.tradeoff)}</p>` : ""}
+      ${edgeLists(details, use)}
       ${details.some(detail => !Object.keys(detail.specs).length) ? `<p class="muted">${escapeHtml(t("pick.missingSpecs"))}</p>` : ""}`
     : `<p class="muted">${escapeHtml(t("use.prompt"))}</p>`;
   return `
