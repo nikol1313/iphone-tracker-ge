@@ -144,20 +144,26 @@ tbody tr.best-offer td:first-child { box-shadow: inset 3px 0 0 var(--good); }
 .compare-line-b, .compare-key-b::before { stroke: #4ea1ff; background: #4ea1ff; }
 .compare-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 8px; padding: 0; list-style: none; color: var(--ink-2); font-size: .85rem; }
 .compare-legend li::before { display: inline-block; width: 14px; height: 3px; margin: 0 6px 3px 0; content: ""; border-radius: 2px; vertical-align: middle; }
-.compare-pick { margin-top: 24px; padding: 18px 20px; background: var(--good-soft); border: 1px solid color-mix(in srgb, var(--good) 40%, transparent); border-radius: 10px; }
-.compare-pick h2 { margin: 0 0 6px; color: var(--good); font-size: .85rem; text-transform: uppercase; letter-spacing: .04em; }
-.compare-pick-phone { display: grid; gap: 10px; margin: 0 0 12px; }
-.compare-pick-phone p { margin: 0; font-size: 1.3rem; }
-.compare-pick-phone p span { color: var(--ink-2); font-size: 1rem; }
-.compare-pick-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.compare-pick-store { display: inline-flex; align-items: center; gap: 6px; min-height: 42px; text-decoration: none; }
-.compare-pick-store svg { width: 14px; height: 14px; }
-.compare-pick-headline { margin: 0 0 8px; font-size: 1.05rem; font-weight: 700; }
-.compare-pick ul { margin: 0 0 8px; padding-left: 20px; }
-.compare-pick li { margin: 2px 0; }
-.compare-pick .muted { margin: 6px 0 0; }
+.compare-pick { margin-top: 24px; padding: 24px 28px; background: var(--good-soft); border: 1px solid color-mix(in srgb, var(--good) 40%, transparent); border-radius: 12px; }
+.compare-pick h2 { margin: 0 0 8px; color: var(--good); font-size: .85rem; text-transform: uppercase; letter-spacing: .05em; }
+.compare-pick-phone { display: grid; gap: 16px; margin: 0 0 22px; }
+.compare-pick-phone p { margin: 0; font-size: 1.45rem; font-weight: 400; line-height: 1.25; }
+.compare-pick-phone p strong { font-weight: 700; }
+.compare-pick-phone p span { color: var(--ink-2); font-size: 1.05rem; }
+/* The two buttons share the box's full width. */
+.compare-pick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.compare-pick-actions > * { width: 100%; min-height: 48px; font-size: .95rem; }
+.compare-pick-store { display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+.compare-pick-store svg { width: 15px; height: 15px; }
+.compare-pick-headline { margin: 0 0 10px; padding-top: 20px; border-top: 1px solid color-mix(in srgb, var(--good) 30%, transparent); font-size: 1.1rem; font-weight: 700; line-height: 1.4; }
+.compare-pick ul { margin: 0 0 12px; padding-left: 20px; }
+.compare-pick li { margin: 4px 0; line-height: 1.45; }
+.compare-pick .muted { margin: 8px 0 0; line-height: 1.6; }
 @media (max-width: 700px) {
   .compare-pickers { grid-template-columns: 1fr; }
+  .compare-pick { padding: 20px; }
+  .compare-pick-actions { grid-template-columns: 1fr; }
+  .compare-pick-phone p { font-size: 1.25rem; }
   .compare-vs { margin: 0; justify-self: center; }
   .compare-cards { grid-template-columns: 1fr; }
   .spec-table th:first-child { width: 34%; }
