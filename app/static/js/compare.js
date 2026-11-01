@@ -394,26 +394,37 @@ function drawComparison(details) {
     ${historyChart(details)}`;
 }
 
+// A message in place of the comparison; it also cancels any comparison still loading.
+function showMessage(text) {
+  renderToken++;
+  shownDetails = null;
+  const result = $("#compareResult");
+  result.removeAttribute("aria-busy");
+  result.innerHTML = `<p class="empty-inline">${escapeHtml(text)}</p>`;
+}
+
+/*
+ * Switching storage or color keeps the current comparison on screen until the new one is
+ * ready, then swaps it in one go; only a first load shows "Loading…". The phone that
+ * didn't change keeps the data already fetched for it.
+ */
 async function renderComparison(ids) {
   const result = $("#compareResult");
   const products = ids.map(productById);
-  if (products.some(product => !product)) {
-    result.innerHTML = `<p class="empty-inline">${escapeHtml(t("compare.prompt"))}</p>`;
-    return;
-  }
-  if (products[0].id === products[1].id) {
-    result.innerHTML = `<p class="empty-inline">${escapeHtml(t("compare.samePhone"))}</p>`;
-    return;
-  }
+  if (products.some(product => !product)) return showMessage(t("compare.prompt"));
+  if (products[0].id === products[1].id) return showMessage(t("compare.samePhone"));
   const token = ++renderToken;
-  result.innerHTML = `<p class="loading-state">${escapeHtml(t("loading"))}</p>`;
+  if (!shownDetails) result.innerHTML = `<p class="loading-state">${escapeHtml(t("loading"))}</p>`;
+  result.setAttribute("aria-busy", "true");
   try {
-    const details = await Promise.all(products.map(productDetails));
+    const details = await Promise.all(products.map(product =>
+      shownDetails?.find(detail => detail.product === product) ?? productDetails(product)));
     // A newer pick replaced this one while it loaded.
     if (token !== renderToken) return;
+    result.removeAttribute("aria-busy");
     drawComparison(details);
   } catch (error) {
-    if (token === renderToken) result.innerHTML = `<p class="empty-inline">${escapeHtml(error.message)}</p>`;
+    if (token === renderToken) showMessage(error.message);
   }
 }
 

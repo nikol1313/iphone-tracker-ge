@@ -215,3 +215,15 @@ def test_compare_two_phones_by_typing_their_models(page: Page):
     page.click("#langToggle")
     expect(page.locator(".compare-pick h2")).to_have_text("ჩვენი რჩევა თამაშებისთვის")
     assert abs(page.evaluate("window.scrollY") - scrolled) < 150
+
+    # Another storage swaps the comparison in place: it never blanks out to "Loading…".
+    other_storage = page.locator('[data-storage][aria-pressed="false"]').first
+    if other_storage.count():
+        page.evaluate("""() => { window.blanks = 0; new MutationObserver(() => {
+          if (!document.querySelector('#compareResult .compare-cards')) window.blanks++;
+        }).observe(document.querySelector('#compareResult'), { childList: true, subtree: true }); }""")
+        storage = other_storage.get_attribute("data-storage")
+        other_storage.click()
+        expect(page.locator(f'[data-storage="{storage}"]').first).to_have_attribute("aria-pressed", "true")
+        expect(page.locator("#compareResult")).not_to_have_attribute("aria-busy", "true")
+        assert page.evaluate("window.blanks") == 0
