@@ -57,15 +57,17 @@ function bindSearchAndCatalog() {
     applyFilters();
     selectProduct(row.dataset.productId, { scroll: true });
   };
-  $("#modelPrices").addEventListener("click", event => {
-    const row = event.target.closest(".model-price");
-    if (row) openModel(row);
-  });
-  $("#modelPrices").addEventListener("keydown", event => {
-    if ((event.key === "Enter" || event.key === " ") && event.target.matches(".model-price")) {
-      event.preventDefault();
-      openModel(event.target);
-    }
+  ["#modelPrices", "#weeklyDrops"].forEach(selector => {
+    $(selector).addEventListener("click", event => {
+      const row = event.target.closest(".model-price");
+      if (row) openModel(row);
+    });
+    $(selector).addEventListener("keydown", event => {
+      if ((event.key === "Enter" || event.key === " ") && event.target.matches(".model-price")) {
+        event.preventDefault();
+        openModel(event.target);
+      }
+    });
   });
   $("#selectedTrackButton").addEventListener("click", () => state.selectedId && track(state.selectedId));
   $("#selectedAlertButton").addEventListener("click", () => state.selectedId && openAlert(state.selectedId));

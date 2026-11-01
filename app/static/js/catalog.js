@@ -119,9 +119,8 @@ const inStock = product => product.available_listing_count > 0 && product.lowest
 
 // "−150 ₾ this week" when the best price fell by at least 1% over the last week.
 function weekDrop(product) {
-  if (!inStock(product) || product.price_week_ago == null) return "";
-  const drop = Number(product.price_week_ago) - Number(product.lowest_price);
-  if (drop < Number(product.price_week_ago) * 0.01) return "";
+  const drop = weeklyDropAmount(product);
+  if (!drop) return "";
   return `<span class="card-change drop">${escapeHtml(t("card.weekDrop", { amount: money(drop, product.currency || "GEL") }))}</span>`;
 }
 
@@ -140,10 +139,35 @@ function cardMeta(product) {
   return `${t("card.inStockAt", { count: product.available_listing_count })}${gap}`;
 }
 
+// How much the best in-stock price fell over the last week, or 0 below a 1% move.
+function weeklyDropAmount(product) {
+  if (!inStock(product) || product.price_week_ago == null) return 0;
+  const drop = Number(product.price_week_ago) - Number(product.lowest_price);
+  return drop >= Number(product.price_week_ago) * 0.01 ? drop : 0;
+}
+
+const WEEKLY_DROPS_SHOWN = 6;
+
+// Today page: the phones whose best price fell the most this week.
+function renderWeeklyDrops() {
+  const drops = state.products
+    .filter(product => weeklyDropAmount(product) > 0)
+    .sort((a, b) => weeklyDropAmount(b) - weeklyDropAmount(a) || byModel(a, b))
+    .slice(0, WEEKLY_DROPS_SHOWN);
+  $("#weeklyDropsSection").hidden = !drops.length;
+  $("#weeklyDrops").innerHTML = drops.map(product => `
+    <li class="model-price" data-model="${escapeHtml(product.model)}" data-product-id="${product.id}" tabindex="0">
+      <span class="model-price-name">${escapeHtml(productName(product))}<small>${escapeHtml(variant(product))}</small></span>
+      <span class="model-price-value">${escapeHtml(money(product.lowest_price, product.currency || "GEL"))}</span>
+      <span class="model-price-meta">${weekDrop(product)} · ${escapeHtml(t("drops.was", { price: money(product.price_week_ago, product.currency || "GEL") }))}</span>
+    </li>`).join("");
+}
+
 // Today page: the cheapest in-stock variant of each model, newest model first.
 export function renderOverview() {
   const list = $("#modelPrices");
   if (!state.products.length) return;
+  renderWeeklyDrops();
   const cheapest = new Map();
   for (const product of state.products.filter(inStock)) {
     const best = cheapest.get(product.model);
