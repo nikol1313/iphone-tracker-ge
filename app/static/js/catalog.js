@@ -63,6 +63,37 @@ function populateFilters() {
   fillSelect($("#storageFilter"), storages, t("filters.anyStorage"));
 }
 
+const SUGGESTIONS_SHOWN = 8;
+// Newest generation first; within one, the base model before Plus, Pro and Pro Max.
+const generation = name => Number(/\d+/.exec(name)?.[0] ?? 99);
+const bySuggestionOrder = (a, b) => generation(b.label) - generation(a.label) || naturalOrder.compare(a.label, b.label);
+
+/*
+ * Search hints: models whose name holds every typed term ("15" → iPhone 15, 15 Plus, 15 Pro…),
+ * or a model + storage when a term names a storage size ("15 pro 256").
+ */
+export function searchSuggestions(query) {
+  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+  if (!terms.length) return [];
+  const groups = new Map();
+  for (const product of state.products) {
+    const model = productName(product);
+    const modelMatches = terms.every(term => model.toLowerCase().includes(term));
+    const label = modelMatches ? model : `${model} ${product.storage || ""}`.trim();
+    if (!modelMatches && !terms.every(term => label.toLowerCase().includes(term))) continue;
+    if (!groups.has(label)) groups.set(label, []);
+    groups.get(label).push(product);
+  }
+  return [...groups].map(([label, products]) => {
+    const prices = products.filter(inStock).map(priceOf);
+    return {
+      label,
+      value: label,
+      detail: prices.length ? t("search.from", { price: money(Math.min(...prices)) }) : t("search.outOfStock"),
+    };
+  }).sort(bySuggestionOrder).slice(0, SUGGESTIONS_SHOWN);
+}
+
 // Every whitespace-separated term must appear in the name, storage or color.
 function matchesQuery(product, query) {
   const haystack = `${productName(product)} ${product.storage || ""} ${product.color || ""}`.toLowerCase();
@@ -163,6 +194,9 @@ function renderWeeklyDrops() {
     </li>`).join("");
 }
 
+// The Today list starts folded to the newest few models.
+const MODELS_FOLDED = 6;
+
 // Today page: the cheapest in-stock variant of each model, newest model first.
 export function renderOverview() {
   const list = $("#modelPrices");
@@ -182,8 +216,15 @@ export function renderOverview() {
   ].filter(Boolean);
   $("#overviewStats").innerHTML = stats.join(" · ");
   const models = [...cheapest.values()].sort(byModel);
+  const shown = state.modelsExpanded ? models : models.slice(0, MODELS_FOLDED);
+  const toggle = $("#modelPricesToggle");
+  toggle.hidden = models.length <= MODELS_FOLDED;
+  toggle.setAttribute("aria-expanded", String(Boolean(state.modelsExpanded)));
+  toggle.querySelector("span").textContent = state.modelsExpanded
+    ? t("models.showFewer")
+    : t("models.showAll", { count: models.length });
   list.innerHTML = models.length
-    ? models.map(product => `
+    ? shown.map(product => `
       <li class="model-price" data-model="${escapeHtml(product.model)}" data-product-id="${product.id}" tabindex="0">
         <span class="model-price-name">${escapeHtml(productName(product))}<small>${escapeHtml(variant(product))}</small></span>
         <span class="model-price-value">${escapeHtml(money(product.lowest_price, product.currency || "GEL"))}</span>

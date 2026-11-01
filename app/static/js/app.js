@@ -1,6 +1,7 @@
 /* Connect the page controls to their feature modules. */
 import { $, $$, pageFromLocation, showPage, state } from "./core.js";
-import { applyFilters, loadProducts, renderProducts, selectProduct, updateSelectedActions } from "./catalog.js";
+import { applyFilters, loadProducts, renderOverview, renderProducts, searchSuggestions, selectProduct, updateSelectedActions } from "./catalog.js";
+import { attachSuggestions } from "./combobox.js";
 import { loadTracked, logout, track } from "./account.js";
 import { bindDialogs, confirmEmailFromLink, openAlert, openAuth, openEmailSettings, openPasswordResetFromLink } from "./dialogs.js";
 import { bindRefresh, loadRefreshStatus } from "./refresh.js";
@@ -12,11 +13,22 @@ function bindSearchAndCatalog() {
     state.searchQuery = $("#searchInput").value.trim();
     applyFilters();
   };
-  $("#searchForm").addEventListener("submit", event => {
-    event.preventDefault();
+  const searchAndOpenFirst = () => {
     search();
     const first = state.visibleProducts[0];
     if (first) selectProduct(first.id, { scroll: true });
+  };
+  $("#searchForm").addEventListener("submit", event => {
+    event.preventDefault();
+    searchAndOpenFirst();
+  });
+  // Choosing a hint is an explicit search, like pressing the button.
+  attachSuggestions($("#searchInput"), {
+    suggest: searchSuggestions,
+    onPick: item => {
+      $("#searchInput").value = item.value;
+      searchAndOpenFirst();
+    },
   });
   // Typing alone doesn't search; only an emptied box (e.g. its × button) brings back every phone.
   $("#searchInput").addEventListener("input", () => {
@@ -61,6 +73,12 @@ function bindSearchAndCatalog() {
     applyFilters();
     selectProduct(row.dataset.productId, { scroll: true });
   };
+  $("#modelPricesToggle").addEventListener("click", () => {
+    state.modelsExpanded = !state.modelsExpanded;
+    renderOverview();
+    // Folding up from the bottom of a long list: bring its top back into view.
+    if (!state.modelsExpanded) $("#modelPrices").closest(".section").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
   ["#modelPrices", "#weeklyDrops"].forEach(selector => {
     $(selector).addEventListener("click", event => {
       const row = event.target.closest(".model-price");

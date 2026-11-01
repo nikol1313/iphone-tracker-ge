@@ -157,3 +157,25 @@ def test_search_waits_for_the_search_button(page: Page):
     # Emptying the box brings every phone back.
     page.fill("#searchInput", "")
     expect(count).to_have_text(everything)
+
+
+def test_search_hints_offer_models_and_search_when_chosen(page: Page):
+    page.goto(SITE_URL + "/?page=products")
+    count = page.locator("#productCount")
+    expect(count).not_to_have_text("Loading…")
+    everything = count.inner_text()
+
+    page.fill("#searchInput", "15")
+    hints = page.locator(".suggestions li")
+    expect(hints.first).to_be_visible()
+    labels = hints.locator("span").all_inner_texts()
+    assert labels and all("15" in label for label in labels)
+    # Hints alone don't filter.
+    expect(count).to_have_text(everything)
+
+    # Arrow down + Enter chooses the first hint and searches for it.
+    page.keyboard.press("ArrowDown")
+    page.keyboard.press("Enter")
+    expect(page.locator("#searchInput")).to_have_value(labels[0])
+    expect(count).not_to_have_text(everything)
+    expect(page.locator(".suggestions")).to_be_hidden()
