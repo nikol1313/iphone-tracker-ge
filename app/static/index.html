@@ -59,9 +59,9 @@
   <main id="mainContent">
     <div class="page-view" data-page-view="overview" aria-labelledby="overviewTitle">
       <section class="intro">
-        <h1 id="overviewTitle" data-i18n="intro.title">iPhone-ის ფასები საქართველოს მაღაზიებში</h1>
-        <p class="intro-lead" data-i18n="intro.lead">ყოველ 12 საათში ვამოწმებთ Zoommer-ს, Alta-ს, iSpace-ს, Elit-ს, Megatechnica-ს, Extra.ge-ს, PCShop-სა და Metromart-ს და გაჩვენებთ, სად ღირს თითოეული iPhone ყველაზე იაფად ახლა.</p>
-        <p class="intro-stats" id="overviewStats" data-i18n="loadingPrices">ფასები იტვირთება…</p>
+        <h1 id="overviewTitle" data-i18n-html="intro.title">ყველა iPhone, ყველა ფასი, <span class="intro-accent">ერთ ადგილას</span></h1>
+        <p class="intro-lead" data-i18n="intro.lead">შეადარეთ, აირჩიეთ და იყიდეთ იქ, სადაც ყველაზე იაფია.</p>
+        <p class="intro-stats" id="overviewStats" role="status"></p>
       </section>
       <section class="section" id="weeklyDropsSection" hidden>
         <div class="section-heading">
@@ -147,6 +147,7 @@
             </div>
           </div>
         </div>
+        <div id="buyVerdict"></div>
         <div class="chart-wrap">
           <svg id="priceChart" role="img" data-i18n-attr="aria-label:chart.label"></svg>
           <div id="chartEmpty" class="chart-empty" data-i18n="chart.empty" hidden></div>
@@ -280,19 +281,27 @@
       <button class="icon-button" id="closeAlert" type="button" data-i18n-attr="aria-label:close"><svg><use href="#i-close"/></svg></button>
     </div>
     <form id="alertForm">
+      <!-- Offered only while the phone is out of stock everywhere. -->
+      <fieldset class="alert-kind" id="alertKind" hidden>
+        <legend data-i18n="alert.kindLabel">როდის მოგწეროთ?</legend>
+        <label><input type="radio" name="kind" value="stock"> <span data-i18n="alert.kindStock">როცა მარაგში დაბრუნდება, ნებისმიერ ფასად</span></label>
+        <label><input type="radio" name="kind" value="price"> <span data-i18n="alert.kindPrice">როცა ფასი ჩემს სამიზნემდე ჩამოვა</span></label>
+      </fieldset>
       <div class="alert-explainer">
-        <p data-i18n-html="alert.explainer">როცა ამ iPhone-ის საუკეთესო ფასი რომელიმე მაღაზიაში <b>თქვენს სამიზნე ფასამდე ან უფრო დაბლა</b> ჩამოვა, ერთხელ მოგწერთ ელფოსტაზე.</p>
+        <p id="alertExplainer"></p>
         <p id="alertCurrentPrice" class="settings-note"></p>
       </div>
       <input type="hidden" name="product_id">
       <input type="hidden" name="alert_id">
-      <label for="alertTargetPrice" data-i18n="alert.target">სამიზნე ფასი (₾)</label>
-      <div class="price-stepper">
-        <button class="stepper-button" type="button" data-price-step="-1" data-i18n-attr="aria-label:alert.stepDown">−100</button>
-        <input id="alertTargetPrice" type="number" name="target_price" min="0.01" step="any" aria-describedby="alertPriceHelp" required>
-        <button class="stepper-button" type="button" data-price-step="1" data-i18n-attr="aria-label:alert.stepUp">+100</button>
+      <div id="alertPriceFields">
+        <label for="alertTargetPrice" data-i18n="alert.target">სამიზნე ფასი (₾)</label>
+        <div class="price-stepper">
+          <button class="stepper-button" type="button" data-price-step="-1" data-i18n-attr="aria-label:alert.stepDown">−100</button>
+          <input id="alertTargetPrice" type="number" name="target_price" min="0.01" step="any" aria-describedby="alertPriceHelp" required>
+          <button class="stepper-button" type="button" data-price-step="1" data-i18n-attr="aria-label:alert.stepUp">+100</button>
+        </div>
+        <p id="alertPriceHelp" class="settings-note" data-i18n="alert.help">გამოიყენეთ −100/+100, მაუსის ბორბალი ან ↑/↓, ან ჩაწერეთ ნებისმიერი თანხა.</p>
       </div>
-      <p id="alertPriceHelp" class="settings-note" data-i18n="alert.help">გამოიყენეთ −100/+100, მაუსის ბორბალი ან ↑/↓, ან ჩაწერეთ ნებისმიერი თანხა.</p>
       <p id="alertEmailNote" class="settings-note"></p>
       <p id="alertError" class="form-error" role="alert"></p>
       <button class="primary-button full" id="alertSubmit" type="submit"></button>

@@ -1,6 +1,6 @@
 /* Manual price refresh with the shared one-hour cooldown. */
 import { $, api, relativeTime as relative, showToast, state } from "./core.js";
-import { loadProducts, renderOverview } from "./catalog.js";
+import { loadProducts } from "./catalog.js";
 import { openAuth } from "./dialogs.js";
 import { onLanguageChange, t } from "./i18n.js";
 
@@ -20,9 +20,7 @@ function renderRefresh() {
 function applyStatus(status) {
   refresh.lastRefreshedAt = status.last_refreshed_at;
   refresh.availableAt = status.next_manual_refresh_at;
-  state.lastRefreshedAt = status.last_refreshed_at;
   renderRefresh();
-  renderOverview();
 }
 
 export async function loadRefreshStatus() {

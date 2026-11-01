@@ -233,3 +233,51 @@ async def test_alert_adds_product_to_watchlist_and_untrack_removes_it(
     assert removed.status_code == 204
     alerts = await client.get("/alerts", headers=bearer(token))
     assert alerts.json()["items"] == []
+
+
+@pytest.mark.asyncio
+async def test_back_in_stock_alert_only_for_out_of_stock_phones(
+    client: httpx.AsyncClient,
+    session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    _, product = await create_admin_product(client, session_factory)
+    token = await register_and_login(client, email="user@example.com", session_factory=session_factory)
+    now = datetime.now(UTC)
+    async with session_factory() as session:
+        store = Store(title="Store", web_url="https://a.example")
+        session.add(store)
+        await session.flush()
+        listing = ProductListing(
+            product_id=product["id"],
+            store_id=store.id,
+            product_url="https://a.example/phone",
+            current_price=Decimal("2400.00"),
+            currency="GEL",
+            is_available=False,
+            last_checked_at=now,
+        )
+        session.add(listing)
+        await session.commit()
+        listing_id = listing.id
+
+    created = await client.post(f"/products/{product['id']}/alerts", headers=bearer(token), json={})
+    assert created.status_code == 201, created.text
+    assert created.json()["target_price"] is None
+    assert created.json()["is_triggered"] is False
+    tracked = (await client.get("/tracked-products", headers=bearer(token))).json()["items"][0]
+    assert tracked["active_alert"]["target_price"] is None
+
+    async with session_factory() as session:
+        listing = await session.get(ProductListing, listing_id)
+        assert listing is not None
+        listing.is_available = True
+        await session.commit()
+    # Back in stock: reached at any price.
+    alert = (await client.get("/alerts", headers=bearer(token))).json()["items"][0]
+    assert alert["is_triggered"] is True
+    # While it's in stock, a back-in-stock alert would fire at once: ask for a target.
+    switched = await client.put(f"/alerts/{alert['id']}", headers=bearer(token), json={"target_price": None})
+    assert switched.status_code == 409
+    assert (
+        await client.put(f"/alerts/{alert['id']}", headers=bearer(token), json={"target_price": "2300"})
+    ).status_code == 200

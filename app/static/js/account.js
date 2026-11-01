@@ -33,7 +33,7 @@ export function renderTracked() {
       <div>
         <p><span class="tracked-price">${escapeHtml(money(item.product.lowest_price, item.product.currency || "GEL"))}</span> ${item.product.available_listing_count > 0 ? t("alerts.cheapestNow") : t("alerts.lastListed")}</p>
         ${item.active_alert
-          ? `<p class="alert-value${item.active_alert.is_triggered ? " reached" : ""}">${escapeHtml(t("alerts.alertAt", { amount: money(item.active_alert.target_price, item.active_alert.currency) }))}${item.active_alert.is_triggered ? t("alerts.reached") : ""}</p>`
+          ? `<p class="alert-value${item.active_alert.is_triggered ? " reached" : ""}">${escapeHtml(item.active_alert.target_price == null ? t("alerts.alertStock") : t("alerts.alertAt", { amount: money(item.active_alert.target_price, item.active_alert.currency) }))}${item.active_alert.is_triggered ? t("alerts.reached") : ""}</p>`
           : `<p>${t("alerts.none")}</p>`}
       </div>
       <div class="tracked-actions">

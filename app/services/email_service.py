@@ -84,28 +84,37 @@ async def send_price_alert_notification(
     email: str,
     product_name: str,
     product_variant: str,
-    target_price: Decimal,
+    target_price: Decimal | None,
     current_price: Decimal,
     currency: str,
     store_name: str | None = None,
     product_url: str | None = None,
 ) -> None:
-    """Format and send a triggered price alert to one email address."""
+    """Format and send a reached alert to one email address; no target means back in stock."""
     currency = currency.upper()
-    difference = target_price - current_price
-    difference_label = "Below target by" if difference >= 0 else "Above target by"
     link = _safe_link(product_url)
     rows = [
         ("Product", product_name),
         ("Variant", product_variant),
-        ("Target price", f"{currency} {_price(target_price)}"),
-        ("Current price", f"{currency} {_price(current_price)}"),
-        (difference_label, f"{currency} {_price(abs(difference))}"),
     ]
+    if target_price is None:
+        intro = "The phone you were waiting for is back in stock."
+        subject = f"Back in stock: {product_name} for {currency} {_price(current_price)}"
+        rows.append(("Price", f"{currency} {_price(current_price)}"))
+    else:
+        intro = "Your price alert was triggered."
+        subject = f"Price alert: {product_name} is now {currency} {_price(current_price)}"
+        difference = target_price - current_price
+        difference_label = "Below target by" if difference >= 0 else "Above target by"
+        rows += [
+            ("Target price", f"{currency} {_price(target_price)}"),
+            ("Current price", f"{currency} {_price(current_price)}"),
+            (difference_label, f"{currency} {_price(abs(difference))}"),
+        ]
     if store_name:
         rows.append(("Store", store_name))
 
-    text_lines = ["Your price alert was triggered.", ""]
+    text_lines = [intro, ""]
     text_lines += [f"{label}: {value}" for label, value in rows]
     if link:
         text_lines += ["", f"View product: {link}"]
@@ -120,10 +129,10 @@ async def send_price_alert_notification(
     )
     await send_email(
         to=email,
-        subject=f"Price alert: {product_name} is now {currency} {_price(current_price)}",
+        subject=subject,
         text="\n".join(text_lines),
         html=(
-            "<p>Your price alert was triggered.</p>"
+            f"<p>{escape(intro)}</p>"
             f"<table>{html_rows}</table>{html_link}"
         ),
     )

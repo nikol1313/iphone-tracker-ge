@@ -1,6 +1,6 @@
 /* Compare page: two phones side by side, specs row by row, and a reasoned pick at the end. */
 import { $, api, dayDate, escapeHtml, money, productName, safeUrl, showPage, state, variant } from "./core.js";
-import { bestPriceSeries, inStock, openProductInCatalog, searchSuggestions } from "./catalog.js";
+import { bestPriceSeries, buyVerdict, inStock, openProductInCatalog, searchSuggestions } from "./catalog.js";
 import { attachSuggestions } from "./combobox.js";
 import { onLanguageChange, t } from "./i18n.js";
 
@@ -38,7 +38,8 @@ const ROWS = [
   { key: "chip", show: d => d.specs.chip, score: d => chipScore(d.specs.chip), better: "higher", weight: 3 },
   { key: "ram", show: d => d.specs.ram, score: d => firstNumber(d.specs.ram), better: "higher", weight: 2 },
   { key: "storage", show: d => d.product.storage, score: d => storageGb(d.product.storage), better: "higher", weight: 2 },
-  { key: "display_size", show: d => d.specs.display_size?.replace(/inches?/i, "″").replace(/\s+″/, "″"), score: () => null },
+  // Bigger isn't better for everyone: no tick in the table, and it only counts for uses that want it.
+  { key: "display_size", show: d => d.specs.display_size?.replace(/inches?/i, "″").replace(/\s+″/, "″"), score: d => firstNumber(d.specs.display_size), better: "higher", plain: true },
   { key: "refresh_rate", show: d => d.specs.refresh_rate, score: d => firstNumber(d.specs.refresh_rate), better: "higher", weight: 2 },
   { key: "brightness", show: d => d.specs.brightness, score: d => firstNumber(d.specs.brightness), better: "higher", weight: 1 },
   { key: "rear_cameras", show: d => rearCameras(d.specs)?.toString(), score: d => rearCameras(d.specs), better: "higher", weight: 2 },
@@ -51,6 +52,25 @@ const ROWS = [
   { key: "release_year", show: d => d.specs.release_year, score: d => firstNumber(d.specs.release_year), better: "higher", weight: 1 },
 ];
 
+/*
+ * What the phone is for. Each use re-weighs the rows (a row it doesn't name keeps its own
+ * weight) and caps how much more, as a share of the cheaper price, a clear step up is worth.
+ */
+const USES = [
+  { key: "everyday", icon: "📱", weights: {}, maxExtra: 0.25 },
+  {
+    key: "gaming", icon: "🎮", maxExtra: 0.35,
+    weights: { chip: 4, ram: 3, refresh_rate: 3, storage: 2, display_size: 1.5, rear_cameras: 0, main_camera: 0, front_camera: 0, video: 0, weight: 0, water_resistance: 0 },
+  },
+  {
+    key: "creator", icon: "🎬", maxExtra: 0.35,
+    weights: { video: 3, rear_cameras: 3, storage: 3, main_camera: 2, front_camera: 2, chip: 2, display_size: 1, ram: 1, refresh_rate: 1 },
+  },
+  { key: "longTerm", icon: "⏳", maxExtra: 0.3, weights: { release_year: 3, chip: 3, water_resistance: 1 } },
+  { key: "budget", icon: "💰", weights: {}, maxExtra: 0.1 },
+];
+const weightFor = (row, use) => use.weights[row.key] ?? row.weight ?? 0;
+
 // For each row: 0 or 1 when that side is strictly better, null on a tie or unknown.
 function rowWinner(row, details) {
   const [a, b] = details.map(row.score);
@@ -58,28 +78,29 @@ function rowWinner(row, details) {
   return (row.better === "higher") === (a > b) ? 0 : 1;
 }
 
-// Side-by-side wins for one side, as reasons with weights.
-function advantages(details, side) {
+// Side-by-side wins for one side that matter for this use, most important first.
+function advantages(details, side, use) {
   return ROWS
-    .filter(row => row.weight && rowWinner(row, details) === side)
+    .filter(row => weightFor(row, use) > 0 && rowWinner(row, details) === side)
     .map(row => ({
-      weight: row.weight,
+      weight: weightFor(row, use),
       text: t(`why.${row.key}`, { mine: row.show(details[side]), theirs: row.show(details[1 - side]) }),
-    }));
+    }))
+    .sort((x, y) => y.weight - x.weight);
 }
 
 const total = reasons => reasons.reduce((sum, reason) => sum + reason.weight, 0);
 const fullName = product => `${productName(product)} ${variant(product)}`;
 
-/* The pick: specs won by each phone weighed against how much more the pricier one costs. */
-function recommend(details) {
+/* The pick for a use: specs won by each phone weighed against how much more the pricier one costs. */
+function recommend(details, use) {
   const [a, b] = details.map(detail => detail.product);
   if (!inStock(a) || !inStock(b)) {
     const available = inStock(a) ? 0 : inStock(b) ? 1 : null;
     if (available == null) return { side: null, headline: t("pick.neitherInStock"), reasons: [] };
     return { side: available, headline: t("pick.onlyInStock", { name: fullName(details[available].product) }), reasons: [] };
   }
-  const wins = [advantages(details, 0), advantages(details, 1)];
+  const wins = [advantages(details, 0, use), advantages(details, 1, use)];
   const gap = Math.abs(priceOf(a) - priceOf(b));
   if (gap < 1) {
     const side = total(wins[0]) === total(wins[1]) ? null : total(wins[0]) > total(wins[1]) ? 0 : 1;
@@ -98,8 +119,8 @@ function recommend(details) {
       reasons: wins[cheaper],
     };
   }
-  // Worth paying more only for a clear step up that costs at most a quarter extra.
-  if (total(wins[pricier]) >= total(wins[cheaper]) + 3 && share <= 0.25) {
+  // Worth paying more only for a clear step up that costs no more extra than this use allows.
+  if (total(wins[pricier]) >= total(wins[cheaper]) + 3 && share <= use.maxExtra) {
     return {
       side: pricier,
       headline: t("pick.worthMore", { name: fullName(details[pricier].product), ...extra }),
@@ -121,6 +142,7 @@ function recommend(details) {
 
 const pickerIds = () => SIDES.map(side => Number(new URLSearchParams(window.location.search).get(side)) || null)
   .map(id => (productById(id) ? id : null));
+const chosenUse = () => USES.find(use => use.key === new URLSearchParams(window.location.search).get("use")) || null;
 
 function saveSelection(ids) {
   const url = new URL(window.location.href);
@@ -128,6 +150,12 @@ function saveSelection(ids) {
     if (ids[index] == null) url.searchParams.delete(side);
     else url.searchParams.set(side, ids[index]);
   });
+  window.history.replaceState(window.history.state, "", url);
+}
+
+function saveUse(key) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("use", key);
   window.history.replaceState(window.history.state, "", url);
 }
 
@@ -195,6 +223,7 @@ function summaryCard(detail) {
         <p class="card-price"><strong>${escapeHtml(money(product.lowest_price, product.currency || "GEL"))}</strong></p>
         <p class="card-meta">${escapeHtml(inStock(product) ? t("card.inStockAt", { count: product.available_listing_count }) : t("card.outOfStock"))}</p>
         ${product.lowest_installment_monthly != null ? `<p class="card-installment">${escapeHtml(t("card.installments", { amount: money(product.lowest_installment_monthly) }))}</p>` : ""}
+        ${buyVerdict(product)}
       </div>
     </article>`;
 }
@@ -203,7 +232,7 @@ function specTable(details) {
   const rows = ROWS.map(row => {
     const values = details.map(row.show);
     if (values.every(value => !value)) return "";
-    const winner = rowWinner(row, details);
+    const winner = row.plain ? null : rowWinner(row, details);
     const cell = (value, side) => `<td class="${winner === side ? "spec-win" : ""}">${escapeHtml(value || "—")}${winner === side ? ' <span class="spec-check" aria-hidden="true">✓</span>' : ""}</td>`;
     return `<tr><th scope="row">${escapeHtml(t(`spec.${row.key}`))}</th>${values.map(cell).join("")}</tr>`;
   }).join("");
@@ -283,20 +312,43 @@ function pickedPhone(detail) {
     </div>`;
 }
 
-function pickBox(details) {
-  const pick = recommend(details);
+// "What's the phone for?": one button per use; the chosen one stays pressed.
+function usePicker(chosen) {
   return `
-    <section class="compare-pick" aria-labelledby="comparePickTitle">
-      <h2 id="comparePickTitle">${escapeHtml(t("pick.title"))}</h2>
+    <fieldset class="use-picker">
+      <legend>${escapeHtml(t("use.question"))}</legend>
+      <div class="use-options">${USES.map(use => `
+        <button class="use-option${use === chosen ? " selected" : ""}" type="button" data-use="${use.key}" aria-pressed="${use === chosen}">
+          <span class="use-icon" aria-hidden="true">${use.icon}</span>
+          <strong>${escapeHtml(t(`use.${use.key}`))}</strong>
+          <small>${escapeHtml(t(`use.${use.key}.hint`))}</small>
+        </button>`).join("")}
+      </div>
+    </fieldset>`;
+}
+
+// The pick waits until the visitor says what the phone is for.
+function pickBox(details) {
+  const use = chosenUse();
+  const pick = use && recommend(details, use);
+  const result = pick ? `
       ${pick.side != null ? pickedPhone(details[pick.side]) : ""}
       <p class="compare-pick-headline">${escapeHtml(pick.headline)}</p>
       ${pick.reasons.length ? `<ul>${pick.reasons.map(reason => `<li>${escapeHtml(reason.text)}</li>`).join("")}</ul>` : ""}
       ${pick.tradeoff ? `<p class="muted">${escapeHtml(pick.tradeoff)}</p>` : ""}
-      ${details.some(detail => !Object.keys(detail.specs).length) ? `<p class="muted">${escapeHtml(t("pick.missingSpecs"))}</p>` : ""}
+      ${details.some(detail => !Object.keys(detail.specs).length) ? `<p class="muted">${escapeHtml(t("pick.missingSpecs"))}</p>` : ""}`
+    : `<p class="muted">${escapeHtml(t("use.prompt"))}</p>`;
+  return `
+    <section class="compare-pick" id="comparePick" aria-labelledby="comparePickTitle" aria-live="polite">
+      <h2 id="comparePickTitle">${escapeHtml(use ? t("pick.titleFor", { use: t(`use.${use.key}.for`) }) : t("pick.title"))}</h2>
+      ${usePicker(use)}
+      ${result}
     </section>`;
 }
 
 let renderToken = 0;
+// The phones on screen, so choosing a use redraws the pick without refetching.
+let shownDetails = null;
 
 async function renderComparison(ids) {
   const result = $("#compareResult");
@@ -315,6 +367,7 @@ async function renderComparison(ids) {
     const details = await Promise.all(products.map(productDetails));
     // A newer pick replaced this one while it loaded.
     if (token !== renderToken) return;
+    shownDetails = details;
     result.innerHTML = `
       <div class="compare-cards">${details.map(summaryCard).join("")}</div>
       <h2>${escapeHtml(t("compare.specs"))}</h2>
@@ -376,6 +429,13 @@ export function bindCompare() {
     });
   });
   $("#compareResult").addEventListener("click", event => {
+    const useButton = event.target.closest("[data-use]");
+    if (useButton && shownDetails) {
+      saveUse(useButton.dataset.use);
+      $("#comparePick").outerHTML = pickBox(shownDetails);
+      $(`#comparePick [data-use="${useButton.dataset.use}"]`).focus();
+      return;
+    }
     const button = event.target.closest("[data-open-product]");
     if (button) openProductInCatalog(button.dataset.openProduct);
   });

@@ -263,7 +263,8 @@ class PriceAlert(Base):
         index=True,
         nullable=False,
     )
-    target_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    # None: a back-in-stock alert, reached by any in-stock price.
+    target_price: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
     currency: Mapped[str] = mapped_column(String(3), nullable=False)
     notified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(

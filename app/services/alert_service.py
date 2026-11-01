@@ -1,5 +1,6 @@
 import logging
 from datetime import UTC, datetime
+from decimal import Decimal
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
@@ -52,6 +53,30 @@ def _lowest_price(product_id_column, currency_column=None):
         .correlate(Product, PriceAlert, TrackedProduct)
         .scalar_subquery()
     )
+
+
+def alert_reached(price: Decimal | None, target: Decimal | None) -> bool:
+    """An in-stock price reaches a target at or above it; with no target, any in-stock price does."""
+    return price is not None and (target is None or price <= target)
+
+
+async def _reject_back_in_stock_while_in_stock(
+    session: AsyncSession, product_id: int, data: AlertCreate
+) -> None:
+    if data.target_price is not None:
+        return
+    in_stock = await session.scalar(
+        select(ProductListing.id)
+        .where(
+            ProductListing.product_id == product_id,
+            ProductListing.is_active.is_(True),
+            ProductListing.is_available.is_(True),
+            ProductListing.currency == data.currency,
+        )
+        .limit(1)
+    )
+    if in_stock is not None:
+        raise ConflictError("This phone is in stock now; set a target price instead")
 
 
 def _product_response(product: Product) -> ProductResponse:
@@ -129,9 +154,7 @@ async def list_tracked_products(
                 id=alert.id,
                 target_price=alert.target_price,
                 currency=alert.currency,
-                is_triggered=(
-                    alert_price is not None and alert_price <= alert.target_price
-                ),
+                is_triggered=alert_reached(alert_price, alert.target_price),
             )
         items.append(
             TrackedProductResponse(
@@ -176,6 +199,7 @@ async def create_alert(
     data: AlertCreate,
 ) -> PriceAlert:
     await require_active_product(session, product_id)
+    await _reject_back_in_stock_while_in_stock(session, product_id, data)
     alert = PriceAlert(
         user_id=user_id,
         product_id=product_id,
@@ -223,9 +247,7 @@ async def get_alert_response(
         target_price=alert.target_price,
         currency=alert.currency,
         current_lowest_price=current_price,
-        is_triggered=(
-            current_price is not None and current_price <= alert.target_price
-        ),
+        is_triggered=alert_reached(current_price, alert.target_price),
         created_at=alert.created_at,
     )
 
@@ -269,7 +291,7 @@ async def list_alerts(
             target_price=alert.target_price,
             currency=alert.currency,
             current_lowest_price=price,
-            is_triggered=price is not None and price <= alert.target_price,
+            is_triggered=alert_reached(price, alert.target_price),
             created_at=alert.created_at,
         )
         for alert, product, price in rows
@@ -302,6 +324,7 @@ async def update_alert(
     data: AlertCreate,
 ) -> PriceAlert:
     alert = await _owned_alert(session, user_id=user_id, alert_id=alert_id)
+    await _reject_back_in_stock_while_in_stock(session, alert.product_id, data)
     alert.target_price = data.target_price
     alert.currency = data.currency
     # A new target is a new alert: email again when it is reached.
@@ -322,7 +345,7 @@ async def delete_alert(
 
 
 async def check_and_send_alert_notifications(session: AsyncSession) -> None:
-    """Email each newly triggered alert once to its owner's verified notification address."""
+    """Email each newly reached alert (price or back in stock) once to its owner's verified address."""
     current_price = _lowest_price(Product.id, PriceAlert.currency)
 
     rows = (
@@ -346,7 +369,7 @@ async def check_and_send_alert_notifications(session: AsyncSession) -> None:
     ).all()
 
     for alert, product, email, price in rows:
-        if price is not None and price <= alert.target_price:
+        if alert_reached(price, alert.target_price):
             listing_row = (
                 await session.execute(
                     select(ProductListing, Store.title)

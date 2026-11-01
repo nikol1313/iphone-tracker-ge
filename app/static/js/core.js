@@ -10,7 +10,6 @@ export const state = {
   visibleCount: 12,
   currentPage: "overview",
   notificationSettings: null,
-  lastRefreshedAt: null,
   resetToken: null,
   token: sessionStorage.getItem("priceMonitorToken"),
   email: sessionStorage.getItem("priceMonitorEmail"),

@@ -207,14 +207,6 @@ export function renderOverview() {
     const best = cheapest.get(product.model);
     if (!best || priceOf(product) < priceOf(best)) cheapest.set(product.model, product);
   }
-  const listings = state.products.reduce((total, product) => total + Number(product.listing_count || 0), 0);
-  const stats = [
-    state.lastRefreshedAt ? t("intro.updated", { time: escapeHtml(relativeTime(state.lastRefreshedAt)) }) : "",
-    t("intro.phones", { count: state.products.length }),
-    t("intro.listings", { count: listings }),
-    t("intro.models", { count: cheapest.size }),
-  ].filter(Boolean);
-  $("#overviewStats").innerHTML = stats.join(" · ");
   const models = [...cheapest.values()].sort(byModel);
   const shown = state.modelsExpanded ? models : models.slice(0, MODELS_FOLDED);
   const toggle = $("#modelPricesToggle");
@@ -308,6 +300,7 @@ export async function selectProduct(productId, { scroll = false } = {}) {
   }, { once: true });
   $("#historyTitle").textContent = productName(product);
   $("#historyVariant").textContent = variant(product);
+  $("#buyVerdict").innerHTML = buyVerdict(product);
   $("#allTimeLow").textContent = t("loading");
   $("#allTimeHigh").textContent = t("loading");
   updateSelectedActions();
@@ -332,6 +325,43 @@ export async function selectProduct(productId, { scroll = false } = {}) {
   } catch (error) {
     showToast(error.message);
   }
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+// Matches the server's VERDICT_WINDOW and VERDICT_MIN_HISTORY.
+const VERDICT_WINDOW_DAYS = 90;
+const VERDICT_MIN_DAYS = 14;
+
+/* "Buy now or wait?" for an in-stock phone, from the verdict the server works out. */
+export function buyVerdict(product) {
+  const since = product.price_tracked_since;
+  if (!inStock(product) || !since) return "";
+  const box = (kind, title, detail) => `
+    <div class="verdict verdict-${kind}" role="status">
+      <strong>${escapeHtml(title)}</strong>
+      <p>${escapeHtml(detail)}</p>
+    </div>`;
+  if (!product.price_verdict) {
+    return box("new", t("verdict.new"), t("verdict.newDetail", { date: dayDate(since), days: VERDICT_MIN_DAYS }));
+  }
+  const current = priceOf(product);
+  const typical = Number(product.typical_price);
+  const low = Number(product.recent_low_price);
+  const period = Date.now() - new Date(since).getTime() < VERDICT_WINDOW_DAYS * DAY_MS
+    ? t("verdict.since", { date: dayDate(since) })
+    : t("verdict.lastDays", { days: VERDICT_WINDOW_DAYS });
+  if (product.price_verdict === "good") {
+    const detail = current <= low
+      ? t("verdict.goodLow", { period })
+      : current < typical
+        ? t("verdict.goodBelow", { amount: money(typical - current), typical: money(typical) })
+        : t("verdict.goodNearLow", { low: money(low), period });
+    return box("good", t("verdict.good"), detail);
+  }
+  if (product.price_verdict === "wait") {
+    return box("wait", t("verdict.wait"), t("verdict.waitDetail", { amount: money(current - typical), typical: money(typical), low: money(low), period }));
+  }
+  return box("normal", t("verdict.normal"), t("verdict.normalDetail", { typical: money(typical) }));
 }
 
 function renderAllTimePrices(extremes) {

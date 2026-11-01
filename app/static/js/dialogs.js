@@ -30,7 +30,12 @@ export function openAlert(productId) {
   form.product_id.value = product.id;
   form.alert_id.value = alert?.id ?? "";
   form.target_price.value = alert?.target_price || product.lowest_price || "";
-  $("#alertSubmit").textContent = alert ? t("alert.submitEdit") : t("alert.submitNew");
+  // Back in stock only makes sense while no store has it; then it's the natural default.
+  const outOfStock = !(product.available_listing_count > 0);
+  const stockAlert = alert ? alert.target_price == null : outOfStock;
+  $("#alertKind").hidden = !outOfStock && !stockAlert;
+  form.kind.value = stockAlert ? "stock" : "price";
+  showAlertKind();
   $("#alertRemoveButton").hidden = !alert;
   $("#alertCurrentPrice").textContent = product.lowest_price == null
     ? t("alert.noPrice")
@@ -41,6 +46,16 @@ export function openAlert(productId) {
   api("/notification-settings/email").then(settings => {
     $("#alertEmailNote").textContent = emailStatusNote(settings);
   }).catch(() => {});
+}
+
+// Swap the target-price fields and explainer for the chosen kind of alert.
+function showAlertKind() {
+  const stock = $("#alertForm").kind.value === "stock";
+  $("#alertPriceFields").hidden = stock;
+  $("#alertTargetPrice").required = !stock;
+  $("#alertExplainer").innerHTML = t(stock ? "alert.explainerStock" : "alert.explainer");
+  const alertId = $("#alertForm").alert_id.value;
+  $("#alertSubmit").textContent = alertId ? t("alert.submitEdit") : t(stock ? "alert.submitStock" : "alert.submitNew");
 }
 
 export const activeAlert = productId => state.tracked
@@ -233,23 +248,25 @@ function bindAlertForm() {
     adjustPrice(event.key === "ArrowUp" ? 1 : -1);
   });
 
+  $$("#alertKind input").forEach(radio => radio.addEventListener("change", showAlertKind));
   $("#alertForm").addEventListener("submit", async event => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     $("#alertError").textContent = "";
     const alertId = form.get("alert_id");
+    const stock = form.get("kind") === "stock";
     try {
       await api(alertId ? `/alerts/${alertId}` : `/products/${form.get("product_id")}/alerts`, {
         method: alertId ? "PUT" : "POST",
-        body: JSON.stringify({ target_price: form.get("target_price") }),
+        body: JSON.stringify({ target_price: stock ? null : form.get("target_price") }),
       });
       $("#alertDialog").close();
       const settings = await api("/notification-settings/email").catch(() => null);
-      const target = money(form.get("target_price"));
+      const target = stock ? t("alert.whenBack") : money(form.get("target_price"));
       const action = alertId ? t("alert.updated") : t("alert.set");
       showToast(settings && !settings.email_verified
         ? t("alert.savedPending", { action, target, note: emailStatusNote(settings) })
-        : t("alert.saved", { action, target }));
+        : stock ? t("alert.savedStock", { action }) : t("alert.saved", { action, target }));
       await loadTracked();
     } catch (error) {
       $("#alertError").textContent = error.message;
@@ -332,6 +349,7 @@ function bindEmailForm() {
 onLanguageChange(() => {
   setAuthMode(state.authMode);
   if (state.notificationSettings && $("#emailDialog").open) renderEmailStatus(state.notificationSettings);
+  if ($("#alertDialog").open) showAlertKind();
 });
 
 export function bindDialogs() {

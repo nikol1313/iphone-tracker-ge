@@ -196,6 +196,14 @@ class ProductSummary(ProductResponse):
     price_week_ago: Decimal | None = None
     lowest_price_ever: Decimal | None = None
     highest_price_ever: Decimal | None = None
+    # "Buy now or wait?": the current best price against its recent history.
+    # None until there is enough history, or while the phone is out of stock.
+    price_verdict: Literal["good", "normal", "wait"] | None = None
+    # Median and lowest daily best price over the verdict window.
+    typical_price: Decimal | None = None
+    recent_low_price: Decimal | None = None
+    # When this phone's price history starts.
+    price_tracked_since: datetime | None = None
     # Cheapest advertised monthly payment across in-stock listings, if any store shows one.
     lowest_installment_monthly: Decimal | None = None
 
@@ -297,7 +305,8 @@ class TrackedProductCreated(BaseModel):
 
 
 class AlertCreate(BaseModel):
-    target_price: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
+    # Leave out for a back-in-stock alert: notify at any price once a store has it.
+    target_price: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2)
     # Every store we track prices in lari, so alerts do too.
     currency: str = "GEL"
 
@@ -312,7 +321,7 @@ class AlertCreate(BaseModel):
 
 class AlertBrief(BaseModel):
     id: int
-    target_price: Decimal
+    target_price: Decimal | None
     currency: str
     is_triggered: bool
 
@@ -326,7 +335,7 @@ class TrackedProductResponse(BaseModel):
 class AlertResponse(BaseModel):
     id: int
     product: ProductResponse
-    target_price: Decimal
+    target_price: Decimal | None
     currency: str
     current_lowest_price: Decimal | None
     is_triggered: bool

@@ -40,3 +40,11 @@ dialog input:focus, dialog select:focus { border-color: var(--ink-2); }
 .stepper-button:hover { border-color: var(--ink-2); }
 .alert-explainer p { margin: 0 0 4px; color: var(--ink-2); font-size: .88rem; }
 .alert-explainer .settings-note { margin: 0; }
+/* Alert dialog: "back in stock" or "price drops to my target". */
+.alert-kind { display: grid; gap: 8px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.alert-kind legend { margin-bottom: 8px; padding: 0; color: var(--ink-2); font-size: .85rem; font-weight: 600; }
+.alert-kind label { display: flex; align-items: center; gap: 10px; padding: 10px 12px; color: var(--ink); border: 1px solid var(--line-strong); border-radius: var(--radius); font-weight: 500; cursor: pointer; }
+.alert-kind label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.alert-kind input { width: auto; min-height: 0; margin: 0; accent-color: var(--accent); }
+#alertPriceFields { display: grid; gap: 14px; }
+.alert-kind[hidden], #alertPriceFields[hidden] { display: none; }

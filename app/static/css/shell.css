@@ -38,10 +38,12 @@ main { min-height: calc(100vh - 150px); padding: 28px 0 0; }
 .page-view[hidden] { display: none; }
 
 .intro { width: min(1180px, calc(100% - 56px)); margin: 8px auto 28px; }
-.intro h1 { max-width: 760px; margin: 0 0 12px; font-size: clamp(1.9rem, 3.6vw, 2.7rem); font-weight: 700; line-height: 1.12; letter-spacing: -.02em; }
-.intro-lead { max-width: 680px; margin: 0 0 14px; color: var(--ink-2); font-size: 1.02rem; }
+.intro h1 { max-width: 900px; margin: 0 0 12px; font-size: clamp(1.9rem, 3.6vw, 2.7rem); font-weight: 700; line-height: 1.12; letter-spacing: -.02em; }
+.intro-lead { max-width: 680px; margin: 0 0 14px; color: var(--ink-2); font-size: 1.12rem; }
+.intro-accent { color: var(--accent); white-space: nowrap; }
+/* Only filled when prices fail to load. */
 .intro-stats { margin: 0; color: var(--muted); font-size: .88rem; }
-.intro-stats strong { color: var(--ink); font-weight: 600; }
+.intro-stats:empty { display: none; }
 
 .model-prices { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
 .model-price { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 16px; padding: 13px 4px; border-bottom: 1px solid var(--line); cursor: pointer; }

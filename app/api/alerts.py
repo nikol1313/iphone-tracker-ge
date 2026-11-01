@@ -75,6 +75,8 @@ async def replace_alert(
         return await get_alert_response(session, alert)
     except NotFoundError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
+    except ConflictError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
 
 
 @router.delete("/alerts/{alert_id}", status_code=status.HTTP_204_NO_CONTENT)

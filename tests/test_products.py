@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.db.models import PriceHist, ProductListing, Store
+from app.services import product_service
 from tests.helpers import bearer, register_and_login
 
 
@@ -301,3 +302,84 @@ async def test_catalog_reports_price_trends(
         assert item["price_week_ago"] == "3000.00"
         assert item["lowest_price_ever"] == "2700.00"
         assert item["highest_price_ever"] == "3300.00"
+
+
+def test_daily_best_prices_carry_each_listing_forward_and_skip_out_of_stock() -> None:
+    now = datetime(2026, 11, 1, 12, tzinfo=UTC)
+    events = [
+        (1, Decimal("3000"), True, now - timedelta(days=3)),
+        (2, Decimal("2900"), False, now - timedelta(days=3)),
+        (2, Decimal("2800"), True, now - timedelta(days=1, hours=12)),
+        (1, Decimal("2700"), True, now - timedelta(hours=1)),
+    ]
+    # One price per day since the first record (the third day ends now), then now.
+    assert product_service.daily_best_prices(events, now) == [
+        Decimal("3000"),
+        Decimal("2800"),
+        Decimal("2700"),
+        Decimal("2700"),
+    ]
+    assert product_service.daily_best_prices([], now) == []
+
+
+@pytest.mark.parametrize(
+    ("current", "verdict"),
+    [
+        (Decimal("2800"), "good"),  # at its recent low
+        (Decimal("2840"), "good"),  # within 2% of the low
+        (Decimal("2950"), "normal"),
+        (Decimal("3200"), "wait"),  # over 5% above typical
+        (None, None),  # out of stock
+    ],
+)
+def test_price_verdict(current: Decimal | None, verdict: str | None) -> None:
+    now = datetime(2026, 11, 1, tzinfo=UTC)
+    daily = [Decimal("3000")] * 20 + [Decimal("2800")] * 5
+    assert product_service.price_verdict(current, daily, now - timedelta(days=30), now) == verdict
+
+
+def test_price_verdict_needs_history_and_movement() -> None:
+    now = datetime(2026, 11, 1, tzinfo=UTC)
+    daily = [Decimal("3000")] * 10 + [Decimal("2800")]
+    # Too little history to judge.
+    assert product_service.price_verdict(Decimal("2800"), daily, now - timedelta(days=10), now) is None
+    # A price that never moved is not a deal.
+    flat = [Decimal("3000")] * 30
+    assert product_service.price_verdict(Decimal("3000"), flat, now - timedelta(days=30), now) == "normal"
+
+
+@pytest.mark.asyncio
+async def test_catalog_reports_buy_verdict(
+    client: httpx.AsyncClient,
+    session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    _, product = await create_admin_product(client, session_factory)
+    now = datetime.now(UTC)
+    async with session_factory() as session:
+        store = Store(title="Store A", web_url="https://a.example")
+        session.add(store)
+        await session.flush()
+        listing = ProductListing(
+            product_id=product["id"],
+            store_id=store.id,
+            product_url="https://a.example/phone",
+            current_price=Decimal("2700.00"),
+            currency="GEL",
+            is_available=True,
+            last_checked_at=now,
+        )
+        session.add(listing)
+        await session.flush()
+        session.add_all(
+            [
+                PriceHist(listing_id=listing.id, price=Decimal("3000.00"), currency="GEL", recorded_at=now - timedelta(days=40)),
+                PriceHist(listing_id=listing.id, price=Decimal("2700.00"), currency="GEL", recorded_at=now - timedelta(days=2)),
+            ]
+        )
+        await session.commit()
+
+    item = (await client.get("/products")).json()["items"][0]
+    assert item["price_verdict"] == "good"
+    assert item["typical_price"] == "3000.00"
+    assert item["recent_low_price"] == "2700.00"
+    assert item["price_tracked_since"] is not None

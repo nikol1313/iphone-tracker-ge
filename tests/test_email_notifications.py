@@ -384,3 +384,23 @@ async def test_failed_delivery_is_left_pending_for_retry(
     assert attempts == 2
     assert alert is not None
     assert alert.notified_at is None
+
+
+@pytest.mark.asyncio
+async def test_back_in_stock_alert_email(smtp_configured: list[EmailMessage]) -> None:
+    await send_price_alert_notification(
+        email="buyer@example.com",
+        product_name="iPhone 17 Pro",
+        product_variant="256GB Blue",
+        target_price=None,
+        current_price=Decimal("3499.00"),
+        currency="GEL",
+        store_name="Zoommer",
+    )
+
+    [message] = smtp_configured
+    assert message["Subject"] == "Back in stock: iPhone 17 Pro for GEL 3,499.00"
+    text = message.get_body(("plain",)).get_content()
+    assert "back in stock" in text
+    assert "Price: GEL 3,499.00" in text
+    assert "Target price" not in text

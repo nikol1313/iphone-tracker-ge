@@ -1,6 +1,7 @@
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from statistics import median
 
 from sqlalchemy import Select, and_, func, or_, select
 from sqlalchemy.exc import IntegrityError
@@ -25,6 +26,68 @@ from app.services.normalization import (
 )
 
 PRICE_TREND_WINDOW = timedelta(days=7)
+# "Buy now or wait?" looks at the best price over this window...
+VERDICT_WINDOW = timedelta(days=90)
+# ...once there is this much history: fewer days can't tell a deal from a normal price.
+VERDICT_MIN_HISTORY = timedelta(days=14)
+# Within 2% of the window's low is "at its low"; 5% off the typical price is a real move.
+NEAR_LOW = Decimal("1.02")
+GOOD_BELOW_TYPICAL = Decimal("0.95")
+WAIT_ABOVE_TYPICAL = Decimal("1.05")
+CENT = Decimal("0.01")
+
+# (listing_id, price, is_available, recorded_at), oldest first.
+PriceEvent = tuple[int, Decimal, bool, datetime]
+
+
+def daily_best_prices(
+    events: list[PriceEvent], now: datetime, window: timedelta = VERDICT_WINDOW
+) -> list[Decimal]:
+    """Cheapest in-stock price at the end of each day in the window, and now.
+
+    A listing keeps its last recorded price and stock until its next record.
+    """
+    if not events:
+        return []
+    start = max(now - window, events[0][3])
+    days = (now - start).days
+    checkpoints = [start + timedelta(days=day) for day in range(1, days + 1)] + [now]
+    latest: dict[int, tuple[Decimal, bool]] = {}
+    best: list[Decimal] = []
+    index = 0
+    for checkpoint in checkpoints:
+        while index < len(events) and events[index][3] <= checkpoint:
+            listing_id, price, available, _ = events[index]
+            latest[listing_id] = (price, available)
+            index += 1
+        in_stock = [price for price, available in latest.values() if available]
+        if in_stock:
+            best.append(min(in_stock))
+    return best
+
+
+def price_verdict(
+    current: Decimal | None,
+    daily_best: list[Decimal],
+    tracked_since: datetime | None,
+    now: datetime,
+) -> str | None:
+    """good: at its recent low or well under its typical price; wait: well above it."""
+    if (
+        current is None
+        or not daily_best
+        or tracked_since is None
+        or now - tracked_since < VERDICT_MIN_HISTORY
+    ):
+        return None
+    typical = median(daily_best)
+    low = min(daily_best)
+    # A price that never moved is "normal", not a deal.
+    if current <= typical * GOOD_BELOW_TYPICAL or (low < typical and current <= low * NEAR_LOW):
+        return "good"
+    if current >= typical * WAIT_ABOVE_TYPICAL:
+        return "wait"
+    return "normal"
 
 
 def _lowest_price_expression():
@@ -184,6 +247,7 @@ async def with_price_trends(
                 PriceHist.listing_id,
                 PriceHist.price,
                 PriceHist.currency,
+                PriceHist.is_available,
                 PriceHist.recorded_at,
             )
             .join(ProductListing, ProductListing.id == PriceHist.listing_id)
@@ -195,29 +259,43 @@ async def with_price_trends(
         )
     ).all()
     currencies = {summary.id: summary.currency for summary in summaries}
-    cutoff = datetime.now(UTC) - PRICE_TREND_WINDOW
+    now = datetime.now(UTC)
+    cutoff = now - PRICE_TREND_WINDOW
     prices: dict[int, list[Decimal]] = defaultdict(list)
+    events: dict[int, list[PriceEvent]] = defaultdict(list)
     # Per product, each listing's latest price at the cutoff (rows are time-ordered).
     at_cutoff: dict[int, dict[int, Decimal]] = defaultdict(dict)
-    for product_id, listing_id, price, currency, recorded_at in rows:
+    for product_id, listing_id, price, currency, available, recorded_at in rows:
         if currency != currencies[product_id]:
             continue
         prices[product_id].append(price)
         if recorded_at.tzinfo is None:
             recorded_at = recorded_at.replace(tzinfo=UTC)
+        events[product_id].append((listing_id, price, available, recorded_at))
         if recorded_at <= cutoff:
             at_cutoff[product_id][listing_id] = price
 
-    return [
-        summary.model_copy(
-            update={
-                "price_week_ago": min(at_cutoff[summary.id].values(), default=None),
-                "lowest_price_ever": min(prices[summary.id], default=None),
-                "highest_price_ever": max(prices[summary.id], default=None),
-            }
+    updated = []
+    for summary in summaries:
+        history = events[summary.id]
+        tracked_since = history[0][3] if history else None
+        daily_best = daily_best_prices(history, now)
+        current = summary.lowest_price if summary.available_listing_count else None
+        verdict = price_verdict(current, daily_best, tracked_since, now)
+        updated.append(
+            summary.model_copy(
+                update={
+                    "price_week_ago": min(at_cutoff[summary.id].values(), default=None),
+                    "lowest_price_ever": min(prices[summary.id], default=None),
+                    "highest_price_ever": max(prices[summary.id], default=None),
+                    "price_verdict": verdict,
+                    "typical_price": median(daily_best).quantize(CENT) if verdict else None,
+                    "recent_low_price": min(daily_best) if verdict else None,
+                    "price_tracked_since": tracked_since,
+                }
+            )
         )
-        for summary in summaries
-    ]
+    return updated
 
 
 async def require_active_product(

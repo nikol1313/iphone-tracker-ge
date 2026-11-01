@@ -16,6 +16,8 @@
   --on-accent: #ffffff;
   --good: #4fc97a;
   --good-soft: #17301f;
+  --warn: #f2b84b;
+  --warn-soft: #33290f;
   --danger: #ff7b72;
   --shadow: 0 12px 32px rgba(0, 0, 0, .45);
   --font: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Georgian", "Helvetica Neue", Arial, sans-serif;
@@ -38,6 +40,8 @@
   --on-accent: #ffffff;
   --good: #157a3c;
   --good-soft: #e5f4ea;
+  --warn: #9a6700;
+  --warn-soft: #fbf3dc;
   --danger: #b42318;
   --shadow: 0 12px 32px rgba(22, 24, 29, .14);
 }

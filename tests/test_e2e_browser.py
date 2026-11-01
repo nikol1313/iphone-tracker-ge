@@ -122,14 +122,14 @@ def test_site_opens_in_georgian_and_switches_to_english(browser):
     page = browser.new_page()
     page.goto(SITE_URL)
     expect(page.locator("html")).to_have_attribute("lang", "ka")
-    expect(page.locator("#overviewTitle")).to_have_text("iPhone-ის ფასები საქართველოს მაღაზიებში")
+    expect(page.locator("#overviewTitle")).to_have_text("ყველა iPhone, ყველა ფასი, ერთ ადგილას")
 
     # Switching keeps you where you were on the page.
     page.wait_for_selector(".model-price")
     page.evaluate("window.scrollTo({ top: 600, behavior: 'instant' })")
     scrolled = page.evaluate("window.scrollY")
     page.click("#langToggle")
-    expect(page.locator("#overviewTitle")).to_have_text("iPhone prices across Georgian stores")
+    expect(page.locator("#overviewTitle")).to_have_text("Every iPhone, every price, one place")
     expect(page.locator("#langToggle")).to_have_text("ქართ")
     expect(page.locator(".model-price-meta").first).to_contain_text("In stock at")
     # Shorter English text above can nudge it a little, but it must not jump to the top.
@@ -190,7 +190,14 @@ def test_compare_two_phones_by_typing_their_models(page: Page):
         page.locator(f"#compare-{side}-search + .suggestions li").first.click()
         expect(page.locator(f"#compare-{side}-search")).to_have_value(f"iPhone {model}")
 
-    # Specs side by side, with a reasoned pick at the end.
+    # Specs side by side; the pick waits until we say what the phone is for.
     expect(page.locator(".spec-table").first).to_contain_text("Chip")
-    expect(page.locator(".compare-pick")).to_contain_text("Our pick")
+    expect(page.locator(".compare-pick")).to_contain_text("What will you mostly use the phone for?")
+    expect(page.locator(".compare-pick-headline")).to_have_count(0)
     assert "a=" in page.url and "b=" in page.url
+
+    page.locator('.compare-pick [data-use="gaming"]').click()
+    expect(page.locator(".compare-pick h2")).to_have_text("Our pick for gaming")
+    expect(page.locator('.compare-pick [data-use="gaming"]')).to_have_attribute("aria-pressed", "true")
+    expect(page.locator(".compare-pick-headline")).to_be_visible()
+    assert "use=gaming" in page.url
