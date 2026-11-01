@@ -33,6 +33,8 @@ from app.scraper.scrape_ispace import BASE_URL as ISPACE_BASE_URL
 from app.scraper.scrape_ispace import scrape_ispace
 from app.scraper.scrape_megatechnica import BASE_URL as MEGATECHNICA_BASE_URL
 from app.scraper.scrape_megatechnica import scrape_megatechnica
+from app.scraper.scrape_metromart import BASE_URL as METROMART_BASE_URL
+from app.scraper.scrape_metromart import scrape_metromart
 from app.scraper.scrape_pcshop import BASE_URL as PCSHOP_BASE_URL
 from app.scraper.scrape_pcshop import scrape_pcshop
 from app.scraper.scrape_zoommer import BASE_URL, scrape_zoommer
@@ -350,6 +352,10 @@ async def run_extra_ingestion() -> IngestionSummary:
 
 async def run_pcshop_ingestion() -> IngestionSummary:
     return await _run_store_ingestion("PCShop", PCSHOP_BASE_URL, scrape_pcshop)
+
+
+async def run_metromart_ingestion() -> IngestionSummary:
+    return await _run_store_ingestion("Metromart", METROMART_BASE_URL, scrape_metromart)
 
 
 async def main() -> None:

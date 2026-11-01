@@ -66,6 +66,7 @@ async def fetch_with_retries(
     store: str,
     error_type: type[RuntimeError],
     params: dict[str, int | str] | None = None,
+    json: object | None = None,
     max_attempts: int,
     backoff_seconds: float,
     request_delay_seconds: float,
@@ -79,7 +80,12 @@ async def fetch_with_retries(
             await asyncio.sleep(request_delay_seconds)
 
         try:
-            response = await client.get(url, params=params)
+            # A JSON body means a POST (e.g. an Odoo JSON-RPC call); otherwise a plain GET.
+            response = (
+                await client.post(url, params=params, json=json)
+                if json is not None
+                else await client.get(url, params=params)
+            )
             response.raise_for_status()
             return response
         except httpx.HTTPError as error:
