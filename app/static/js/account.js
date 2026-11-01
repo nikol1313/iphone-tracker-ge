@@ -1,7 +1,7 @@
 /* Sign-in state, tracked products, and profile actions. */
 import { $, api, escapeHtml, money, productName, showToast, state, variant } from "./core.js";
 import { renderProducts, updateSelectedActions } from "./catalog.js";
-import { t } from "./i18n.js";
+import { onLanguageChange, t } from "./i18n.js";
 
 export async function loadTracked() {
   updateAccount();
@@ -42,6 +42,11 @@ export function renderTracked() {
       </div>
     </div>`).join("")}</div>`;
 }
+
+onLanguageChange(() => {
+  updateAccount();
+  if (state.token) renderTracked();
+});
 
 export function updateAccount() {
   const button = $("#accountButton");

@@ -124,7 +124,36 @@ def test_site_opens_in_georgian_and_switches_to_english(browser):
     expect(page.locator("html")).to_have_attribute("lang", "ka")
     expect(page.locator("#overviewTitle")).to_have_text("iPhone-ის ფასები საქართველოს მაღაზიებში")
 
+    # Switching keeps you where you were on the page.
+    page.wait_for_selector(".model-price")
+    page.evaluate("window.scrollTo({ top: 600, behavior: 'instant' })")
+    scrolled = page.evaluate("window.scrollY")
     page.click("#langToggle")
     expect(page.locator("#overviewTitle")).to_have_text("iPhone prices across Georgian stores")
     expect(page.locator("#langToggle")).to_have_text("ქართ")
+    expect(page.locator(".model-price-meta").first).to_contain_text("In stock at")
+    # Shorter English text above can nudge it a little, but it must not jump to the top.
+    assert scrolled > 0
+    assert page.evaluate("window.scrollY") > scrolled / 2
     page.close()
+
+
+def test_search_waits_for_the_search_button(page: Page):
+    page.goto(SITE_URL + "/?page=products")
+    count = page.locator("#productCount")
+    expect(count).not_to_have_text("Loading…")
+    everything = count.inner_text()
+
+    # Typing alone leaves the list as it was.
+    page.fill("#searchInput", "iphone 15")
+    page.wait_for_timeout(300)
+    expect(count).to_have_text(everything)
+
+    # Pressing Search filters it.
+    page.click("#searchForm button[type=submit]")
+    expect(count).not_to_have_text(everything)
+    expect(page.locator("#productGrid [data-product-id]").first).to_contain_text("iPhone 15")
+
+    # Emptying the box brings every phone back.
+    page.fill("#searchInput", "")
+    expect(count).to_have_text(everything)

@@ -2,7 +2,7 @@
 import { $, api, relativeTime as relative, showToast, state } from "./core.js";
 import { loadProducts, renderOverview } from "./catalog.js";
 import { openAuth } from "./dialogs.js";
-import { t } from "./i18n.js";
+import { onLanguageChange, t } from "./i18n.js";
 
 const refresh = { lastRefreshedAt: null, availableAt: null, running: false };
 
@@ -56,6 +56,8 @@ async function refreshPrices() {
     renderRefresh();
   }
 }
+
+onLanguageChange(renderRefresh);
 
 export function bindRefresh() {
   $("#refreshButton").addEventListener("click", refreshPrices);

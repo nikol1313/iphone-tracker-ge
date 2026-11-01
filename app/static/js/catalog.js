@@ -1,6 +1,6 @@
 /* Catalog search, offer cards, charts, and retailer comparison. */
 import { $, $$, api, dateTime, dayDate, escapeHtml, money, productName, relativeTime, safeUrl, shortDate, state, variant, showToast } from "./core.js";
-import { t } from "./i18n.js";
+import { onLanguageChange, t } from "./i18n.js";
 
 const PAGE_LIMIT = 100;
 const INITIAL_VISIBLE = 12;
@@ -464,6 +464,16 @@ function renderListings(items) {
     </tr>`;
   }).join("");
 }
+
+// Redraw everything this module renders, keeping filters, scroll and the open phone.
+onLanguageChange(() => {
+  if (!state.products.length) return;
+  populateFilters();
+  renderOverview();
+  renderProducts();
+  updateSelectedActions();
+  if (state.selectedId != null) selectProduct(state.selectedId);
+});
 
 export function updateSelectedActions() {
   const tracked = state.tracked.some(item => item.product.id === state.selectedId);

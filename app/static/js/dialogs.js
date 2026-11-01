@@ -1,7 +1,7 @@
 /* Authentication, price alert, and notification forms. */
 import { $, $$, api, money, showToast, state } from "./core.js";
 import { loadTracked } from "./account.js";
-import { t } from "./i18n.js";
+import { onLanguageChange, t } from "./i18n.js";
 
 export function openAuth() {
   $("#authError").textContent = "";
@@ -328,6 +328,11 @@ function bindEmailForm() {
     }
   });
 }
+
+onLanguageChange(() => {
+  setAuthMode(state.authMode);
+  if (state.notificationSettings && $("#emailDialog").open) renderEmailStatus(state.notificationSettings);
+});
 
 export function bindDialogs() {
   $("#closeAuth").addEventListener("click", () => $("#authDialog").close());

@@ -1,7 +1,7 @@
 /* Compare page: two phones side by side, with prices per store and both price histories. */
 import { $, api, dayDate, escapeHtml, money, productName, safeUrl, showPage, state, variant } from "./core.js";
 import { bestPriceSeries, byModel, inStock } from "./catalog.js";
-import { t } from "./i18n.js";
+import { onLanguageChange, t } from "./i18n.js";
 
 const SIDES = ["a", "b"];
 
@@ -184,6 +184,10 @@ export function openCompareWith(productId) {
   showPage("compare", true);
   renderComparePage();
 }
+
+onLanguageChange(() => {
+  if (state.currentPage === "compare") renderComparePage();
+});
 
 export function bindCompare() {
   SIDES.forEach(side => {

@@ -1,7 +1,7 @@
-/* Georgian (default) and English text. Switching language saves the choice and reloads. */
+/* Georgian (default) and English text. Switching language re-renders in place. */
 const STORAGE_KEY = "iphoneTrackerLang";
 
-export const lang = (() => {
+export let lang = (() => {
   try {
     return localStorage.getItem(STORAGE_KEY) === "en" ? "en" : "ka";
   } catch {
@@ -9,7 +9,13 @@ export const lang = (() => {
   }
 })();
 // Dates and "3 hours ago" in the page language.
-export const locale = lang;
+export let locale = lang;
+const languageListeners = [];
+
+/* Run `render` after every language switch to redraw text built in JS. */
+export function onLanguageChange(render) {
+  languageListeners.push(render);
+}
 
 const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`;
 
@@ -489,11 +495,13 @@ export function translatePage(root = document) {
 }
 
 export function switchLanguage() {
+  lang = lang === "ka" ? "en" : "ka";
+  locale = lang;
   try {
-    localStorage.setItem(STORAGE_KEY, lang === "ka" ? "en" : "ka");
+    localStorage.setItem(STORAGE_KEY, lang);
   } catch {
-    // Without storage the choice can't persist; nothing to switch to.
-    return;
+    // The switch still applies to this visit.
   }
-  window.location.reload();
+  translatePage();
+  languageListeners.forEach(render => render());
 }

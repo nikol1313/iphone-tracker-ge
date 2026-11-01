@@ -1,5 +1,5 @@
 /* Shared state and browser-level helpers. */
-import { locale, t, translateServerMessage } from "./i18n.js";
+import { locale, onLanguageChange, t, translateServerMessage } from "./i18n.js";
 
 export const state = {
   products: [],
@@ -33,17 +33,18 @@ export const money = (value, currency = "GEL") => {
   return currency === "GEL" ? `${amount} ₾` : `${amount} ${currency}`;
 };
 // Browsers without Georgian locale data fall back to English in Intl; spell Georgian out ourselves.
-const georgianFallback = locale === "ka" && Intl.RelativeTimeFormat.supportedLocalesOf(["ka"]).length === 0;
+const intlLacksGeorgian = Intl.RelativeTimeFormat.supportedLocalesOf(["ka"]).length === 0;
+const georgianFallback = () => locale === "ka" && intlLacksGeorgian;
 const GEORGIAN_MONTHS = ["იან", "თებ", "მარ", "აპრ", "მაი", "ივნ", "ივლ", "აგვ", "სექ", "ოქტ", "ნოე", "დეკ"];
 const GEORGIAN_UNITS = { minute: ["წუთის წინ", "წუთში"], hour: ["საათის წინ", "საათში"], day: ["დღის წინ", "დღეში"] };
 const relativeUnit = (amount, unit) => {
-  if (!georgianFallback) return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(amount, unit);
+  if (!georgianFallback()) return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(amount, unit);
   const [past, future] = GEORGIAN_UNITS[unit];
   return `${Math.abs(amount)} ${amount < 0 ? past : future}`;
 };
 export const relativeTime = value => {
   const minutes = Math.round((new Date(value) - Date.now()) / 60000);
-  if (Math.abs(minutes) < 1) return georgianFallback ? "ახლახან" : new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(0, "minute");
+  if (Math.abs(minutes) < 1) return georgianFallback() ? "ახლახან" : new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(0, "minute");
   if (Math.abs(minutes) < 60) return relativeUnit(minutes, "minute");
   if (Math.abs(minutes) < 48 * 60) return relativeUnit(Math.round(minutes / 60), "hour");
   return relativeUnit(Math.round(minutes / 1440), "day");
@@ -51,21 +52,21 @@ export const relativeTime = value => {
 // "1 Nov" / "1 ნოე"
 export const shortDate = value => {
   const date = new Date(value);
-  return georgianFallback
+  return georgianFallback()
     ? `${date.getDate()} ${GEORGIAN_MONTHS[date.getMonth()]}`
     : date.toLocaleDateString(locale, { day: "numeric", month: "short" });
 };
 // "1 Nov 2026" / "1 ნოე 2026"
 export const dayDate = value => {
   const date = new Date(value);
-  return georgianFallback
+  return georgianFallback()
     ? `${shortDate(date)} ${date.getFullYear()}`
     : date.toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" });
 };
 export const dateTime = value => {
   if (!value) return t("notAvailable");
   const date = new Date(value);
-  if (!georgianFallback) {
+  if (!georgianFallback()) {
     return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(date);
   }
   const time = `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
@@ -100,6 +101,11 @@ export function pageFromLocation() {
   return pages.has(requestedPage) ? requestedPage : "overview";
 }
 
+function setPageTitle() {
+  document.title = `${t(pageTitleKeys[state.currentPage])} — iPhone Tracker`;
+}
+onLanguageChange(setPageTitle);
+
 export function showPage(page, updateHistory = false) {
   const nextPage = pages.has(page) ? page : "overview";
   state.currentPage = nextPage;
@@ -110,7 +116,7 @@ export function showPage(page, updateHistory = false) {
     if (isCurrent) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
   });
-  document.title = `${t(pageTitleKeys[nextPage])} — iPhone Tracker`;
+  setPageTitle();
   if (updateHistory) {
     const url = new URL(window.location.href);
     url.searchParams.set("page", nextPage);
