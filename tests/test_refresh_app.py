@@ -64,6 +64,7 @@ async def add_crawl_run(
 async def test_full_catalog_refresh_isolates_store_failures(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setattr(scraper_service, "refresh_model_specs", AsyncMock(return_value=0))
     zoommer = AsyncMock(side_effect=ZoommerCrawlError("upstream failed"))
     alta = AsyncMock(return_value=ingestion(42, 20))
     ispace = AsyncMock(return_value=ingestion(43, 10))
@@ -97,6 +98,7 @@ async def test_full_catalog_refresh_isolates_store_failures(
 async def test_full_catalog_refresh_rejects_concurrent_runs(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setattr(scraper_service, "refresh_model_specs", AsyncMock(return_value=0))
     started = asyncio.Event()
     release = asyncio.Event()
 
@@ -341,6 +343,7 @@ def test_openapi_contains_all_requested_routes():
         "/products/{product_id}/listings",
         "/products/{product_id}/prices",
         "/products/{product_id}/prices/extremes",
+        "/products/{product_id}/specs",
         "/tracked-products",
         "/tracked-products/{product_id}",
         "/products/{product_id}/alerts",

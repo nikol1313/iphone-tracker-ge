@@ -166,7 +166,7 @@ def test_search_hints_offer_models_and_search_when_chosen(page: Page):
     everything = count.inner_text()
 
     page.fill("#searchInput", "15")
-    hints = page.locator(".suggestions li")
+    hints = page.locator("#searchInput + .suggestions li")
     expect(hints.first).to_be_visible()
     labels = hints.locator("span").all_inner_texts()
     assert labels and all("15" in label for label in labels)
@@ -178,4 +178,19 @@ def test_search_hints_offer_models_and_search_when_chosen(page: Page):
     page.keyboard.press("Enter")
     expect(page.locator("#searchInput")).to_have_value(labels[0])
     expect(count).not_to_have_text(everything)
-    expect(page.locator(".suggestions")).to_be_hidden()
+    expect(page.locator("#searchInput + .suggestions")).to_be_hidden()
+
+
+def test_compare_two_phones_by_typing_their_models(page: Page):
+    page.goto(SITE_URL + "/?page=compare")
+    expect(page.locator("#compareResult")).to_contain_text("Choose two phones")
+
+    for side, model in (("a", "17 Pro Max"), ("b", "16")):
+        page.fill(f"#compare-{side}-search", model)
+        page.locator(f"#compare-{side}-search + .suggestions li").first.click()
+        expect(page.locator(f"#compare-{side}-search")).to_have_value(f"iPhone {model}")
+
+    # Specs side by side, with a reasoned pick at the end.
+    expect(page.locator(".spec-table").first).to_contain_text("Chip")
+    expect(page.locator(".compare-pick")).to_contain_text("Our pick")
+    assert "a=" in page.url and "b=" in page.url

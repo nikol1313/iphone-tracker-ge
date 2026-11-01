@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.models import CrawlRun
 from app.db.sess import SESSION
 from app.services.errors import RefreshCooldownError, RefreshInProgressError
+from app.services.spec_service import refresh_model_specs
 from app.services.zmr_inges import (
     IngestionSummary,
     run_alta_ingestion,
@@ -70,6 +71,12 @@ async def refresh_full_catalog() -> CatalogRefreshSummary:
             except Exception:
                 LOGGER.exception("%s refresh failed", store_title)
                 failed.append(store_title)
+
+        # Specs only feed the compare page; a failure here never fails the refresh.
+        try:
+            await refresh_model_specs()
+        except Exception:
+            LOGGER.exception("Model spec refresh failed")
 
     return CatalogRefreshSummary(
         scraped=sum(summary.scraped for summary in summaries),

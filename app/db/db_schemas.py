@@ -92,6 +92,16 @@ class EmailVerificationRequest(BaseModel):
     token: str = Field(min_length=1, max_length=2000)
 
 
+class ProductSpecsResponse(BaseModel):
+    product_id: int
+    model: str
+    storage: str | None = None
+    # English keys (chip, ram, display_size, refresh_rate, main_camera, …); empty when unknown.
+    specs: dict[str, str]
+    source_url: str | None = None
+    fetched_at: datetime | None = None
+
+
 class PasswordResetRequest(BaseModel):
     email: EmailStr
 

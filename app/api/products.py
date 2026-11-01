@@ -5,11 +5,12 @@ from fastapi import APIRouter, HTTPException, Query, Response, status
 from app.db.db_schemas import (
     Page,
     ProductCreate,
+    ProductSpecsResponse,
     ProductSummary,
     ProductUpdate,
 )
 from app.dependencies import CurrentAdmin, SessionDep
-from app.services import product_service
+from app.services import product_service, spec_service
 from app.services.errors import ConflictError, NotFoundError
 
 router = APIRouter(prefix="/products", tags=["products"])
@@ -59,6 +60,17 @@ async def get_product(
 ) -> ProductSummary:
     try:
         return await product_service.get_product_summary(session, product_id)
+    except NotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+
+
+@router.get("/{product_id}/specs", response_model=ProductSpecsResponse)
+async def get_product_specs(
+    product_id: int,
+    session: SessionDep,
+) -> ProductSpecsResponse:
+    try:
+        return await spec_service.get_product_specs(session, product_id)
     except NotFoundError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
 

@@ -190,9 +190,23 @@
           </div>
         </div>
         <div class="compare-pickers">
-          <label class="filter-field"><span data-i18n="compare.first">პირველი ტელეფონი</span><select id="compare-a"></select></label>
-          <button class="small-button" id="compareSwap" type="button" data-i18n="compare.swap">⇄ შეცვლა</button>
-          <label class="filter-field"><span data-i18n="compare.second">მეორე ტელეფონი</span><select id="compare-b"></select></label>
+          <div class="compare-slot">
+            <label for="compare-a-search" data-i18n="compare.first">პირველი ტელეფონი</label>
+            <div class="picker-search">
+              <svg aria-hidden="true"><use href="#i-search"/></svg>
+              <input id="compare-a-search" type="search" placeholder="მოდელი, მაგ. 17 Pro" data-i18n-attr="placeholder:compare.placeholder">
+            </div>
+            <div class="picker-options" id="compare-a-options"></div>
+          </div>
+          <span class="compare-vs" aria-hidden="true">vs</span>
+          <div class="compare-slot">
+            <label for="compare-b-search" data-i18n="compare.second">მეორე ტელეფონი</label>
+            <div class="picker-search">
+              <svg aria-hidden="true"><use href="#i-search"/></svg>
+              <input id="compare-b-search" type="search" placeholder="მოდელი, მაგ. 17 Pro" data-i18n-attr="placeholder:compare.placeholder">
+            </div>
+            <div class="picker-options" id="compare-b-options"></div>
+          </div>
         </div>
         <div id="compareResult" class="compare-result"></div>
       </section>

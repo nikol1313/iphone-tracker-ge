@@ -8,6 +8,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    JSON,
     Numeric,
     String,
     UniqueConstraint,
@@ -273,3 +274,20 @@ class PriceAlert(Base):
 
     user: Mapped["User"] = relationship(back_populates="alerts")
     product: Mapped["Product"] = relationship(back_populates="alerts")
+
+
+class ModelSpecs(Base):
+    """Specifications shared by every storage and color of one model (e.g. "iPhone 17 Pro")."""
+
+    __tablename__ = "model_specs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    model: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    # English keys from app/scraper/zoommer_specs.py; values are the store's text.
+    specs: Mapped[dict[str, str]] = mapped_column(JSON, nullable=False, default=dict)
+    source_url: Mapped[str] = mapped_column(String(500), nullable=False)
+    fetched_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        nullable=False,
+    )
