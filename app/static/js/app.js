@@ -5,6 +5,7 @@ import { loadTracked, logout, track } from "./account.js";
 import { bindDialogs, confirmEmailFromLink, openAlert, openAuth, openEmailSettings, openPasswordResetFromLink } from "./dialogs.js";
 import { bindRefresh, loadRefreshStatus } from "./refresh.js";
 import { switchLanguage, t, translatePage } from "./i18n.js";
+import { bindCompare, renderComparePage } from "./compare.js";
 
 function bindSearchAndCatalog() {
   const search = () => {
@@ -129,6 +130,7 @@ function bindNavigation() {
     if (pageLink && event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
       event.preventDefault();
       showPage(pageLink.dataset.pageLink, true);
+      if (pageLink.dataset.pageLink === "compare") renderComparePage();
       if (pageLink.hasAttribute("data-focus-search")) {
         requestAnimationFrame(() => $("#searchInput")?.focus());
       }
@@ -136,7 +138,10 @@ function bindNavigation() {
     }
     if (event.target.closest("[data-open-auth]")) openAuth();
   });
-  window.addEventListener("popstate", () => showPage(pageFromLocation()));
+  window.addEventListener("popstate", () => {
+    showPage(pageFromLocation());
+    if (state.currentPage === "compare") renderComparePage();
+  });
 }
 
 translatePage();
@@ -147,8 +152,11 @@ bindAccountMenu();
 bindNavigation();
 bindDialogs();
 bindRefresh();
+bindCompare();
 showPage(pageFromLocation());
-loadProducts();
+loadProducts().then(() => {
+  if (state.currentPage === "compare") renderComparePage();
+});
 loadRefreshStatus();
 loadTracked();
 updateSelectedActions();

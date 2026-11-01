@@ -107,3 +107,30 @@ tbody tr.best-offer td:first-child { box-shadow: inset 3px 0 0 var(--good); }
 .tracked-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .alert-value { color: var(--ink-2) !important; font-weight: 600; }
 .alert-value.reached { color: var(--good) !important; }
+
+/* Compare page */
+.compare-pickers { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: end; gap: 12px; margin-bottom: 20px; }
+.compare-pickers .filter-field { min-width: 0; }
+.compare-result h2 { margin: 28px 0 12px; font-size: 1.15rem; }
+.compare-verdict { margin: 0 0 16px; padding: 12px 14px; color: var(--ink); background: var(--surface-2); border-radius: var(--radius); font-weight: 600; }
+.compare-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.compare-card { padding: 16px; border: 1px solid var(--line); border-radius: 10px; }
+.compare-card .history-product-image { margin-bottom: 10px; }
+.compare-card h3 { margin: 0; font-size: 1rem; }
+.compare-card .muted { margin: 2px 0 10px; }
+.compare-extremes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0 0; }
+.compare-extremes dt { color: var(--muted); font-size: .78rem; }
+.compare-extremes dd { margin: 0; font-weight: 700; }
+.compare-result td a { color: var(--ink); text-decoration: none; }
+.compare-result td a:hover { text-decoration: underline; }
+.compare-chart { display: block; width: 100%; height: 300px; }
+.compare-chart text { stroke: none; }
+.compare-line { fill: none; stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+.compare-line-a, .compare-key-a::before { stroke: var(--accent); background: var(--accent); }
+.compare-line-b, .compare-key-b::before { stroke: #4ea1ff; background: #4ea1ff; }
+.compare-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 8px; padding: 0; list-style: none; color: var(--ink-2); font-size: .85rem; }
+.compare-legend li::before { display: inline-block; width: 14px; height: 3px; margin: 0 6px 3px 0; content: ""; border-radius: 2px; vertical-align: middle; }
+@media (max-width: 700px) {
+  .compare-pickers { grid-template-columns: 1fr; }
+  .compare-cards { grid-template-columns: 1fr; }
+}

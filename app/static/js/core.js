@@ -20,8 +20,8 @@ export const state = {
 
 export const $ = (selector, root = document) => root.querySelector(selector);
 export const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-export const pages = new Set(["overview", "products", "alerts"]);
-const pageTitleKeys = { overview: "title.overview", products: "title.products", alerts: "title.alerts" };
+export const pages = new Set(["overview", "products", "compare", "alerts"]);
+const pageTitleKeys = { overview: "title.overview", products: "title.products", compare: "title.compare", alerts: "title.alerts" };
 // "3,199 ₾" the way Georgian stores write it; tetri only when there are any.
 export const money = (value, currency = "GEL") => {
   if (value == null) return t("noPrice");

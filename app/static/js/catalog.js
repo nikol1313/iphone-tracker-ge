@@ -21,7 +21,7 @@ const savings = product => product.highest_price == null || product.lowest_price
 const isEsim = product => /\beSIM$/.test(product.model);
 const baseModel = product => product.model.replace(/\s+eSIM$/, "");
 // Newest generation first; within a model, the regular variant before its eSIM one.
-const byModel = (a, b) => naturalOrder.compare(baseModel(b), baseModel(a))
+export const byModel = (a, b) => naturalOrder.compare(baseModel(b), baseModel(a))
   || isEsim(a) - isEsim(b)
   || storageSize(a.storage) - storageSize(b.storage)
   || naturalOrder.compare(a.color || "", b.color || "");
@@ -115,7 +115,7 @@ export async function loadProducts() {
   }
 }
 
-const inStock = product => product.available_listing_count > 0 && product.lowest_price != null;
+export const inStock = product => product.available_listing_count > 0 && product.lowest_price != null;
 
 // "−150 ₾ this week" when the best price fell by at least 1% over the last week.
 function weekDrop(product) {
@@ -293,7 +293,7 @@ function renderAllTimePrices(extremes) {
 const CRAWL_WINDOW_MS = 15 * 60 * 1000;
 
 // Best in-stock price across stores over time, one point per change.
-function bestPriceSeries(items, currency) {
+export function bestPriceSeries(items, currency) {
   const ordered = items
     .filter(item => item.currency === currency)
     .sort((a, b) => new Date(a.recorded_at) - new Date(b.recorded_at));

@@ -8,6 +8,9 @@
 }
 @media (max-width: 700px) {
   .topbar { min-height: 56px; padding: 0 14px; gap: 2px; }
+  .brand-name, .nav-link { white-space: nowrap; }
+  .nav-link { padding: 8px 4px; font-size: .84rem; }
+  .account-actions { gap: 6px; }
   main { padding-top: 14px; }
   .intro, .search-band, .section, footer { width: calc(100% - 28px); }
   .intro h1 { font-size: 1.7rem; }
@@ -34,6 +37,8 @@
 }
 @media (max-width: 420px) {
   .product-grid { grid-template-columns: 1fr; }
+  /* Room for language, theme and account buttons: keep the logo, drop the wordmark. */
+  .brand-name { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

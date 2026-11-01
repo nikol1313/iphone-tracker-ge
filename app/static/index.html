@@ -38,6 +38,7 @@
     <nav aria-label="მთავარი ნავიგაცია" data-i18n-attr="aria-label:nav.label">
       <a class="nav-link active" href="/?page=overview" data-page-link="overview" data-i18n="nav.today">დღეს</a>
       <a class="nav-link" href="/?page=products" data-page-link="products" data-i18n="nav.products">ყველა iPhone</a>
+      <a class="nav-link" href="/?page=compare" data-page-link="compare" data-i18n="nav.compare">შედარება</a>
       <a class="nav-link" href="/?page=alerts" data-page-link="alerts" data-i18n="nav.alerts">ჩემი სია</a>
     </nav>
     <div class="account-actions">
@@ -141,6 +142,7 @@
             <div class="selected-actions">
               <button class="small-button" id="selectedTrackButton" type="button" data-i18n="detail.track">სიაში დამატება</button>
               <button class="small-button" id="selectedAlertButton" type="button" data-i18n="detail.setAlert">შეტყობინების დაყენება</button>
+              <button class="small-button" id="selectedCompareButton" type="button" data-i18n="detail.compare">შედარება</button>
             </div>
           </div>
         </div>
@@ -175,6 +177,23 @@
           </table>
         </div>
         <div id="storesEmpty" class="empty-inline" data-i18n="stores.empty" hidden>ეს ტელეფონი ახლა არცერთ მაღაზიაში არ იყიდება.</div>
+      </section>
+    </div>
+
+    <div class="page-view" data-page-view="compare" aria-labelledby="compareTitle" hidden>
+      <section class="section">
+        <div class="section-heading">
+          <div>
+            <h1 id="compareTitle" data-i18n="compare.title">ტელეფონების შედარება</h1>
+            <p class="section-description" data-i18n="compare.description">აირჩიეთ ორი ტელეფონი, რომ ნახოთ ფასები, სხვაობა და ფასის ისტორია ერთად.</p>
+          </div>
+        </div>
+        <div class="compare-pickers">
+          <label class="filter-field"><span data-i18n="compare.first">პირველი ტელეფონი</span><select id="compare-a"></select></label>
+          <button class="small-button" id="compareSwap" type="button" data-i18n="compare.swap">⇄ შეცვლა</button>
+          <label class="filter-field"><span data-i18n="compare.second">მეორე ტელეფონი</span><select id="compare-b"></select></label>
+        </div>
+        <div id="compareResult" class="compare-result"></div>
       </section>
     </div>
 
