@@ -13,7 +13,12 @@ Collects prices from 10+ retailers, records every price change, and tells you wh
 ---
 
 
-![iPhone Tracker demo](docs/demo.gif)
+
+https://github.com/user-attachments/assets/bba44bf1-6105-4a8c-bb27-97827d865f46
+
+
+
+
 
 ## Features
 
