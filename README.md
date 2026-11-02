@@ -1,6 +1,17 @@
-# iPhone Tracker (iphonetracker.ge)
+<div align="center">
+  
+# Iphonetracker.ge
 
-A Georgian iPhone price comparison and tracking app. It imports retailer listings, records price changes, and lets shoppers track products and set target-price or back-in-stock alerts.
+🌐 [iphonetracker.ge](https://iphonetracker.ge)
+
+**iPhone price comparison and tracking for Georgian stores**
+
+Collects prices from 10+ retailers, records every price change, and tells you when it's the right time to buy.
+
+</div>
+
+---
+
 
 ![iPhone Tracker demo](docs/demo.gif)
 
