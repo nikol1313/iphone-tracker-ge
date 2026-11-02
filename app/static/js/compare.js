@@ -314,6 +314,9 @@ function pickedPhone(detail) {
   const { product } = detail;
   // Listings come in-stock first, cheapest first.
   const offer = detail.listings.find(listing => listing.is_available);
+  // Buy now or wait: the same verdict as the phone's card, next to the decision. Skipped
+  // while there's too little price history for one; the card says so already.
+  const verdict = product.price_verdict ? buyVerdict(product) : "";
   return `
     <div class="compare-pick-phone">
       <p><strong>${escapeHtml(productName(product))}</strong> <span>${escapeHtml(variant(product))}</span></p>
@@ -321,6 +324,7 @@ function pickedPhone(detail) {
         <button class="primary-button" type="button" data-open-product="${product.id}">${escapeHtml(t("pick.viewInCatalog"))}</button>
         ${offer ? `<a class="small-button compare-pick-store" href="${escapeHtml(safeUrl(offer.product_url))}" target="_blank" rel="noopener noreferrer">${escapeHtml(t("pick.openAtStore", { store: offer.store_name, price: money(offer.current_price, offer.currency) }))} <svg aria-hidden="true"><use href="#i-external"/></svg></a>` : ""}
       </div>
+      ${verdict ? `<div class="compare-pick-timing"><p class="pick-label">${escapeHtml(t("pick.priceTiming"))}</p>${verdict}</div>` : ""}
     </div>`;
 }
 
@@ -339,11 +343,30 @@ function usePicker(chosen) {
     </fieldset>`;
 }
 
+// How the spec wins for this use split between the two phones: one bar, a share each.
+function scoreMeter(details, use) {
+  const scores = SIDES.map((_, side) => total(advantages(details, side, use)));
+  const sum = scores[0] + scores[1];
+  if (!sum) return "";
+  const firstShare = Math.round(scores[0] * 100 / sum);
+  const shares = [firstShare, 100 - firstShare];
+  const labels = details.map((detail, side) => `${fullName(detail.product)}: ${shares[side]}%`);
+  return `
+    <div class="score-meter">
+      <p class="pick-label">${escapeHtml(t("pick.score", { use: t(`use.${use.key}.for`) }))}</p>
+      <div class="score-bar" role="img" aria-label="${escapeHtml(labels.join(", "))}">${shares.map((share, side) => (share
+        ? `<span class="score-${SIDES[side]}" style="--share: ${share}%"></span>` : "")).join("")}
+      </div>
+      <ul class="score-labels">${labels.map((label, side) => `<li class="score-key-${SIDES[side]}">${escapeHtml(label)}</li>`).join("")}</ul>
+      <p class="muted score-note">${escapeHtml(t("pick.scoreNote"))}</p>
+    </div>`;
+}
+
 // Where each phone is better than the other, side by side.
 function edgeLists(details, use) {
   const useFor = t(`use.${use.key}.for`);
-  const item = edge => `
-    <li class="${edge.weight ? "" : "edge-minor"}">${escapeHtml(edge.text)}${edge.key
+  const item = (edge, index) => `
+    <li class="${edge.weight ? "" : "edge-minor"}" style="--i: ${index}">${escapeHtml(edge.text)}${edge.key
       ? ` <span class="edge-tag">${escapeHtml(t("pick.keyFor", { use: useFor }))}</span>`
       : edge.weight ? "" : ` <span class="edge-note">(${escapeHtml(t("pick.minorFor", { use: useFor }))})</span>`}</li>`;
   return `
@@ -358,23 +381,82 @@ function edgeLists(details, use) {
     </div>`;
 }
 
-// The pick waits until the visitor says what the phone is for.
-function pickBox(details) {
+// "Thinking" lines shown before a first pick: the specs that matter most for the use, then the price.
+function thinkingSteps(details, use) {
+  const specs = ROWS
+    .filter(row => row.key !== "price" && weightFor(row, use) > 0 && details.every(detail => row.show(detail)))
+    .sort((x, y) => weightFor(y, use) - weightFor(x, use))
+    .slice(0, 3)
+    .map(row => t("pick.checking", { spec: t(`spec.${row.key}`), a: row.show(details[0]), b: row.show(details[1]) }));
+  const gap = Math.abs(priceOf(details[0].product) - priceOf(details[1].product));
+  return [...specs, t("pick.weighingPrice", { amount: money(gap) })];
+}
+
+function thinkingBox(details, use) {
+  return `
+    <div class="pick-thinking" role="status">
+      <div class="pick-thinking-head"><span class="pick-spinner" aria-hidden="true"></span>${escapeHtml(t("pick.thinking"))}</div>
+      <ol class="pick-steps">${thinkingSteps(details, use).map((step, index) => `
+        <li style="--step: ${index}">${escapeHtml(step)}</li>`).join("")}
+      </ol>
+      <div class="pick-progress" aria-hidden="true"><span></span></div>
+    </div>`;
+}
+
+/*
+ * The pick waits until the visitor says what the phone is for. `thinking` shows the
+ * analysing animation in place of the result; `reveal` fades the result in after it.
+ */
+function pickBox(details, { thinking = false, reveal = false } = {}) {
   const use = chosenUse();
-  const pick = use && recommend(details, use);
-  const result = pick ? `
+  const pick = use && !thinking && recommend(details, use);
+  const result = thinking ? thinkingBox(details, use) : pick ? `
+    <div class="${reveal ? "pick-reveal" : ""}">
       ${pick.side != null ? pickedPhone(details[pick.side]) : ""}
       <p class="compare-pick-headline">${escapeHtml(pick.headline)}</p>
       ${pick.tradeoff ? `<p class="muted">${escapeHtml(pick.tradeoff)}</p>` : ""}
+      ${scoreMeter(details, use)}
       ${edgeLists(details, use)}
-      ${details.some(detail => !Object.keys(detail.specs).length) ? `<p class="muted">${escapeHtml(t("pick.missingSpecs"))}</p>` : ""}`
+      ${details.some(detail => !Object.keys(detail.specs).length) ? `<p class="muted">${escapeHtml(t("pick.missingSpecs"))}</p>` : ""}
+    </div>`
     : `<p class="muted">${escapeHtml(t("use.prompt"))}</p>`;
   return `
     <section class="compare-pick" id="comparePick" aria-labelledby="comparePickTitle" aria-live="polite">
-      <h2 id="comparePickTitle">${escapeHtml(use ? t("pick.titleFor", { use: t(`use.${use.key}.for`) }) : t("pick.title"))}</h2>
+      <div class="compare-pick-head">
+        <h2 id="comparePickTitle">${escapeHtml(use ? t("pick.titleFor", { use: t(`use.${use.key}.for`) }) : t("pick.title"))}</h2>
+        <button class="small-button" type="button" data-share>${escapeHtml(t("compare.share"))}</button>
+      </div>
       ${usePicker(use)}
       ${result}
     </section>`;
+}
+
+// How long the "thinking" animation runs before a pick appears for the first time.
+const THINKING_MS = 1300;
+// Phone pair + use combinations already worked out: choosing one again answers at once.
+const pickedBefore = new Set();
+const pickKey = (details, useKey) => `${details.map(detail => detail.product.id).join(":")}:${useKey}`;
+let pickToken = 0;
+
+function drawPick(details, options) {
+  const focused = document.activeElement?.closest?.("#comparePick [data-use]")?.dataset.use;
+  $("#comparePick").outerHTML = pickBox(details, options);
+  if (focused) $(`#comparePick [data-use="${focused}"]`).focus();
+}
+
+// Show the pick for a use: instantly if worked out before, else after a short "thinking" pause.
+function choosePick(useKey) {
+  const details = shownDetails;
+  const token = ++pickToken;
+  saveUse(useKey);
+  const key = pickKey(details, useKey);
+  if (pickedBefore.has(key)) return drawPick(details);
+  drawPick(details, { thinking: true });
+  setTimeout(() => {
+    if (token !== pickToken || details !== shownDetails) return;
+    pickedBefore.add(key);
+    drawPick(details, { reveal: true });
+  }, THINKING_MS);
 }
 
 let renderToken = 0;
@@ -392,6 +474,10 @@ async function drawComparison(details, token = ++renderToken) {
   await Promise.race([Promise.all(decoded), new Promise(resolve => setTimeout(resolve, 1000))]);
   if (token !== renderToken) return;
   shownDetails = details;
+  // A pick already on screen (from the address bar or before a redraw) counts as worked out.
+  pickToken++;
+  const use = chosenUse();
+  if (use) pickedBefore.add(pickKey(details, use.key));
   const result = $("#compareResult");
   result.removeAttribute("aria-busy");
   result.replaceChildren(...next.childNodes);
@@ -410,12 +496,87 @@ function comparisonHtml(details) {
 }
 
 // A message in place of the comparison; it also cancels any comparison still loading.
-function showMessage(text) {
+function showMessage(text, extra = "") {
   renderToken++;
   shownDetails = null;
   const result = $("#compareResult");
   result.removeAttribute("aria-busy");
-  result.innerHTML = `<p class="empty-inline">${escapeHtml(text)}</p>`;
+  result.innerHTML = `<p class="empty-inline">${escapeHtml(text)}</p>${extra}`;
+}
+
+// The address bar holds both phones and the use, so the link reopens this exact comparison.
+async function copyLink(button) {
+  const url = window.location.href;
+  try {
+    await navigator.clipboard.writeText(url);
+  } catch {
+    window.prompt(t("compare.copyManually"), url);
+    return;
+  }
+  button.textContent = t("compare.copied");
+  setTimeout(() => { button.textContent = t("compare.share"); }, 2000);
+}
+
+/* ---------- suggestions ---------- */
+
+// "iPhone 17 Pro eSIM" is the same phone as "iPhone 17 Pro" for comparing.
+const family = model => model.replace(/\s+eSIM$/i, "");
+
+// The cheapest in-stock phone of each family, cheapest first; the plain model over its eSIM one.
+function familyPhones() {
+  const cheapest = new Map();
+  const rank = product => [product.model !== family(product.model), priceOf(product)];
+  for (const product of state.products.filter(inStock)) {
+    const current = cheapest.get(family(product.model));
+    const [esim, price] = rank(product);
+    if (!current || esim < rank(current)[0] || (esim === rank(current)[0] && price < rank(current)[1])) {
+      cheapest.set(family(product.model), product);
+    }
+  }
+  return [...cheapest.values()].sort((x, y) => priceOf(x) - priceOf(y));
+}
+
+const SUGGESTIONS_SHOWN = 4;
+
+/*
+ * With one phone chosen: the other families closest to it in price. With none: the
+ * neighbouring families whose prices are closest, the hardest calls to make alone.
+ */
+function suggestions(ids) {
+  const phones = familyPhones();
+  const chosenSide = ids.findIndex(id => id != null);
+  let pairs;
+  let title;
+  if (chosenSide >= 0) {
+    const chosen = productById(ids[chosenSide]);
+    title = t("compare.rivals", { name: productName(chosen) });
+    pairs = phones
+      .filter(product => family(product.model) !== family(chosen.model))
+      .sort((x, y) => Math.abs(priceOf(x) - priceOf(chosen)) - Math.abs(priceOf(y) - priceOf(chosen)))
+      .slice(0, SUGGESTIONS_SHOWN)
+      .map(rival => ({ ids: chosenSide === 0 ? [chosen.id, rival.id] : [rival.id, chosen.id], label: t("compare.vsOne", { name: productName(rival) }) }));
+  } else {
+    title = t("compare.suggested");
+    const gap = ([x, y]) => (priceOf(y) - priceOf(x)) / priceOf(x);
+    pairs = phones.slice(1).map((product, index) => [phones[index], product])
+      .sort((x, y) => gap(x) - gap(y))
+      .slice(0, SUGGESTIONS_SHOWN)
+      .map(pair => ({ ids: pair.map(product => product.id), label: pair.map(productName).join(" vs ") }));
+  }
+  if (!pairs.length) return "";
+  return `
+    <div class="compare-suggestions">
+      <p class="pick-label">${escapeHtml(title)}</p>
+      <div class="chip-row">${pairs.map(pair => `
+        <button class="chip" type="button" data-pair="${pair.ids.join(",")}">${escapeHtml(pair.label)}</button>`).join("")}
+      </div>
+    </div>`;
+}
+
+function setPair(ids) {
+  saveSelection(ids);
+  SIDES.forEach((side, index) => renderPicker(side, ids[index]));
+  renderComparison(ids);
 }
 
 /*
@@ -426,7 +587,7 @@ function showMessage(text) {
 async function renderComparison(ids) {
   const result = $("#compareResult");
   const products = ids.map(productById);
-  if (products.some(product => !product)) return showMessage(t("compare.prompt"));
+  if (products.some(product => !product)) return showMessage(t("compare.prompt"), suggestions(ids));
   if (products[0].id === products[1].id) return showMessage(t("compare.samePhone"));
   const token = ++renderToken;
   if (!shownDetails) result.innerHTML = `<p class="loading-state">${escapeHtml(t("loading"))}</p>`;
@@ -484,6 +645,11 @@ export function bindCompare() {
         if (product) setSide(side, product.id);
       },
     });
+    // Emptying the box (typing it away or its × button) drops that phone from the comparison
+    // and the address bar, so a refresh doesn't bring it back.
+    $(`#compare-${side}-search`).addEventListener("input", event => {
+      if (!event.target.value.trim() && pickerIds()[SIDES.indexOf(side)] != null) setSide(side, null);
+    });
     $(`#compare-${side}-options`).addEventListener("click", event => {
       const chip = event.target.closest(".chip");
       const current = productById(pickerIds()[SIDES.indexOf(side)]);
@@ -497,12 +663,11 @@ export function bindCompare() {
   });
   $("#compareResult").addEventListener("click", event => {
     const useButton = event.target.closest("[data-use]");
-    if (useButton && shownDetails) {
-      saveUse(useButton.dataset.use);
-      $("#comparePick").outerHTML = pickBox(shownDetails);
-      $(`#comparePick [data-use="${useButton.dataset.use}"]`).focus();
-      return;
-    }
+    if (useButton && shownDetails) return choosePick(useButton.dataset.use);
+    const shareButton = event.target.closest("[data-share]");
+    if (shareButton) return copyLink(shareButton);
+    const pairButton = event.target.closest("[data-pair]");
+    if (pairButton) return setPair(pairButton.dataset.pair.split(",").map(Number));
     const button = event.target.closest("[data-open-product]");
     if (button) openProductInCatalog(button.dataset.openProduct);
   });
