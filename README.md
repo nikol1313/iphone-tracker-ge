@@ -2,6 +2,8 @@
 
 A Georgian iPhone price comparison and tracking app. It imports retailer listings, records price changes, and lets shoppers track products and set target-price or back-in-stock alerts.
 
+![iPhone Tracker demo](docs/demo.gif)
+
 ## Features
 
 - Search the iPhone catalog by model and variant.
