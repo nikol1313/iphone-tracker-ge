@@ -332,7 +332,6 @@ async def test_lifespan_starts_and_cancels_scheduler(
 
 def test_openapi_contains_all_requested_routes():
     expected = {
-        "/",
         "/auth/register",
         "/auth/login",
         "/auth/password-reset",

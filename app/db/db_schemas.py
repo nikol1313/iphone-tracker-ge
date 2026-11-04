@@ -193,6 +193,7 @@ class ProductSummary(ProductResponse):
     # Most expensive available offer in the lowest price's currency.
     highest_price: Decimal | None = None
     # Lowest price across listings PRICE_TREND_WINDOW ago, for "price drop" badges.
+    price_day_ago: Decimal | None = None
     price_week_ago: Decimal | None = None
     lowest_price_ever: Decimal | None = None
     highest_price_ever: Decimal | None = None

@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /auth/
+Disallow: /alerts
+Disallow: /tracked-products
+Disallow: /notification-settings
+
+Sitemap: https://iphonetracker.ge/sitemap.xml

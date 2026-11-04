@@ -83,6 +83,14 @@ main { min-height: calc(100vh - 150px); padding: 28px 0 0; }
 .count-label, .muted { margin-bottom: 2px; color: var(--muted); font-size: .82rem; }
 
 footer { width: min(1180px, calc(100% - 56px)); display: flex; justify-content: space-between; gap: 20px; margin: 0 auto; padding: 20px 2px 32px; color: var(--muted); font-size: .8rem; }
+.footer-links { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+footer a { color: inherit; }
+footer a:hover { color: var(--ink); }
+.prose { max-width: 720px; }
+.prose h1 { font-size: 1.6rem; margin: 0 0 12px; }
+.prose h3 { font-size: 1rem; margin: 20px 0 4px; }
+.prose p { margin: 0 0 10px; line-height: 1.6; }
+.prose a { color: var(--accent); }
 
 /* Suggestion list under a combobox input (search, compare pickers). */
 .suggestions { position: absolute; z-index: 30; top: calc(100% + 6px); right: 0; left: 0; max-height: 320px; margin: 0; padding: 6px; overflow-y: auto; list-style: none; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 10px; box-shadow: var(--shadow); }

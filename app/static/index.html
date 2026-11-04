@@ -5,21 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="iPhone-ის ყველაზე დაბალი ფასები საქართველოს მაღაზიებში — Zoommer, Alta, iSpace, Elit, Megatechnica, Extra, PCShop და Metromart — ფასის ისტორიით და დაკლების შეტყობინებებით.">
   <meta name="theme-color" content="#1b1c1e">
+  <!--server-meta-->
   <title>iPhone-ის ფასები საქართველოში — iPhone Tracker</title>
   <script>
     try { document.documentElement.dataset.theme = localStorage.getItem("priceMonitorTheme") === "light" ? "light" : "dark"; } catch { document.documentElement.dataset.theme = "dark"; }
-    try { if (localStorage.getItem("iphoneTrackerLang") === "en") document.documentElement.lang = "en"; } catch {}
+    // The HTML is written in Georgian; hide it until app.js has translated it, so English
+    // readers don't see Georgian flash first. The timer shows it anyway if the script fails.
+    try {
+      if (localStorage.getItem("iphoneTrackerLang") === "en") {
+        document.documentElement.lang = "en";
+        document.documentElement.dataset.translating = "";
+        setTimeout(() => delete document.documentElement.dataset.translating, 1500);
+      }
+    } catch {}
   </script>
+  <style>html[data-translating] body { visibility: hidden; }</style>
   <link rel="icon" href="/static/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16.png">
   <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
-  <link rel="stylesheet" href="/static/css/base.css?v=20261101-4">
-  <link rel="stylesheet" href="/static/css/shell.css?v=20261101-4">
-  <link rel="stylesheet" href="/static/css/catalog.css?v=20261101-4">
-  <link rel="stylesheet" href="/static/css/overlays.css?v=20261101-4">
-  <link rel="stylesheet" href="/static/css/responsive.css?v=20261101-4">
-  <script type="module" src="/static/js/app.js?v=20261101-4"></script>
+  <link rel="stylesheet" href="/static/css/base.css?v=20261104-1">
+  <link rel="stylesheet" href="/static/css/shell.css?v=20261104-1">
+  <link rel="stylesheet" href="/static/css/catalog.css?v=20261104-1">
+  <link rel="stylesheet" href="/static/css/overlays.css?v=20261104-1">
+  <link rel="stylesheet" href="/static/css/responsive.css?v=20261104-1">
+  <script type="module" src="/static/js/app.js?v=20261104-1"></script>
 </head>
 <body>
   <svg class="icon-sprite" aria-hidden="true">
@@ -62,6 +72,15 @@
         <h1 id="overviewTitle" data-i18n-html="intro.title">ყველა iPhone, ყველა ფასი, <span class="intro-accent">ერთ ადგილას</span></h1>
         <p class="intro-lead" data-i18n="intro.lead">შეადარეთ, აირჩიეთ და იყიდეთ იქ, სადაც ყველაზე იაფია.</p>
         <p class="intro-stats" id="overviewStats" role="status"></p>
+      </section>
+      <section class="section" id="dayChangesSection" hidden>
+        <div class="section-heading">
+          <div>
+            <h2 data-i18n="day.title">ბოლო 24 საათის ცვლილებები</h2>
+            <p class="section-description" data-i18n="day.description">ტელეფონები, რომელთა საუკეთესო ფასი შეიცვალა ბოლო 24 საათში.</p>
+          </div>
+        </div>
+        <ul id="dayChanges" class="model-prices"></ul>
       </section>
       <section class="section" id="weeklyDropsSection" hidden>
         <div class="section-heading">
@@ -224,11 +243,36 @@
         <div id="trackedContent" class="account-panel"></div>
       </section>
     </div>
+    <div class="page-view" data-page-view="about" aria-labelledby="aboutTitle" hidden>
+      <section class="section prose">
+        <h1 id="aboutTitle" data-i18n="about.title">iPhone Tracker.ge-ს შესახებ</h1>
+        <p data-i18n="about.body">iPhone Tracker.ge ადარებს iPhone-ის ფასებს საქართველოს მაღაზიებში: Zoommer, Alta, iSpace, Elit Electronics, Megatechnica, Extra.ge, PCShop და Metromart. ფასები მაღაზიების საიტებიდან დღეში ორჯერ გროვდება. საიტი არცერთ მაღაზიასთან არ არის დაკავშირებული და ტელეფონებს არ ყიდის.</p>
+        <p data-i18n-html="about.contact">კითხვები, არასწორი ფასი ან ახალი მაღაზიის დამატება: <a href="mailto:avsajanishvilinikol@gmail.com">avsajanishvilinikol@gmail.com</a></p>
+      </section>
+      <section class="section prose" id="privacy">
+        <h2 data-i18n="privacy.title">კონფიდენციალურობის პოლიტიკა</h2>
+        <h3 data-i18n="privacy.collectTitle">რა ინფორმაცია გროვდება</h3>
+        <p data-i18n="privacy.collect">არაფერი, თუ ანგარიშს არ შექმნით. ანგარიშის შემთხვევაში: თქვენი ელფოსტა, პაროლი (ინახება მხოლოდ ცალმხრივი ჰეშის სახით), შეტყობინებებისთვის არჩეული ელფოსტა და ტელეფონები, რომლებსაც ადევნებთ თვალს, სამიზნე ფასებით.</p>
+        <h3 data-i18n="privacy.useTitle">როგორ გამოიყენება</h3>
+        <p data-i18n="privacy.use">მხოლოდ ანგარიშზე შესასვლელად და თქვენ მიერ მოთხოვნილი ფასის შეტყობინებების გასაგზავნად. ინფორმაცია არ იყიდება და არავის გადაეცემა. საიტზე არ არის რეკლამა, ანალიტიკა ან თვალთვალის ქუქი-ფაილები.</p>
+        <h3 data-i18n="privacy.browserTitle">რა ინახება თქვენს ბრაუზერში</h3>
+        <p data-i18n="privacy.browser">არჩეული თემა და ენა (localStorage) და ანგარიშზე შესვლა, სანამ ჩანართს არ დახურავთ (sessionStorage). საიტი ქუქი-ფაილებს არ იყენებს.</p>
+        <h3 data-i18n="privacy.serverTitle">სერვერი და სხვა სერვისები</h3>
+        <p data-i18n="privacy.server">სერვერი ხედავს თქვენს IP მისამართს, მოკლე დროით იყენებს მას განმეორებითი შესვლის მცდელობების შესაზღუდად და შეიძლება შეინახოს ლოგებში. საიტი მუშაობს Oracle Cloud-ზე, ფრანკფურტში. ტელეფონების ფოტოები იტვირთება მაღაზიების საიტებიდან, ამიტომ ამ მაღაზიებს შეუძლიათ დაინახონ თქვენი IP მისამართი. შეტყობინებები იგზავნება ელფოსტის სერვისის მეშვეობით.</p>
+        <h3 data-i18n="privacy.rightsTitle">მონაცემების ნახვა ან წაშლა</h3>
+        <p data-i18n-html="privacy.rights">თქვენი მონაცემების ასლის მისაღებად ან ანგარიშის წასაშლელად მოგვწერეთ: <a href="mailto:avsajanishvilinikol@gmail.com">avsajanishvilinikol@gmail.com</a>. მოთხოვნა შესრულდება 30 დღის განმავლობაში.</p>
+        <p class="section-description" data-i18n="privacy.updated">ბოლო განახლება: 2026 წლის 4 ნოემბერი.</p>
+      </section>
+    </div>
   </main>
 
   <footer>
     <span data-i18n="footer.disclaimer">ფასები აღებულია მაღაზიების საიტებიდან და შეიძლება მოძველებული იყოს. ყიდვამდე გადაამოწმეთ მაღაზიაში.</span>
-    <span data-i18n="footer.author">ავტორი: ნიკუშა ავსაჯანიშვილი</span>
+    <span class="footer-links">
+      <a href="/?page=about" data-page-link="about" data-i18n="footer.about">ჩვენ შესახებ და კონფიდენციალურობა</a>
+      <a href="mailto:avsajanishvilinikol@gmail.com" data-i18n="footer.contact">კონტაქტი</a>
+      <span data-i18n="footer.author">ავტორი: ნიკუშა ავსაჯანიშვილი</span>
+    </span>
   </footer>
 
   <dialog id="authDialog">

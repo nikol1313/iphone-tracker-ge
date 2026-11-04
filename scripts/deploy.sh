@@ -18,6 +18,13 @@ main() {
 	# --wait fails the deploy if a container doesn't become healthy.
 	docker compose up -d --build --remove-orphans --wait
 
+	# nginx.conf and the Caddyfile are mounted files, so a change to them alone
+	# doesn't recreate the containers; reload them so the new config is live.
+	docker compose exec -T nginx nginx -s reload
+	if docker compose ps --services --status running | grep -qx caddy; then
+		docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile
+	fi
+
 	docker image prune -f >/dev/null
 	echo "==> Deployed"
 }

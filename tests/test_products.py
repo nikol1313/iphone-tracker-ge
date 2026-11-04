@@ -300,6 +300,8 @@ async def test_catalog_reports_price_trends(
         assert item["lowest_price"] == "2700.00"
         # A week ago store A was at 3100 and store B at 3000.
         assert item["price_week_ago"] == "3000.00"
+        # Both latest prices were recorded just over 24 hours ago.
+        assert item["price_day_ago"] == "2700.00"
         assert item["lowest_price_ever"] == "2700.00"
         assert item["highest_price_ever"] == "3300.00"
 

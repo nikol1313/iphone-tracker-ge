@@ -2,8 +2,7 @@ import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
 
-from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse
+from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app.api import (
@@ -11,6 +10,7 @@ from app.api import (
     auth,
     listings,
     notification_settings,
+    pages,
     prices,
     products,
     refresh,
@@ -43,9 +43,10 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(
     title="iPhone Price Monitor API",
     version="0.1.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
-    openapi_url="/openapi.json",
+    # The API map stays private in production.
+    docs_url=None if settings.PROD else "/docs",
+    redoc_url=None if settings.PROD else "/redoc",
+    openapi_url=None if settings.PROD else "/openapi.json",
     lifespan=lifespan,
 )
 
@@ -58,11 +59,6 @@ app.include_router(tracked_products.router)
 app.include_router(alerts.router)
 app.include_router(notification_settings.router)
 app.include_router(refresh.router)
+app.include_router(pages.router)
 
 app.mount("/static", StaticFiles(directory="app/static", html=True), name="static")
-
-
-@app.get("/")
-async def serve_index(request: Request) -> FileResponse:
-    return FileResponse("app/static/index.html")
-

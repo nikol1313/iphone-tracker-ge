@@ -26,6 +26,8 @@ from app.services.normalization import (
 )
 
 PRICE_TREND_WINDOW = timedelta(days=7)
+# The Today page's "last 24 hours" list.
+RECENT_CHANGE_WINDOW = timedelta(hours=24)
 # "Buy now or wait?" looks at the best price over this window...
 VERDICT_WINDOW = timedelta(days=90)
 # ...once there is this much history: fewer days can't tell a deal from a normal price.
@@ -261,10 +263,12 @@ async def with_price_trends(
     currencies = {summary.id: summary.currency for summary in summaries}
     now = datetime.now(UTC)
     cutoff = now - PRICE_TREND_WINDOW
+    day_cutoff = now - RECENT_CHANGE_WINDOW
     prices: dict[int, list[Decimal]] = defaultdict(list)
     events: dict[int, list[PriceEvent]] = defaultdict(list)
     # Per product, each listing's latest price at the cutoff (rows are time-ordered).
     at_cutoff: dict[int, dict[int, Decimal]] = defaultdict(dict)
+    at_day_cutoff: dict[int, dict[int, Decimal]] = defaultdict(dict)
     for product_id, listing_id, price, currency, available, recorded_at in rows:
         if currency != currencies[product_id]:
             continue
@@ -274,6 +278,8 @@ async def with_price_trends(
         events[product_id].append((listing_id, price, available, recorded_at))
         if recorded_at <= cutoff:
             at_cutoff[product_id][listing_id] = price
+        if recorded_at <= day_cutoff:
+            at_day_cutoff[product_id][listing_id] = price
 
     updated = []
     for summary in summaries:
@@ -285,6 +291,7 @@ async def with_price_trends(
         updated.append(
             summary.model_copy(
                 update={
+                    "price_day_ago": min(at_day_cutoff[summary.id].values(), default=None),
                     "price_week_ago": min(at_cutoff[summary.id].values(), default=None),
                     "lowest_price_ever": min(prices[summary.id], default=None),
                     "highest_price_ever": max(prices[summary.id], default=None),

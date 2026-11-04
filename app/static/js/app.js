@@ -1,5 +1,5 @@
 /* Connect the page controls to their feature modules. */
-import { $, $$, pageFromLocation, showPage, state } from "./core.js";
+import { $, $$, pageFromLocation, productIdFromLocation, showPage, state } from "./core.js";
 import { applyFilters, loadProducts, openProductInCatalog, renderOverview, renderProducts, searchSuggestions, selectProduct, updateSelectedActions } from "./catalog.js";
 import { attachSuggestions } from "./combobox.js";
 import { loadTracked, logout, track } from "./account.js";
@@ -72,7 +72,7 @@ function bindSearchAndCatalog() {
     // Folding up from the bottom of a long list: bring its top back into view.
     if (!state.modelsExpanded) $("#modelPrices").closest(".section").scrollIntoView({ behavior: "smooth", block: "start" });
   });
-  ["#modelPrices", "#weeklyDrops"].forEach(selector => {
+  ["#modelPrices", "#weeklyDrops", "#dayChanges"].forEach(selector => {
     $(selector).addEventListener("click", event => {
       const row = event.target.closest(".model-price");
       if (row) openModel(row);
@@ -156,10 +156,12 @@ function bindNavigation() {
   window.addEventListener("popstate", () => {
     showPage(pageFromLocation());
     if (state.currentPage === "compare") renderComparePage();
+    openLinkedProduct();
   });
 }
 
 translatePage();
+delete document.documentElement.dataset.translating;
 $("#langToggle").addEventListener("click", switchLanguage);
 bindSearchAndCatalog();
 bindThemeToggle();
@@ -169,8 +171,15 @@ bindDialogs();
 bindRefresh();
 bindCompare();
 showPage(pageFromLocation());
+// A shared phone link (/?page=products&id=9) opens that phone.
+function openLinkedProduct() {
+  const productId = productIdFromLocation();
+  if (state.currentPage === "products" && productId) openProductInCatalog(productId, { updateHistory: false });
+}
+
 loadProducts().then(() => {
   if (state.currentPage === "compare") renderComparePage();
+  openLinkedProduct();
 });
 loadRefreshStatus();
 loadTracked();

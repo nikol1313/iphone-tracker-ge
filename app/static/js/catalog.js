@@ -1,5 +1,5 @@
 /* Catalog search, offer cards, charts, and retailer comparison. */
-import { $, $$, api, dateTime, dayDate, escapeHtml, money, productName, relativeTime, safeUrl, shortDate, showPage, state, variant, showToast } from "./core.js";
+import { $, $$, api, dateTime, dayDate, escapeHtml, money, productName, relativeTime, safeUrl, setProductInLocation, shortDate, showPage, state, variant, showToast } from "./core.js";
 import { onLanguageChange, t } from "./i18n.js";
 
 const PAGE_LIMIT = 100;
@@ -194,6 +194,37 @@ function renderWeeklyDrops() {
     </li>`).join("");
 }
 
+// How much the best in-stock price moved over the last 24 hours (negative = cheaper).
+function dayChangeAmount(product) {
+  if (!inStock(product) || product.price_day_ago == null) return 0;
+  const change = Number(product.lowest_price) - Number(product.price_day_ago);
+  return Math.abs(change) >= 1 ? change : 0;
+}
+
+const DAY_CHANGES_SHOWN = 6;
+
+// Today page: what changed since yesterday, so the page shows it is kept up to date.
+function renderDayChanges() {
+  const changes = state.products
+    .filter(product => dayChangeAmount(product) !== 0)
+    .sort((a, b) => Math.abs(dayChangeAmount(b)) - Math.abs(dayChangeAmount(a)) || byModel(a, b))
+    .slice(0, DAY_CHANGES_SHOWN);
+  $("#dayChangesSection").hidden = false;
+  $("#dayChanges").innerHTML = changes.length
+    ? changes.map(product => {
+      const change = dayChangeAmount(product);
+      const currency = product.currency || "GEL";
+      const label = t(change < 0 ? "day.down" : "day.up", { amount: money(Math.abs(change), currency) });
+      return `
+    <li class="model-price" data-model="${escapeHtml(product.model)}" data-product-id="${product.id}" tabindex="0">
+      <span class="model-price-name">${escapeHtml(productName(product))}<small>${escapeHtml(variant(product))}</small></span>
+      <span class="model-price-value">${escapeHtml(money(product.lowest_price, currency))}</span>
+      <span class="model-price-meta"><span class="card-change ${change < 0 ? "drop" : "rise"}">${escapeHtml(label)}</span> · ${escapeHtml(t("day.was", { price: money(product.price_day_ago, currency) }))}</span>
+    </li>`;
+    }).join("")
+    : `<li class="empty-state">${t("day.none")}</li>`;
+}
+
 // The Today list starts folded to the newest few models.
 const MODELS_FOLDED = 6;
 
@@ -201,6 +232,7 @@ const MODELS_FOLDED = 6;
 export function renderOverview() {
   const list = $("#modelPrices");
   if (!state.products.length) return;
+  renderDayChanges();
   renderWeeklyDrops();
   const cheapest = new Map();
   for (const product of state.products.filter(inStock)) {
@@ -271,13 +303,13 @@ export function renderProducts() {
 }
 
 /* Open one phone in All iPhones: list filtered to its model, the phone selected and in view. */
-export function openProductInCatalog(productId) {
+export function openProductInCatalog(productId, { updateHistory = true } = {}) {
   const product = state.products.find(item => item.id === Number(productId));
   if (!product) return;
   $("#searchInput").value = "";
   state.searchQuery = "";
   $("#modelFilter").value = product.model;
-  showPage("products", true);
+  showPage("products", updateHistory);
   applyFilters();
   selectProduct(product.id, { scroll: true });
 }
@@ -286,6 +318,8 @@ export async function selectProduct(productId, { scroll = false } = {}) {
   state.selectedId = Number(productId);
   const product = state.products.find(item => item.id === state.selectedId);
   if (!product) return;
+  // A phone the visitor chose (not the one picked by default) gets its own address.
+  if (scroll && state.currentPage === "products") setProductInLocation(product.id);
   $$(".product-card").forEach(card => card.classList.toggle("selected", Number(card.dataset.productId) === state.selectedId));
   $("#historySection").hidden = false;
   $("#storesSection").hidden = false;

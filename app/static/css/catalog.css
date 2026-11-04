@@ -28,6 +28,7 @@
 .product-card.out-of-stock .card-price strong { color: var(--muted); font-size: 1.1rem; }
 .card-change { font-size: .8rem; font-weight: 600; }
 .card-change.drop { color: var(--good); }
+.card-change.rise { color: var(--accent); }
 .card-installment { margin: 0 0 4px; color: var(--ink-2); font-size: .8rem; }
 .card-meta { margin: 0; color: var(--muted); font-size: .78rem; }
 .card-meta .savings { color: var(--good); font-weight: 600; }

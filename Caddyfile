@@ -1,9 +1,24 @@
 # Public entry point in production (compose profile "prod").
 # Caddy gets and renews the Let's Encrypt certificate and forwards to nginx.
+(security_headers) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		# Hide the server software (Caddy's and nginx's) once the response is ready.
+		-Server
+		defer
+	}
+}
+
 iphonetracker.ge {
+	import security_headers
 	reverse_proxy nginx:80
 }
 
 www.iphonetracker.ge {
+	import security_headers
 	redir https://iphonetracker.ge{uri} permanent
 }

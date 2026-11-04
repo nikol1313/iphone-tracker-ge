@@ -19,8 +19,8 @@ export const state = {
 
 export const $ = (selector, root = document) => root.querySelector(selector);
 export const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-export const pages = new Set(["overview", "products", "compare", "alerts"]);
-const pageTitleKeys = { overview: "title.overview", products: "title.products", compare: "title.compare", alerts: "title.alerts" };
+export const pages = new Set(["overview", "products", "compare", "alerts", "about"]);
+const pageTitleKeys = { overview: "title.overview", products: "title.products", compare: "title.compare", alerts: "title.alerts", about: "title.about" };
 // "3,199 ₾" the way Georgian stores write it; tetri only when there are any.
 export const money = (value, currency = "GEL") => {
   if (value == null) return t("noPrice");
@@ -100,6 +100,20 @@ export function pageFromLocation() {
   return pages.has(requestedPage) ? requestedPage : "overview";
 }
 
+// The phone a shared link points at: /?page=products&id=9
+export function productIdFromLocation() {
+  const id = Number(new URLSearchParams(window.location.search).get("id"));
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
+
+// Keep the address bar on the phone being looked at, so it can be shared or bookmarked.
+export function setProductInLocation(productId) {
+  const url = new URL(window.location.href);
+  if (url.searchParams.get("id") === String(productId)) return;
+  url.searchParams.set("id", productId);
+  window.history.replaceState(window.history.state, "", url);
+}
+
 function setPageTitle() {
   document.title = `${t(pageTitleKeys[state.currentPage])} — iPhone Tracker`;
 }
@@ -119,6 +133,7 @@ export function showPage(page, updateHistory = false) {
   if (updateHistory) {
     const url = new URL(window.location.href);
     url.searchParams.set("page", nextPage);
+    if (nextPage !== "products") url.searchParams.delete("id");
     url.hash = "";
     window.history.pushState({ page: nextPage }, "", url);
   }
