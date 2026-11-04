@@ -1,3 +1,7 @@
+import asyncio
+import importlib
+
+import pytest
 from pydantic import SecretStr
 
 from app.scraper import http, scrape_alta
@@ -43,3 +47,36 @@ def test_alta_scraper_uses_scraper_proxy(monkeypatch):
     scrape_alta.scrape_alta()
 
     assert fake.proxies == {"http": PROXY, "https": PROXY}
+
+
+class _Stop(Exception):
+    pass
+
+
+@pytest.mark.parametrize(
+    ("module_name", "function_name", "proxied"),
+    [
+        ("scrape_zoommer", "scrape_zoommer", True),
+        ("scrape_ispace", "scrape_ispace", True),
+        ("scrape_elit", "scrape_elit", True),
+        ("scrape_pcshop", "scrape_pcshop", True),
+        ("scrape_extra", "scrape_extra", False),
+        ("scrape_megatechnica", "scrape_megatechnica", False),
+        ("scrape_metromart", "scrape_metromart", False),
+    ],
+)
+def test_only_cloudflare_stores_use_the_proxy(monkeypatch, module_name, function_name, proxied):
+    # Only the stores that block datacenter IPs spend proxy traffic.
+    module = importlib.import_module(f"app.scraper.{module_name}")
+    requested: list[bool] = []
+
+    def fake_client(*, proxied: bool = False):
+        requested.append(proxied)
+        raise _Stop
+
+    monkeypatch.setattr(module, "browser_client", fake_client)
+
+    with pytest.raises(_Stop):
+        asyncio.run(getattr(module, function_name)())
+
+    assert requested == [proxied]
