@@ -37,6 +37,9 @@ services:
       ]
     expose:
       - "8080"
+    # SCRAPER_PROXY_URL=socks5h://host.docker.internal:1080 reaches a reverse SSH tunnel on the host.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       db:
         condition: service_healthy

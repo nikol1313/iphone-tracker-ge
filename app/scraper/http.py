@@ -6,6 +6,8 @@ import re
 
 import httpx
 
+from app.conf import settings
+
 LOGGER = logging.getLogger(__name__)
 BROWSER_HEADERS = {
     "User-Agent": (
@@ -18,11 +20,18 @@ BROWSER_HEADERS = {
 }
 
 
-def browser_client() -> httpx.AsyncClient:
+def scraper_proxy_url() -> str | None:
+    proxy = settings.SCRAPER_PROXY_URL
+    return proxy.get_secret_value() if proxy else None
+
+
+def browser_client(*, proxied: bool = False) -> httpx.AsyncClient:
+    """proxied=True routes through SCRAPER_PROXY_URL when it is set."""
     return httpx.AsyncClient(
         headers=BROWSER_HEADERS,
         timeout=httpx.Timeout(20, connect=10),
         follow_redirects=True,
+        proxy=scraper_proxy_url() if proxied else None,
     )
 
 

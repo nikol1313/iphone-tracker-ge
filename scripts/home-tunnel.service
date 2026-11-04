@@ -1,0 +1,25 @@
+# Runs on your home PC (not the server). Opens a SOCKS5 proxy on the server at
+# 172.17.0.1:1080 whose traffic leaves through your home internet connection, so
+# Cloudflare-protected stores (Zoommer, Alta, iSpace, Elit, PCShop) see a home IP.
+# The server's .env then has: SCRAPER_PROXY_URL=socks5h://host.docker.internal:1080
+#
+# Install:
+#   mkdir -p ~/.config/systemd/user
+#   cp scripts/home-tunnel.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now home-tunnel
+#   loginctl enable-linger "$USER"   # keep it running after reboot without logging in
+# Check: systemctl --user status home-tunnel
+[Unit]
+Description=Reverse SOCKS tunnel for iphonetracker.ge scrapers
+After=network-online.target
+
+[Service]
+ExecStart=/usr/bin/ssh -N -i %h/.ssh/id_ed25519 \
+  -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes \
+  -R 172.17.0.1:1080 ubuntu@130.61.209.148
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=default.target

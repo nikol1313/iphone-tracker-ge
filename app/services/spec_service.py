@@ -65,7 +65,7 @@ async def refresh_model_specs(
     async with session_factory() as session:
         targets = await models_needing_specs(session)
     saved = 0
-    async with nullcontext(client) if client is not None else browser_client() as http:
+    async with nullcontext(client) if client is not None else browser_client(proxied=True) as http:
         for model, url in targets:
             try:
                 specs = await scrape_zoommer_specs(http, url)

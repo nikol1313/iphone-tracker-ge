@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     # Origin users open the site at; email verification links point here.
     PUBLIC_BASE_URL: str | None = None
     REFRESH_SCHEDULER_ENABLED: bool = True
+    # Zoommer, Alta, iSpace, Elit and PCShop (Cloudflare) return 403 to datacenter IPs,
+    # so their scrapers go through this proxy, e.g. http://user:pass@host:port.
+    SCRAPER_PROXY_URL: SecretStr | None = None
 
     @model_validator(mode="after")
     def _require_production_config(self) -> "Settings":

@@ -9,6 +9,8 @@ import cloudscraper
 import requests
 from bs4 import BeautifulSoup
 
+from app.scraper.http import scraper_proxy_url
+
 BASE_URL = "https://alta.ge"
 ALTA_IPHONE_URL = f"{BASE_URL}/search/iphone/category=mobiluri-telefonebi;"
 ALTA_PHONE_CATEGORY_ID = 16
@@ -307,6 +309,8 @@ def scrape_alta(
                 'desktop': True
             }
         )
+        if proxy := scraper_proxy_url():
+            scraper.proxies = {"http": proxy, "https": proxy}
 
     return _scrape_price_windows(
         lambda params: _fetch_with_retries(

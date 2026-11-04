@@ -132,7 +132,7 @@ async def scrape_elit(
     if client is not None:
         return await _scrape_pages(client, url, **options)
 
-    async with browser_client() as owned_client:
+    async with browser_client(proxied=True) as owned_client:
         return await _scrape_pages(owned_client, url, **options)
 
 

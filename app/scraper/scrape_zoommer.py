@@ -292,7 +292,7 @@ async def scrape_zoommer(
     if client is not None:
         return await scrape_with(client)
 
-    async with browser_client() as owned_client:
+    async with browser_client(proxied=True) as owned_client:
         return await scrape_with(owned_client)
 
 

@@ -3,7 +3,7 @@ pydantic
 pydantic-settings
 sqlalchemy
 bs4
-requests
+requests[socks]
 django-request
 fastapi
 uvicorn[standard]
@@ -11,4 +11,4 @@ pyjwt
 pwdlib
 email-validator
 cloudscraper
-httpx
+httpx[socks]
