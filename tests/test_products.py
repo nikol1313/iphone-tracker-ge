@@ -385,3 +385,39 @@ async def test_catalog_reports_buy_verdict(
     assert item["typical_price"] == "3000.00"
     assert item["recent_low_price"] == "2700.00"
     assert item["price_tracked_since"] is not None
+
+
+@pytest.mark.asyncio
+async def test_new_listing_has_no_day_old_price(
+    client: httpx.AsyncClient,
+    session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    # A listing first seen an hour ago has nothing to compare with yet,
+    # so it must not show up as a 24-hour change.
+    _, product = await create_admin_product(client, session_factory)
+    now = datetime.now(UTC)
+    async with session_factory() as session:
+        store = Store(title="Store A", web_url="https://a.example")
+        session.add(store)
+        await session.flush()
+        listing = ProductListing(
+            product_id=product["id"],
+            store_id=store.id,
+            product_url="https://a.example/phone",
+            current_price=Decimal("2700.00"),
+            currency="GEL",
+            is_available=True,
+            last_checked_at=now,
+        )
+        session.add(listing)
+        await session.flush()
+        session.add(
+            PriceHist(listing_id=listing.id, price=Decimal("2700.00"), currency="GEL", recorded_at=now - timedelta(hours=1))
+        )
+        await session.commit()
+
+    item = (await client.get("/products")).json()["items"][0]
+
+    assert item["lowest_price"] == "2700.00"
+    assert item["price_day_ago"] is None
+    assert item["price_week_ago"] is None
