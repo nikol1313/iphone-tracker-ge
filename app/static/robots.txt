@@ -3,5 +3,6 @@ Disallow: /auth/
 Disallow: /alerts
 Disallow: /tracked-products
 Disallow: /notification-settings
+Disallow: /refresh
 
 Sitemap: https://iphonetracker.ge/sitemap.xml
