@@ -26,7 +26,10 @@ https://github.com/user-attachments/assets/bba44bf1-6105-4a8c-bb27-97827d865f46
 - Compare one phone across retailers: titles like "Apple iPhone 17 (8GB/256GB) - Sage" and
   "iPhone 17, 256 GB, Sage" are parsed into the same model, storage, and color.
 - Filter by model, storage, and stock; sort by price, store savings, or store count.
-- See the cheapest in-stock price per model on the Today page, plus weekly drops and lowest-recorded tags on catalog cards.
+- See the cheapest in-stock price per model on the Today page, the price changes of the last 24 hours,
+  weekly drops, and lowest-recorded tags on catalog cards.
+- Share or bookmark a phone: each one has its own link (`/?page=products&id=9`), and the server
+  fills in its title, price, and photo for Facebook and Messenger previews.
 - View price history for tracked products, with a "buy now or wait?" verdict that compares
   today's best price to its typical and lowest price over the last 90 days (after 14 days of history).
 - Compare two phones spec by spec and get a pick weighed for what the phone is for
@@ -39,7 +42,8 @@ https://github.com/user-attachments/assets/bba44bf1-6105-4a8c-bb27-97827d865f46
   for 15 minutes after 5 wrong passwords. Counts are kept in memory, so run one uvicorn worker.
 - Refresh the catalog from Zoommer, Alta, iSpace, Elit Electronics, Megatechnica, Extra.ge, PCShop, and Metromart automatically every 12 hours and record crawl outcomes.
 - Refresh prices on demand from the catalog page (signed-in users, once per hour).
-- Explore the REST API using Swagger UI.
+- Explore the REST API using Swagger UI (`/docs`, local only: it is off when `PROD=true`).
+- About and privacy page, `robots.txt`, a `sitemap.xml` of every phone, and real 404s for unknown paths.
 
 ## Technology
 
