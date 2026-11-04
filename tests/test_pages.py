@@ -100,3 +100,27 @@ def test_api_docs_are_off_in_production(monkeypatch) -> None:
     finally:
         monkeypatch.undo()
         importlib.reload(app.main)
+
+
+def test_preview_tags_escape_product_text() -> None:
+    from app.api.pages import render_index
+    from app.db.db_schemas import ProductSummary
+
+    product = ProductSummary(
+        id=1,
+        brand="Apple",
+        model='iPhone "17" <b>',
+        storage="256GB",
+        color="Black",
+        image_url='https://img.example/a.jpg?x="1"',
+        lowest_price=None,
+        currency="GEL",
+        listing_count=0,
+        available_listing_count=0,
+    )
+
+    html = render_index(product)
+
+    assert "<b>" not in html
+    assert 'content="iPhone &quot;17&quot; &lt;b&gt; 256GB Black"' in html
+    assert 'content="https://img.example/a.jpg?x=&quot;1&quot;"' in html
