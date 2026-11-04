@@ -28,3 +28,26 @@ jobs:
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # Runs scripts/deploy.sh on the server after tests and the image build pass on main.
+  deploy:
+    needs: [test, docker]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # One deploy at a time; a newer push waits for the running one instead of cancelling it mid-build.
+    concurrency:
+      group: deploy
+      cancel-in-progress: false
+    steps:
+      - name: Deploy over SSH
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          # The server's authorized_keys forces scripts/deploy.sh for this key, so no command is sent.
+          ssh -T -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "ubuntu@$DEPLOY_HOST"
