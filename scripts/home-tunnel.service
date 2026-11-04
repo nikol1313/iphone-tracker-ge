@@ -3,6 +3,12 @@
 # Cloudflare-protected stores (Zoommer, Alta, iSpace, Elit, PCShop) see a home IP.
 # The server's .env then has: SCRAPER_PROXY_URL=socks5h://host.docker.internal:1080
 #
+# Server setup (once): /etc/ssh/sshd_config.d/tunnel.conf with
+#   GatewayPorts clientspecified   # lets the tunnel listen on the Docker bridge
+#   ClientAliveInterval 30         # drop a dead tunnel (laptop slept or changed
+#   ClientAliveCountMax 3          # Wi-Fi) so the port frees up for a reconnect
+# then: sudo systemctl reload ssh
+#
 # Install:
 #   mkdir -p ~/.config/systemd/user
 #   cp scripts/home-tunnel.service ~/.config/systemd/user/
