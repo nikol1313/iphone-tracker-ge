@@ -124,3 +124,50 @@ def test_preview_tags_escape_product_text() -> None:
     assert "<b>" not in html
     assert 'content="iPhone &quot;17&quot; &lt;b&gt; 256GB Black"' in html
     assert 'content="https://img.example/a.jpg?x=&quot;1&quot;"' in html
+
+
+@pytest.mark.asyncio
+async def test_index_lists_cheapest_price_per_model(
+    client: httpx.AsyncClient,
+    session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    _, product = await create_admin_product(client, session_factory)
+    await _priced_product(session_factory, product["id"])
+
+    html = (await client.get("/")).text
+
+    assert "<!--server-models-->" not in html
+    assert 'data-server-rendered' in html
+    assert f'data-product-id="{product["id"]}" tabindex="0">' in html
+    assert '<span class="model-price-name">iPhone 17 Pro<small>256GB · Natural Titanium</small></span>' in html
+    assert '<span class="model-price-value">3,199 ₾</span>' in html
+    assert "მარაგშია 1 მაღაზიაში" in html
+
+
+def test_index_folds_the_model_list_like_the_page() -> None:
+    from app.api.pages import render_index
+    from app.db.db_schemas import ProductSummary
+
+    models = [
+        ProductSummary(
+            id=number,
+            brand="Apple",
+            model=f"iPhone {number}",
+            storage="128GB",
+            color="Black",
+            image_url=None,
+            lowest_price=Decimal("2000"),
+            currency="GEL",
+            listing_count=1,
+            available_listing_count=1,
+        )
+        for number in range(9, 18)
+    ]
+
+    html = render_index(None, models)
+
+    # Newest first, with 17 before 9 (natural order), and three rows past the fold hidden.
+    assert html.index("iPhone 17<small>") < html.index("iPhone 9<small>")
+    assert html.count('tabindex="0" hidden>') == 3
+    assert "<span>ყველა 9 მოდელის ჩვენება</span>" in html
+    assert 'aria-expanded="false"><span>' in html

@@ -1,10 +1,12 @@
 """The HTML entry page, with link-preview tags filled in on the server, and the sitemap.
 
 Facebook, Messenger and search engines read the page without running JavaScript, so
-the title, description and preview image of a shared phone link are written here.
+the title, description and preview image of a shared phone link, and the Today page's
+cheapest price per model, are written here.
 """
 
 import re
+from collections.abc import Sequence
 from decimal import Decimal
 from html import escape, unescape
 from pathlib import Path
@@ -25,14 +27,82 @@ router = APIRouter(include_in_schema=False)
 
 INDEX_PATH = Path(__file__).resolve().parent.parent / "static" / "index.html"
 META_MARKER = "<!--server-meta-->"
+MODELS_MARKER = '<ul id="modelPrices" class="model-prices" aria-live="polite"><!--server-models--></ul>'
+MODELS_TOGGLE = (
+    '<button class="fold-toggle" id="modelPricesToggle" type="button" '
+    'aria-controls="modelPrices" aria-expanded="false" hidden><span></span>'
+)
+# Same as catalog.js: the Today list starts folded to the newest few models.
+MODELS_FOLDED = 6
 TITLE_PATTERN = re.compile(r"<title>(.*?)</title>", re.DOTALL)
 DESCRIPTION_PATTERN = re.compile(r'<meta name="description" content="([^"]*)">')
 NO_CACHE = {"Cache-Control": "no-cache, no-store, must-revalidate"}
 
 
-def _price(value: Decimal) -> str:
+def _price(value: Decimal, currency: str | None = "GEL") -> str:
     # "3,199 ₾" like the page itself; tetri only when there are any.
-    return f"{value:,.0f} ₾" if value == value.to_integral() else f"{value:,.2f} ₾"
+    amount = f"{value:,.0f}" if value == value.to_integral() else f"{value:,.2f}"
+    return f"{amount} ₾" if currency in (None, "GEL") else f"{amount} {currency}"
+
+
+def _natural_key(text: str) -> list[int | str]:
+    return [int(part) if part.isdigit() else part.lower() for part in re.split(r"(\d+)", text)]
+
+
+def _by_model(products: list[ProductSummary]) -> list[ProductSummary]:
+    # catalog.js byModel: newest generation first, a model before its eSIM one.
+    by_esim = sorted(products, key=lambda product: product.model.endswith(" eSIM"))
+    return sorted(
+        by_esim,
+        key=lambda product: _natural_key(product.model.removesuffix(" eSIM").strip()),
+        reverse=True,
+    )
+
+
+def _phone_name(product: ProductSummary) -> str:
+    model = product.model.strip()
+    return model if re.match(r"iphone\b", model, re.IGNORECASE) else f"iPhone {model}"
+
+
+def _model_row(product: ProductSummary, *, hidden: bool) -> str:
+    # The same markup catalog.js renderOverview writes, in Georgian.
+    variant = " · ".join(part for part in (product.storage, product.color) if part)
+    meta = f"მარაგშია {product.available_listing_count} მაღაზიაში"
+    week_ago = product.price_week_ago
+    if week_ago is not None and week_ago - product.lowest_price >= week_ago * Decimal("0.01"):
+        drop = _price(week_ago - product.lowest_price, product.currency)
+        meta += f' · <span class="card-change drop">{escape(f"−{drop} ამ კვირაში")}</span>'
+    return (
+        f'<li class="model-price" data-model="{escape(product.model)}" '
+        f'data-product-id="{product.id}" tabindex="0"{" hidden" if hidden else ""}>'
+        f'<span class="model-price-name">{escape(_phone_name(product))}'
+        f"<small>{escape(variant or 'მეხსიერება და ფერი მითითებული არ არის')}</small></span>"
+        f'<span class="model-price-value">{escape(_price(product.lowest_price, product.currency))}</span>'
+        f'<span class="model-price-meta">{meta}</span></li>'
+    )
+
+
+def _render_models(html: str, models: list[ProductSummary]) -> str:
+    """Fill the Today list so crawlers see every model's price; the rows past the fold are hidden."""
+    if not models:
+        return html
+    models = _by_model(models)
+    rows = "".join(
+        _model_row(product, hidden=index >= MODELS_FOLDED) for index, product in enumerate(models)
+    )
+    html = html.replace(
+        MODELS_MARKER,
+        '<ul id="modelPrices" class="model-prices" aria-live="polite" data-server-rendered>'
+        f"{rows}</ul>",
+        1,
+    )
+    if len(models) > MODELS_FOLDED:
+        html = html.replace(
+            MODELS_TOGGLE,
+            MODELS_TOGGLE.replace(" hidden><span></span>", f"><span>ყველა {len(models)} მოდელის ჩვენება</span>"),
+            1,
+        )
+    return html
 
 
 def _product_url(product_id: int) -> str:
@@ -73,8 +143,8 @@ def _meta_tags(*, title: str, description: str, url: str, image: str) -> str:
     return "\n  ".join(lines)
 
 
-def render_index(product: ProductSummary | None) -> str:
-    html = INDEX_PATH.read_text(encoding="utf-8")
+def render_index(product: ProductSummary | None, models: Sequence[ProductSummary] = ()) -> str:
+    html = _render_models(INDEX_PATH.read_text(encoding="utf-8"), list(models))
     base = settings.public_base_url
     if product is None:
         # index.html's own title and description are already escaped HTML.
@@ -110,7 +180,8 @@ async def index(session: SessionDep, page: str | None = None, id: str | None = N
             product = await product_service.get_product_summary(session, int(id))
         except NotFoundError:
             product = None
-    return HTMLResponse(render_index(product), headers=NO_CACHE)
+    models = await product_service.cheapest_in_stock_per_model(session)
+    return HTMLResponse(render_index(product, models), headers=NO_CACHE)
 
 
 @router.get("/sitemap.xml")
