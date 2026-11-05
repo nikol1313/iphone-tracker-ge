@@ -255,6 +255,7 @@ export function renderOverview() {
         <span class="model-price-meta">${t("card.inStockAt", { count: product.available_listing_count })}${weekDrop(product) ? ` · ${weekDrop(product)}` : ""}</span>
       </li>`).join("")
     : `<li class="empty-state">${t("models.empty")}</li>`;
+  list.removeAttribute("data-server-rendered");
 }
 
 export function renderProducts() {

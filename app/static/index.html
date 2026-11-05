@@ -19,7 +19,11 @@
       }
     } catch {}
   </script>
-  <style>html[data-translating] body { visibility: hidden; }</style>
+  <style>
+    html[data-translating] body { visibility: hidden; }
+    /* The server writes the price list in Georgian; English readers wait for app.js's copy. */
+    html[lang="en"] [data-server-rendered] { visibility: hidden; }
+  </style>
   <link rel="icon" href="/static/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16.png">
