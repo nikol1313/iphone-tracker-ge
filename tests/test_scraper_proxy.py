@@ -60,6 +60,7 @@ class _Stop(Exception):
         ("scrape_ispace", "scrape_ispace", True),
         ("scrape_elit", "scrape_elit", True),
         ("scrape_pcshop", "scrape_pcshop", True),
+        ("scrape_kontakt", "scrape_kontakt", True),
         ("scrape_gstore", "scrape_gstore", False),
         ("scrape_extra", "scrape_extra", False),
         ("scrape_megatechnica", "scrape_megatechnica", False),

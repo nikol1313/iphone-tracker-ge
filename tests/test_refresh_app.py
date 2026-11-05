@@ -79,6 +79,7 @@ async def test_full_catalog_refresh_isolates_store_failures(
     monkeypatch.setattr(scraper_service, "run_pcshop_ingestion", AsyncMock(return_value=ingestion(46, 3)))
     monkeypatch.setattr(scraper_service, "run_metromart_ingestion", AsyncMock(return_value=ingestion(47, 2)))
     monkeypatch.setattr(scraper_service, "run_gstore_ingestion", AsyncMock(return_value=ingestion(48, 1)))
+    monkeypatch.setattr(scraper_service, "run_kontakt_ingestion", AsyncMock(side_effect=RuntimeError("403")))
 
     summary = await scraper_service.refresh_full_catalog()
 
@@ -89,7 +90,7 @@ async def test_full_catalog_refresh_isolates_store_failures(
         prices_recorded=45,
         crawl_run_ids=(42, 43, 44, 45, 46, 47, 48),
         succeeded_stores=("Alta", "iSpace", "Elit Electronics", "Extra.ge", "PCShop", "Metromart", "Gstore"),
-        failed_stores=("Zoommer", "Megatechnica"),
+        failed_stores=("Zoommer", "Megatechnica", "Kontakt"),
     )
     for runner in (zoommer, alta, ispace, elit, megatechnica):
         runner.assert_awaited_once()
@@ -118,6 +119,7 @@ async def test_full_catalog_refresh_rejects_concurrent_runs(
         "run_pcshop_ingestion",
         "run_metromart_ingestion",
         "run_gstore_ingestion",
+        "run_kontakt_ingestion",
     ):
         monkeypatch.setattr(scraper_service, name, slow_ingestion)
 
@@ -136,6 +138,7 @@ async def test_full_catalog_refresh_rejects_concurrent_runs(
         "PCShop",
         "Metromart",
         "Gstore",
+        "Kontakt",
     )
 
 

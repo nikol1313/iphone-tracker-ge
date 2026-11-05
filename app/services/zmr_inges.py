@@ -33,6 +33,8 @@ from app.scraper.scrape_gstore import BASE_URL as GSTORE_BASE_URL
 from app.scraper.scrape_gstore import scrape_gstore
 from app.scraper.scrape_ispace import BASE_URL as ISPACE_BASE_URL
 from app.scraper.scrape_ispace import scrape_ispace
+from app.scraper.scrape_kontakt import BASE_URL as KONTAKT_BASE_URL
+from app.scraper.scrape_kontakt import scrape_kontakt
 from app.scraper.scrape_megatechnica import BASE_URL as MEGATECHNICA_BASE_URL
 from app.scraper.scrape_megatechnica import scrape_megatechnica
 from app.scraper.scrape_metromart import BASE_URL as METROMART_BASE_URL
@@ -380,6 +382,10 @@ async def run_metromart_ingestion() -> IngestionSummary:
 
 async def run_gstore_ingestion() -> IngestionSummary:
     return await _run_store_ingestion("Gstore", GSTORE_BASE_URL, scrape_gstore)
+
+
+async def run_kontakt_ingestion() -> IngestionSummary:
+    return await _run_store_ingestion("Kontakt", KONTAKT_BASE_URL, scrape_kontakt)
 
 
 async def main() -> None:
