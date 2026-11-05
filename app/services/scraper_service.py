@@ -16,6 +16,7 @@ from app.services.zmr_inges import (
     run_alta_ingestion,
     run_elit_ingestion,
     run_extra_ingestion,
+    run_gstore_ingestion,
     run_ispace_ingestion,
     run_megatechnica_ingestion,
     run_metromart_ingestion,
@@ -51,6 +52,7 @@ def _store_runners() -> tuple[tuple[str, Callable[[], Awaitable[IngestionSummary
         ("Extra.ge", run_extra_ingestion),
         ("PCShop", run_pcshop_ingestion),
         ("Metromart", run_metromart_ingestion),
+        ("Gstore", run_gstore_ingestion),
     )
 
 

@@ -29,6 +29,8 @@ from app.scraper.scrape_elit import BASE_URL as ELIT_BASE_URL
 from app.scraper.scrape_elit import scrape_elit
 from app.scraper.scrape_extra import BASE_URL as EXTRA_BASE_URL
 from app.scraper.scrape_extra import scrape_extra
+from app.scraper.scrape_gstore import BASE_URL as GSTORE_BASE_URL
+from app.scraper.scrape_gstore import scrape_gstore
 from app.scraper.scrape_ispace import BASE_URL as ISPACE_BASE_URL
 from app.scraper.scrape_ispace import scrape_ispace
 from app.scraper.scrape_megatechnica import BASE_URL as MEGATECHNICA_BASE_URL
@@ -374,6 +376,10 @@ async def run_pcshop_ingestion() -> IngestionSummary:
 
 async def run_metromart_ingestion() -> IngestionSummary:
     return await _run_store_ingestion("Metromart", METROMART_BASE_URL, scrape_metromart)
+
+
+async def run_gstore_ingestion() -> IngestionSummary:
+    return await _run_store_ingestion("Gstore", GSTORE_BASE_URL, scrape_gstore)
 
 
 async def main() -> None:
