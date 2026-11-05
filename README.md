@@ -56,12 +56,12 @@ https://github.com/user-attachments/assets/bba44bf1-6105-4a8c-bb27-97827d865f46
 
 ## Scraping from a server
 
-Zoommer, Alta, iSpace, Elit Electronics, and PCShop sit behind Cloudflare, which answers
+Zoommer, Alta, iSpace, Elit Electronics, PCShop, and Kontakt sit behind Cloudflare, which answers
 datacenter IPs (Oracle, Hetzner, AWS, ...) with `403 Forbidden`. From a home connection they
-work. On a server, set `SCRAPER_PROXY_URL` in `.env` and only those five stores use it:
+work. On a server, set `SCRAPER_PROXY_URL` in `.env` and only those six stores use it:
 
 - `socks5h://host.docker.internal:1080` with the reverse SSH tunnel in
   `scripts/home-tunnel.service`, which runs on an always-on machine at home (free).
 - Any `http://` or `socks5://` proxy, such as a residential proxy with Georgian IPs.
 
-If the proxy is down, the other stores still refresh and those five keep their last prices.
+If the proxy is down, the other stores still refresh and those six keep their last prices.
