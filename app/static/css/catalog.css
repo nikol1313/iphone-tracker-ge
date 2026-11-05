@@ -175,7 +175,6 @@ tbody tr.best-offer td:first-child { box-shadow: inset 3px 0 0 var(--good); }
 .use-option { display: grid; justify-items: start; gap: 4px; padding: 12px 14px; color: var(--ink); background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); font: inherit; text-align: left; cursor: pointer; }
 .use-option:hover { background: var(--surface-2); }
 .use-option.selected { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
-.use-icon { font-size: 1.4rem; line-height: 1; }
 .use-option strong { font-size: .95rem; }
 .use-option small { color: var(--muted); font-size: .78rem; line-height: 1.35; }
 .compare-pick ul { margin: 0 0 12px; padding-left: 20px; }
@@ -189,17 +188,6 @@ tbody tr.best-offer td:first-child { box-shadow: inset 3px 0 0 var(--good); }
 .edge-minor { color: var(--muted); }
 .edge-tag { display: inline-block; margin-left: 4px; padding: 1px 8px; color: var(--good); border: 1px solid color-mix(in srgb, var(--good) 50%, transparent); border-radius: 999px; font-size: .75rem; font-weight: 600; white-space: nowrap; }
 .edge-note { font-size: .82rem; }
-/* "Thinking" before a first pick: spinner, spec lines ticking in one by one, a filling bar. */
-.pick-thinking { padding: 18px 20px; background: var(--surface); border: 1px dashed color-mix(in srgb, var(--good) 50%, transparent); border-radius: var(--radius); }
-.pick-thinking-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-weight: 700; }
-.pick-spinner { width: 18px; height: 18px; border: 2px solid color-mix(in srgb, var(--good) 25%, transparent); border-top-color: var(--good); border-radius: 50%; animation: pick-spin .7s linear infinite; }
-.compare-pick .pick-steps { margin: 0 0 14px; padding: 0; list-style: none; }
-.pick-steps li { margin: 6px 0; color: var(--ink-2); font-size: .9rem; opacity: 0; animation: pick-step .3s ease-out forwards; animation-delay: calc(var(--step) * 280ms); }
-.pick-steps li::before { display: inline-block; width: 1.4em; color: var(--good); content: "✓"; }
-.pick-progress { height: 4px; overflow: hidden; background: color-mix(in srgb, var(--good) 15%, transparent); border-radius: 2px; }
-.pick-progress span { display: block; width: 100%; height: 100%; background: var(--good); transform: scaleX(0); transform-origin: left; animation: pick-fill 1.3s ease-in-out forwards; }
-.pick-reveal { animation: pick-step .4s ease-out; }
-.pick-reveal .compare-edge li { opacity: 0; animation: pick-step .3s ease-out forwards; animation-delay: calc(.25s + var(--i, 0) * 60ms); }
 /* Spec score bar: one segment per phone, in the history chart's colors. */
 .pick-label { margin: 0 0 8px; color: var(--ink-2); font-size: .85rem; font-weight: 700; }
 .score-meter { margin-top: 18px; }
@@ -207,16 +195,11 @@ tbody tr.best-offer td:first-child { box-shadow: inset 3px 0 0 var(--good); }
 .score-bar span { width: var(--share); }
 .score-a, .score-key-a::before { background: var(--accent); }
 .score-b, .score-key-b::before { background: #4ea1ff; }
-.pick-reveal .score-bar span { animation: score-grow .7s ease-out .2s both; }
 .compare-pick .score-labels { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin: 8px 0 0; padding: 0; list-style: none; font-size: .88rem; font-weight: 600; }
 .score-labels li::before { display: inline-block; width: 10px; height: 10px; margin-right: 6px; content: ""; border-radius: 50%; }
 .compare-pick .score-note { margin: 4px 0 0; font-size: .8rem; }
 .compare-pick-timing .verdict { margin: 0; }
 .compare-suggestions { margin-top: 14px; }
-@keyframes score-grow { from { width: 0; } }
-@keyframes pick-spin { to { transform: rotate(360deg); } }
-@keyframes pick-step { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-@keyframes pick-fill { to { transform: scaleX(1); } }
 @media (max-width: 700px) {
   .compare-pickers { grid-template-columns: 1fr; }
   .compare-pick { padding: 20px; }

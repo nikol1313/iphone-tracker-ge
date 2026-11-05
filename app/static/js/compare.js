@@ -58,18 +58,18 @@ const ROWS = [
  * while the cheaper phone has wins of its own.
  */
 const USES = [
-  { key: "everyday", icon: "📱", weights: {}, maxExtra: 0.25 },
+  { key: "everyday", weights: {}, maxExtra: 0.25 },
   {
-    key: "gaming", icon: "🎮", maxExtra: 0.35,
+    key: "gaming", maxExtra: 0.35,
     weights: { chip: 4, ram: 3, refresh_rate: 3, storage: 2, display_size: 1.5, rear_cameras: 0, main_camera: 0, front_camera: 0, video: 0, weight: 0, water_resistance: 0 },
   },
   {
-    key: "creator", icon: "🎬", maxExtra: 0.35,
+    key: "creator", maxExtra: 0.35,
     weights: { video: 3, rear_cameras: 3, storage: 3, main_camera: 2, front_camera: 2, chip: 2, display_size: 1, ram: 1, refresh_rate: 1 },
   },
-  { key: "longTerm", icon: "⏳", maxExtra: 0.3, weights: { release_year: 3, chip: 3, water_resistance: 1 } },
+  { key: "longTerm", maxExtra: 0.3, weights: { release_year: 3, chip: 3, water_resistance: 1 } },
   // Saving money comes first: the cap holds even when the cheaper phone wins no spec.
-  { key: "budget", icon: "💰", weights: {}, maxExtra: 0.1, priceFirst: true },
+  { key: "budget", weights: {}, maxExtra: 0.1, priceFirst: true },
 ];
 const weightFor = (row, use) => use.weights[row.key] ?? row.weight ?? 0;
 
@@ -335,7 +335,6 @@ function usePicker(chosen) {
       <legend>${escapeHtml(t("use.question"))}</legend>
       <div class="use-options">${USES.map(use => `
         <button class="use-option${use === chosen ? " selected" : ""}" type="button" data-use="${use.key}" aria-pressed="${use === chosen}">
-          <span class="use-icon" aria-hidden="true">${use.icon}</span>
           <strong>${escapeHtml(t(`use.${use.key}`))}</strong>
           <small>${escapeHtml(t(`use.${use.key}.hint`))}</small>
         </button>`).join("")}
@@ -381,37 +380,12 @@ function edgeLists(details, use) {
     </div>`;
 }
 
-// "Thinking" lines shown before a first pick: the specs that matter most for the use, then the price.
-function thinkingSteps(details, use) {
-  const specs = ROWS
-    .filter(row => row.key !== "price" && weightFor(row, use) > 0 && details.every(detail => row.show(detail)))
-    .sort((x, y) => weightFor(y, use) - weightFor(x, use))
-    .slice(0, 3)
-    .map(row => t("pick.checking", { spec: t(`spec.${row.key}`), a: row.show(details[0]), b: row.show(details[1]) }));
-  const gap = Math.abs(priceOf(details[0].product) - priceOf(details[1].product));
-  return [...specs, t("pick.weighingPrice", { amount: money(gap) })];
-}
-
-function thinkingBox(details, use) {
-  return `
-    <div class="pick-thinking" role="status">
-      <div class="pick-thinking-head"><span class="pick-spinner" aria-hidden="true"></span>${escapeHtml(t("pick.thinking"))}</div>
-      <ol class="pick-steps">${thinkingSteps(details, use).map((step, index) => `
-        <li style="--step: ${index}">${escapeHtml(step)}</li>`).join("")}
-      </ol>
-      <div class="pick-progress" aria-hidden="true"><span></span></div>
-    </div>`;
-}
-
-/*
- * The pick waits until the visitor says what the phone is for. `thinking` shows the
- * analysing animation in place of the result; `reveal` fades the result in after it.
- */
-function pickBox(details, { thinking = false, reveal = false } = {}) {
+// The pick waits until the visitor says what the phone is for.
+function pickBox(details) {
   const use = chosenUse();
-  const pick = use && !thinking && recommend(details, use);
-  const result = thinking ? thinkingBox(details, use) : pick ? `
-    <div class="${reveal ? "pick-reveal" : ""}">
+  const pick = use && recommend(details, use);
+  const result = pick ? `
+    <div>
       ${pick.side != null ? pickedPhone(details[pick.side]) : ""}
       <p class="compare-pick-headline">${escapeHtml(pick.headline)}</p>
       ${pick.tradeoff ? `<p class="muted">${escapeHtml(pick.tradeoff)}</p>` : ""}
@@ -431,32 +405,15 @@ function pickBox(details, { thinking = false, reveal = false } = {}) {
     </section>`;
 }
 
-// How long the "thinking" animation runs before a pick appears for the first time.
-const THINKING_MS = 1300;
-// Phone pair + use combinations already worked out: choosing one again answers at once.
-const pickedBefore = new Set();
-const pickKey = (details, useKey) => `${details.map(detail => detail.product.id).join(":")}:${useKey}`;
-let pickToken = 0;
-
-function drawPick(details, options) {
+function drawPick(details) {
   const focused = document.activeElement?.closest?.("#comparePick [data-use]")?.dataset.use;
-  $("#comparePick").outerHTML = pickBox(details, options);
+  $("#comparePick").outerHTML = pickBox(details);
   if (focused) $(`#comparePick [data-use="${focused}"]`).focus();
 }
 
-// Show the pick for a use: instantly if worked out before, else after a short "thinking" pause.
 function choosePick(useKey) {
-  const details = shownDetails;
-  const token = ++pickToken;
   saveUse(useKey);
-  const key = pickKey(details, useKey);
-  if (pickedBefore.has(key)) return drawPick(details);
-  drawPick(details, { thinking: true });
-  setTimeout(() => {
-    if (token !== pickToken || details !== shownDetails) return;
-    pickedBefore.add(key);
-    drawPick(details, { reveal: true });
-  }, THINKING_MS);
+  drawPick(shownDetails);
 }
 
 let renderToken = 0;
@@ -474,10 +431,6 @@ async function drawComparison(details, token = ++renderToken) {
   await Promise.race([Promise.all(decoded), new Promise(resolve => setTimeout(resolve, 1000))]);
   if (token !== renderToken) return;
   shownDetails = details;
-  // A pick already on screen (from the address bar or before a redraw) counts as worked out.
-  pickToken++;
-  const use = chosenUse();
-  if (use) pickedBefore.add(pickKey(details, use.key));
   const result = $("#compareResult");
   result.removeAttribute("aria-busy");
   result.replaceChildren(...next.childNodes);
