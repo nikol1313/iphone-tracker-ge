@@ -425,6 +425,26 @@ async def list_products(
     )
 
 
+async def cheapest_in_stock_per_model(session: AsyncSession) -> list[ProductSummary]:
+    """The cheapest in-stock variant of each active model, with price trends."""
+    rows = (
+        await session.execute(
+            product_summary_select()
+            .where(Product.is_active.is_(True))
+            .order_by(Product.id)
+        )
+    ).all()
+    cheapest: dict[str, ProductSummary] = {}
+    for row in rows:
+        summary = product_summary(*row)
+        if not summary.available_listing_count or summary.lowest_price is None:
+            continue
+        best = cheapest.get(summary.model)
+        if best is None or summary.lowest_price < best.lowest_price:
+            cheapest[summary.model] = summary
+    return await with_price_trends(session, list(cheapest.values()))
+
+
 async def get_product_summary(
     session: AsyncSession,
     product_id: int,
