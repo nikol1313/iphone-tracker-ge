@@ -40,7 +40,7 @@ https://github.com/user-attachments/assets/bba44bf1-6105-4a8c-bb27-97827d865f46
 - Reset a forgotten password with a one-hour, single-use emailed link.
 - Login, sign-up, and password-reset attempts are rate limited per IP, and an account locks
   for 15 minutes after 5 wrong passwords. Counts are kept in memory, so run one uvicorn worker.
-- Refresh the catalog from Zoommer, Alta, iSpace, Elit Electronics, Megatechnica, Extra.ge, PCShop, and Metromart automatically every 12 hours and record crawl outcomes.
+- Refresh the catalog from Zoommer, Alta, iSpace, Elit Electronics, Megatechnica, Extra.ge, PCShop, Metromart, Gstore, Kontakt, and iCity automatically every 12 hours and record crawl outcomes.
 - Refresh prices on demand from the catalog page (signed-in users, once per hour).
 - Explore the REST API using Swagger UI (`/docs`, local only: it is off when `PROD=true`).
 - About and privacy page, `robots.txt`, a `sitemap.xml` of every phone, and real 404s for unknown paths.
