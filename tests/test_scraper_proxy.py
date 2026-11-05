@@ -62,6 +62,7 @@ class _Stop(Exception):
         ("scrape_pcshop", "scrape_pcshop", True),
         ("scrape_kontakt", "scrape_kontakt", True),
         ("scrape_gstore", "scrape_gstore", False),
+        ("scrape_icity", "scrape_icity", False),
         ("scrape_extra", "scrape_extra", False),
         ("scrape_megatechnica", "scrape_megatechnica", False),
         ("scrape_metromart", "scrape_metromart", False),

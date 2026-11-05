@@ -31,6 +31,8 @@ from app.scraper.scrape_extra import BASE_URL as EXTRA_BASE_URL
 from app.scraper.scrape_extra import scrape_extra
 from app.scraper.scrape_gstore import BASE_URL as GSTORE_BASE_URL
 from app.scraper.scrape_gstore import scrape_gstore
+from app.scraper.scrape_icity import BASE_URL as ICITY_BASE_URL
+from app.scraper.scrape_icity import scrape_icity
 from app.scraper.scrape_ispace import BASE_URL as ISPACE_BASE_URL
 from app.scraper.scrape_ispace import scrape_ispace
 from app.scraper.scrape_kontakt import BASE_URL as KONTAKT_BASE_URL
@@ -386,6 +388,10 @@ async def run_gstore_ingestion() -> IngestionSummary:
 
 async def run_kontakt_ingestion() -> IngestionSummary:
     return await _run_store_ingestion("Kontakt", KONTAKT_BASE_URL, scrape_kontakt)
+
+
+async def run_icity_ingestion() -> IngestionSummary:
+    return await _run_store_ingestion("iCity", ICITY_BASE_URL, scrape_icity)
 
 
 async def main() -> None:
