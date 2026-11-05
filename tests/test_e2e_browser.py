@@ -131,7 +131,7 @@ def test_site_opens_in_georgian_and_switches_to_english(browser):
     page.click("#langToggle")
     expect(page.locator("#overviewTitle")).to_have_text("Every iPhone, every price, one place")
     expect(page.locator("#langToggle")).to_have_text("ქართ")
-    expect(page.locator(".model-price-meta").first).to_contain_text("In stock at")
+    expect(page.locator("#modelPrices .model-price-meta").first).to_contain_text("In stock at")
     # Shorter English text above can nudge it a little, but it must not jump to the top.
     assert scrolled > 0
     assert page.evaluate("window.scrollY") > scrolled / 2
