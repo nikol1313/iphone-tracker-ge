@@ -48,6 +48,7 @@ main { min-height: calc(100vh - 150px); padding: 28px 0 0; }
 .model-prices { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
 .model-price { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 16px; padding: 13px 4px; border-bottom: 1px solid var(--line); cursor: pointer; }
 .model-price:hover { background: var(--surface-2); }
+.model-price[hidden] { display: none; }
 .model-price-name { font-weight: 600; }
 .model-price-name small { margin-left: 8px; color: var(--muted); font-size: .8rem; font-weight: 400; }
 .model-price-value { font-size: 1.1rem; font-weight: 700; text-align: right; }
