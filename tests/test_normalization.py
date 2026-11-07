@@ -33,6 +33,11 @@ from app.services.normalization import ParsedIphone, parse_iphone_title
             "Apple iPhone Duo 256GB MK2D4 Star White",
             ParsedIphone("iPhone Duo", "256GB", "Star White"),
         ),
+        # So is the Duo.
+        (
+            "iPhone Duo 256GB Night Sky eSIM",
+            ParsedIphone("iPhone Duo", "256GB", "Night Sky"),
+        ),
         (
             "APPLE iPhone 18 Pro Max 256GB Silver eSIM",
             ParsedIphone("iPhone 18 Pro Max eSIM", "256GB", "Silver"),

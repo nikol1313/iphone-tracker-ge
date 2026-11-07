@@ -26,7 +26,7 @@ _STORAGE = re.compile(r"\b(\d+)\s*(GB|TB)\b", re.IGNORECASE)
 _PART_NUMBER = re.compile(r"\bM[A-Z0-9]{3}\d(?:[A-Z]{2})?(?:/A)?(?=\s|$)")
 _SEPARATORS = re.compile(r"[|,()/]|(?:^|\s)-(?=\s|$)")
 # Models sold only as eSIM everywhere; the flag would split identical phones.
-_ESIM_ONLY_MODELS = frozenset({"iPhone Air"})
+_ESIM_ONLY_MODELS = frozenset({"iPhone Air", "iPhone Duo"})
 
 
 def normalize_text(value: str) -> str:
