@@ -15,9 +15,12 @@ def card(
     price: str,
     *,
     action_price: str | None = None,
+    old_price: str | None = None,
     action: str = '<button class="button carousel-product_button">კალათაში</button>',
     credit: str | None = None,
 ) -> str:
+    # Since 2026-11 the old price sits in action-price and the sale price in price-value.
+    before = f'<p class="carousel-product_action-price">{old_price}</p>' if old_price else ""
     discount = (
         f'<span class="carousel-product_price-value carousel-product_price-value__discount">{price}</span>'
         f'<span class="carousel-product_action-price">{action_price}</span>'
@@ -35,6 +38,7 @@ def card(
         </a>
       </div>
       <div class="carousel-product_price-wrapper">
+        {before}
         <p class="carousel-product_price">{discount}</p>
         {f'<p class="carousel-product_credit-text"><span>{credit}</span></p>' if credit else ""}
         {action}
@@ -49,7 +53,12 @@ def page(*cards: str) -> str:
 def test_products_from_ispace_cards() -> None:
     soup = BeautifulSoup(
         page(
-            card("iPhone 18 Pro, 256 GB, Black", "iphone-18-pro-256-gb-black-mjrp4af-a", "4 599 ₾"),
+            card(
+                "iPhone 18 Pro, 256 GB, Black",
+                "iphone-18-pro-256-gb-black-mjrp4af-a",
+                "4 269 ₾",
+                old_price="4 599 ₾",
+            ),
             card(
                 "iPhone 17 Pro Max, 2 TB, Deep Blue",
                 "iphone-17-pro-max-2-tb-deep-blue-mfyx4af-a",
@@ -73,7 +82,7 @@ def test_products_from_ispace_cards() -> None:
     assert products == [
         {
             "name": "iPhone 18 Pro, 256 GB, Black",
-            "price": 4599.0,
+            "price": 4269.0,
             "currency": "GEL",
             "url": "https://ispace.ge/product/iphone-18-pro-256-gb-black-mjrp4af-a",
             "image_url": "https://cdn.example/iphone-18-pro-256-gb-black-mjrp4af-a.webp",

@@ -49,16 +49,22 @@ def products_from_cards(soup: BeautifulSoup) -> list[dict[str, object]]:
     for card in soup.select(".products-grid_grid [data-test='carousel-product']"):
         name_element = card.select_one(".entity-card_name-text")
         link_element = card.select_one("a.entity-card_name[href]")
-        price_element = card.select_one(
-            ".carousel-product_action-price"
-        ) or card.select_one(".carousel-product_price-value")
+        # On sale, a card shows the old and the sale price; iSpace has swapped
+        # which class holds which, so the sale price is the lower one.
+        prices = [
+            price
+            for element in card.select(
+                ".carousel-product_action-price, .carousel-product_price-value"
+            )
+            if (price := parse_price(element.get_text(" ", strip=True)))
+        ]
 
-        if not name_element or not link_element or not price_element:
+        if not name_element or not link_element or not prices:
             continue
 
         name = name_element.get_text(" ", strip=True)
         product_path = link_element.get("href", "")
-        price = parse_price(price_element.get_text(" ", strip=True))
+        price = min(prices)
 
         if (
             "iphone" not in name.casefold()
