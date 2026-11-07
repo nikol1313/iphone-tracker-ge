@@ -142,6 +142,37 @@ async def test_index_lists_cheapest_price_per_model(
     assert '<span class="model-price-name">iPhone 17 Pro<small>256GB · Natural Titanium</small></span>' in html
     assert '<span class="model-price-value">3,199 ₾</span>' in html
     assert "მარაგშია 1 მაღაზიაში" in html
+    # The only model in stock leads the headline, with its cheapest store.
+    assert (
+        '<h1 id="overviewTitle" data-model="iPhone 17 Pro" data-price="3199.00" data-store="Store A">'
+        "iPhone 17 Pro დღეს ყველაზე იაფია Store A-ში: 3,199 ₾</h1>"
+    ) in html
+    assert 'data-models="1" data-stores="1"' in html
+
+
+def test_headline_prefers_the_newest_standard_model() -> None:
+    from app.api.pages import _headline_product
+    from app.db.db_schemas import ProductSummary
+
+    models = [
+        ProductSummary(
+            id=number,
+            brand="Apple",
+            model=model,
+            storage="256GB",
+            color="Black",
+            image_url=None,
+            lowest_price=Decimal("2000"),
+            currency="GEL",
+            listing_count=1,
+            available_listing_count=1,
+        )
+        for number, model in enumerate(["iPhone 16", "iPhone 18 Pro", "iPhone 17", "iPhone Duo"])
+    ]
+
+    assert _headline_product(models).model == "iPhone 17"
+    assert _headline_product(models[1:2]).model == "iPhone 18 Pro"
+    assert _headline_product([]) is None
 
 
 def test_index_folds_the_model_list_like_the_page() -> None:

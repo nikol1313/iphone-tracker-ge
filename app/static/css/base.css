@@ -9,11 +9,14 @@
   --muted: #95979c;
   --line: #2e2f33;
   --line-strong: #44454a;
-  /* Georgian flag red: the one brand color. */
-  --accent: #ef4250;
-  --accent-hover: #ff6370;
-  --accent-soft: #3a1b1f;
-  --on-accent: #ffffff;
+  /* Buttons and highlights stay neutral: in a price app red reads as "price went up". */
+  --accent: #ececea;
+  --accent-hover: #ffffff;
+  --accent-soft: #26272a;
+  --on-accent: #121314;
+  /* Green = cheaper, red = pricier; the flag red otherwise only marks the logo. */
+  --rise: #ef4250;
+  --brand: #ef4250;
   --good: #4fc97a;
   --good-soft: #17301f;
   --warn: #f2b84b;
@@ -34,10 +37,12 @@
   --muted: #676d78;
   --line: #e2e2dc;
   --line-strong: #cbcbc3;
-  --accent: #c8102e;
-  --accent-hover: #a30d25;
-  --accent-soft: #fbe9ec;
+  --accent: #16181d;
+  --accent-hover: #3d424d;
+  --accent-soft: #efefeb;
   --on-accent: #ffffff;
+  --rise: #c8102e;
+  --brand: #c8102e;
   --good: #157a3c;
   --good-soft: #e5f4ea;
   --warn: #9a6700;

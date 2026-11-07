@@ -161,13 +161,14 @@ const isLowestEver = product => inStock(product)
   && Number(product.price_week_ago) > Number(product.lowest_price)
   && Number(product.lowest_price) <= Number(product.lowest_price_ever);
 
+// One short line: "5 stores · save 350 ₾".
 function cardMeta(product) {
   if (!inStock(product)) return t("card.outOfStock");
   const saved = savings(product);
   const gap = saved >= 1 && product.available_listing_count > 1
-    ? ` · <span class="savings">${escapeHtml(t("card.cheaperThan", { amount: money(saved, product.currency || "GEL") }))}</span>`
+    ? ` · <span class="savings">${escapeHtml(t("card.save", { amount: money(saved, product.currency || "GEL") }))}</span>`
     : "";
-  return `${t("card.inStockAt", { count: product.available_listing_count })}${gap}`;
+  return `${t("card.stores", { count: product.available_listing_count })}${gap}`;
 }
 
 // How much the best in-stock price fell over the last week, or 0 below a 1% move.
@@ -203,11 +204,13 @@ function dayChangeAmount(product) {
 
 const DAY_CHANGES_SHOWN = 6;
 
-// Today page: what changed since yesterday, so the page shows it is kept up to date.
+// Today page: what changed since yesterday, drops first since that's what people come for.
 function renderDayChanges() {
   const changes = state.products
     .filter(product => dayChangeAmount(product) !== 0)
-    .sort((a, b) => Math.abs(dayChangeAmount(b)) - Math.abs(dayChangeAmount(a)) || byModel(a, b))
+    .sort((a, b) => (dayChangeAmount(a) > 0) - (dayChangeAmount(b) > 0)
+      || Math.abs(dayChangeAmount(b)) - Math.abs(dayChangeAmount(a))
+      || byModel(a, b))
     .slice(0, DAY_CHANGES_SHOWN);
   $("#dayChangesSection").hidden = false;
   $("#dayChanges").innerHTML = changes.length
@@ -223,6 +226,21 @@ function renderDayChanges() {
     </li>`;
     }).join("")
     : `<li class="empty-state">${t("day.none")}</li>`;
+}
+
+// Today headline: the server picks the phone and counts; this writes them in the page language.
+function renderIntro() {
+  const title = $("#overviewTitle");
+  const { model, price, store } = title.dataset;
+  if (model) title.textContent = t("intro.headline", { model, price: money(price), store });
+  const stats = $("#overviewStats");
+  if (!stats.dataset.models) return;
+  const parts = [
+    t("intro.models", { count: Number(stats.dataset.models) }),
+    t("intro.stores", { count: Number(stats.dataset.stores) }),
+  ];
+  if (stats.dataset.checked) parts.push(t("intro.checked", { time: relativeTime(stats.dataset.checked) }));
+  stats.textContent = parts.join(" · ");
 }
 
 // The Today list starts folded to the newest few models.
@@ -293,7 +311,6 @@ export function renderProducts() {
       <h3>${escapeHtml(productName(product))}</h3>
       <p class="product-variant">${escapeHtml(variant(product))}</p>
       <p class="card-price"><strong>${escapeHtml(money(product.lowest_price, product.currency || "GEL"))}</strong>${weekDrop(product)}</p>
-      ${product.lowest_installment_monthly != null ? `<p class="card-installment">${escapeHtml(t("card.installments", { amount: money(product.lowest_installment_monthly) }))}</p>` : ""}
       <p class="card-meta">${cardMeta(product)}</p>
     </article>`;
   }).join("");
@@ -584,7 +601,9 @@ function renderListings(items) {
 }
 
 // Redraw everything this module renders, keeping filters, scroll and the open phone.
+renderIntro();
 onLanguageChange(() => {
+  renderIntro();
   if (!state.products.length) return;
   populateFilters();
   renderOverview();

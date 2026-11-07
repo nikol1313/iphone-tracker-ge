@@ -28,12 +28,12 @@
 .product-card.out-of-stock .card-price strong { color: var(--muted); font-size: 1.1rem; }
 .card-change { font-size: .8rem; font-weight: 600; }
 .card-change.drop { color: var(--good); }
-.card-change.rise { color: var(--accent); }
+.card-change.rise { color: var(--rise); }
 .card-installment { margin: 0 0 4px; color: var(--ink-2); font-size: .8rem; }
 .card-meta { margin: 0; color: var(--muted); font-size: .78rem; }
 .card-meta .savings { color: var(--good); font-weight: 600; }
 .card-tag { align-self: flex-start; margin-bottom: 8px; padding: 2px 8px; color: var(--accent); background: var(--accent-soft); border-radius: 4px; font-size: .74rem; font-weight: 700; }
-.product-card.top-deal { border-color: var(--accent); }
+.product-card.top-deal { border-color: var(--good); }
 
 .catalog-controls { display: flex; gap: 10px; margin-top: 14px; }
 .show-more-button, .show-less-button { min-height: 42px; padding: 0 18px; color: var(--ink); background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); font-size: .88rem; font-weight: 600; cursor: pointer; }

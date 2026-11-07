@@ -445,6 +445,22 @@ async def cheapest_in_stock_per_model(session: AsyncSession) -> list[ProductSumm
     return await with_price_trends(session, list(cheapest.values()))
 
 
+async def count_stores_in_stock(session: AsyncSession) -> int:
+    """How many stores have at least one active phone in stock."""
+    return int(
+        await session.scalar(
+            select(func.count(func.distinct(ProductListing.store_id)))
+            .join(Product, Product.id == ProductListing.product_id)
+            .where(
+                Product.is_active.is_(True),
+                ProductListing.is_active.is_(True),
+                ProductListing.is_available.is_(True),
+            )
+        )
+        or 0
+    )
+
+
 async def get_product_summary(
     session: AsyncSession,
     product_id: int,

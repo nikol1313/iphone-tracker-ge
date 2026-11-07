@@ -7,6 +7,8 @@ cheapest price per model, are written here.
 
 import re
 from collections.abc import Sequence
+from dataclasses import dataclass
+from datetime import datetime
 from decimal import Decimal
 from html import escape, unescape
 from pathlib import Path
@@ -15,12 +17,13 @@ from xml.sax.saxutils import escape as xml_escape
 from fastapi import APIRouter, Response
 from fastapi.responses import HTMLResponse
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.conf import settings
 from app.db.db_schemas import ProductSummary
 from app.db.models import Product
 from app.dependencies import SessionDep
-from app.services import product_service
+from app.services import product_service, scraper_service
 from app.services.errors import NotFoundError
 
 router = APIRouter(include_in_schema=False)
@@ -32,6 +35,10 @@ MODELS_TOGGLE = (
     '<button class="fold-toggle" id="modelPricesToggle" type="button" '
     'aria-controls="modelPrices" aria-expanded="false" hidden><span></span>'
 )
+INTRO_TITLE = '<h1 id="overviewTitle" data-i18n="intro.title">iPhone-ის ფასები საქართველოში</h1>'
+INTRO_STATS = '<p class="intro-stats" id="overviewStats" role="status"></p>'
+# The headline's phone: the newest standard model (e.g. "iPhone 17"), the one most people buy.
+HEADLINE_MODEL = re.compile(r"iPhone \d+")
 # Same as catalog.js: the Today list starts folded to the newest few models.
 MODELS_FOLDED = 6
 TITLE_PATTERN = re.compile(r"<title>(.*?)</title>", re.DOTALL)
@@ -105,6 +112,62 @@ def _render_models(html: str, models: list[ProductSummary]) -> str:
     return html
 
 
+@dataclass(frozen=True, slots=True)
+class Intro:
+    """The Today headline's data; catalog.js formats it again in the reader's language."""
+
+    model: str
+    price: Decimal
+    store: str
+    models: int
+    stores: int
+    checked_at: datetime | None
+
+
+def _headline_product(models: Sequence[ProductSummary]) -> ProductSummary | None:
+    standard = [product for product in models if HEADLINE_MODEL.fullmatch(product.model)]
+    ranked = _by_model(standard or list(models))
+    return ranked[0] if ranked else None
+
+
+def _render_intro(html: str, intro: Intro | None) -> str:
+    if intro is None:
+        return html
+    title = f"{intro.model} დღეს ყველაზე იაფია {intro.store}-ში: {_price(intro.price)}"
+    html = html.replace(
+        INTRO_TITLE,
+        f'<h1 id="overviewTitle" data-model="{escape(intro.model)}" data-price="{intro.price}" '
+        f'data-store="{escape(intro.store)}">{escape(title)}</h1>',
+        1,
+    )
+    checked = f' data-checked="{intro.checked_at.isoformat()}"' if intro.checked_at else ""
+    return html.replace(
+        INTRO_STATS,
+        f'<p class="intro-stats" id="overviewStats" role="status" data-models="{intro.models}" '
+        f'data-stores="{intro.stores}"{checked}>{intro.models} მოდელი · {intro.stores} მაღაზია</p>',
+        1,
+    )
+
+
+async def _load_intro(session: AsyncSession, models: Sequence[ProductSummary]) -> Intro | None:
+    product = _headline_product(models)
+    if product is None:
+        return None
+    cheapest = await product_service.list_product_listings(
+        session, product_id=product.id, limit=1, offset=0
+    )
+    if not cheapest.items:
+        return None
+    return Intro(
+        model=_phone_name(product),
+        price=product.lowest_price,
+        store=cheapest.items[0].store_name,
+        models=len(models),
+        stores=await product_service.count_stores_in_stock(session),
+        checked_at=await scraper_service.last_refresh_started_at(session),
+    )
+
+
 def _product_url(product_id: int) -> str:
     return f"{settings.public_base_url}/?page=products&id={product_id}"
 
@@ -143,8 +206,13 @@ def _meta_tags(*, title: str, description: str, url: str, image: str) -> str:
     return "\n  ".join(lines)
 
 
-def render_index(product: ProductSummary | None, models: Sequence[ProductSummary] = ()) -> str:
+def render_index(
+    product: ProductSummary | None,
+    models: Sequence[ProductSummary] = (),
+    intro: Intro | None = None,
+) -> str:
     html = _render_models(INDEX_PATH.read_text(encoding="utf-8"), list(models))
+    html = _render_intro(html, intro)
     base = settings.public_base_url
     if product is None:
         # index.html's own title and description are already escaped HTML.
@@ -181,7 +249,8 @@ async def index(session: SessionDep, page: str | None = None, id: str | None = N
         except NotFoundError:
             product = None
     models = await product_service.cheapest_in_stock_per_model(session)
-    return HTMLResponse(render_index(product, models), headers=NO_CACHE)
+    intro = await _load_intro(session, models)
+    return HTMLResponse(render_index(product, models, intro), headers=NO_CACHE)
 
 
 @router.get("/sitemap.xml")

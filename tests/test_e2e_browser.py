@@ -122,14 +122,14 @@ def test_site_opens_in_georgian_and_switches_to_english(browser):
     page = browser.new_page()
     page.goto(SITE_URL)
     expect(page.locator("html")).to_have_attribute("lang", "ka")
-    expect(page.locator("#overviewTitle")).to_have_text("ყველა iPhone, ყველა ფასი, ერთ ადგილას")
+    expect(page.locator("#overviewTitle")).to_contain_text("დღეს ყველაზე იაფია")
 
     # Switching keeps you where you were on the page.
     page.wait_for_selector(".model-price")
     page.evaluate("window.scrollTo({ top: 600, behavior: 'instant' })")
     scrolled = page.evaluate("window.scrollY")
     page.click("#langToggle")
-    expect(page.locator("#overviewTitle")).to_have_text("Every iPhone, every price, one place")
+    expect(page.locator("#overviewTitle")).to_contain_text("Cheapest iPhone")
     expect(page.locator("#langToggle")).to_have_text("ქართ")
     expect(page.locator("#modelPrices .model-price-meta").first).to_contain_text("In stock at")
     # Shorter English text above can nudge it a little, but it must not jump to the top.

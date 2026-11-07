@@ -14,7 +14,6 @@
   main { padding-top: 14px; }
   .intro, .search-band, .section, footer { width: calc(100% - 28px); }
   .intro h1 { font-size: 1.7rem; }
-  .intro-lead { font-size: .95rem; }
   .section { padding: 18px 16px; }
   .section-heading { align-items: flex-start; flex-direction: column; gap: 8px; margin-bottom: 16px; }
   .catalog-meta { align-items: flex-start; }
