@@ -1,11 +1,12 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 import httpx
 import pytest
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.db.models import ProductListing, Store
+from app.db.models import PriceHist, ProductListing, Store
 from tests.test_products import create_admin_product
 
 
@@ -141,7 +142,8 @@ async def test_index_lists_cheapest_price_per_model(
     assert f'data-product-id="{product["id"]}" tabindex="0">' in html
     assert '<span class="model-price-name">iPhone 17 Pro<small>256GB · Natural Titanium</small></span>' in html
     assert '<span class="model-price-value">3,199 ₾</span>' in html
-    assert "მარაგშია 1 მაღაზიაში" in html
+    # Each row names the store with the price.
+    assert '<span class="model-price-store">Store A</span> · მარაგშია 1 მაღაზიაში' in html
     # The only model in stock leads the headline, with its cheapest store.
     assert (
         '<h1 id="overviewTitle" data-model="iPhone 17 Pro" data-price="3199.00" data-store="Store A">'
@@ -202,3 +204,66 @@ def test_index_folds_the_model_list_like_the_page() -> None:
     assert html.count('tabindex="0" hidden>') == 3
     assert "<span>ყველა 9 მოდელის ჩვენება</span>" in html
     assert 'aria-expanded="false"><span>' in html
+
+
+@pytest.mark.asyncio
+async def test_headline_has_the_models_30_day_price_line(
+    client: httpx.AsyncClient,
+    session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    _, product = await create_admin_product(client, session_factory)
+    await _priced_product(session_factory, product["id"])
+    async with session_factory() as session:
+        listing_id = await session.scalar(select(ProductListing.id))
+        now = datetime.now(UTC)
+        session.add_all([
+            PriceHist(listing_id=listing_id, price=Decimal("3399.00"), recorded_at=now - timedelta(days=10)),
+            PriceHist(listing_id=listing_id, price=Decimal("3199.00"), recorded_at=now - timedelta(days=2)),
+        ])
+        await session.commit()
+
+    html = (await client.get("/")).text
+
+    assert '<figure class="intro-trend" id="introTrend" data-low="3199.00" data-high="3399.00">' in html
+    assert "<polyline points=" in html
+    assert "<figcaption>ბოლო 30 დღე: 3,199 ₾ – 3,399 ₾</figcaption>" in html
+
+
+@pytest.mark.asyncio
+async def test_headline_hides_the_price_line_without_history(
+    client: httpx.AsyncClient,
+    session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    _, product = await create_admin_product(client, session_factory)
+    await _priced_product(session_factory, product["id"])
+
+    html = (await client.get("/")).text
+
+    assert '<figure class="intro-trend" id="introTrend" hidden></figure>' in html
+
+
+def test_prices_are_whole_lari_and_drops_show_a_percentage() -> None:
+    from app.api.pages import _model_row, _price
+    from app.db.db_schemas import ProductSummary
+
+    assert _price(Decimal("5999.99")) == "6,000 ₾"
+    assert _price(Decimal("8339")) == "8,339 ₾"
+    product = ProductSummary(
+        id=1,
+        brand="Apple",
+        model="iPhone 18 Pro",
+        storage="256GB",
+        color="Black",
+        image_url=None,
+        lowest_price=Decimal("6369"),
+        lowest_price_store="Zoommer",
+        price_week_ago=Decimal("6999"),
+        currency="GEL",
+        listing_count=2,
+        available_listing_count=2,
+    )
+
+    row = _model_row(product, hidden=False)
+
+    assert '<span class="model-price-store">Zoommer</span> · მარაგშია 2 მაღაზიაში' in row
+    assert "−630 ₾ (−9%) ამ კვირაში" in row

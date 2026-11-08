@@ -188,6 +188,8 @@ class ProductResponse(ProductBase):
 class ProductSummary(ProductResponse):
     lowest_price: Decimal | None
     currency: str | None
+    # The store with that price (the first by id when several tie).
+    lowest_price_store: str | None = None
     listing_count: int
     available_listing_count: int = 0
     # Most expensive available offer in the lowest price's currency.

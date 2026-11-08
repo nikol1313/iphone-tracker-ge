@@ -22,14 +22,10 @@ export const $ = (selector, root = document) => root.querySelector(selector);
 export const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 export const pages = new Set(["overview", "products", "compare", "alerts", "about"]);
 const pageTitleKeys = { overview: "title.overview", products: "title.products", compare: "title.compare", alerts: "title.alerts", about: "title.about" };
-// "3,199 ₾" the way Georgian stores write it; tetri only when there are any.
+// "3,199 ₾": always whole lari, so 5,999.99 shows as 6,000 next to 8,339.
 export const money = (value, currency = "GEL") => {
   if (value == null) return t("noPrice");
-  const number = Number(value);
-  const amount = new Intl.NumberFormat("en", {
-    minimumFractionDigits: Number.isInteger(number) ? 0 : 2,
-    maximumFractionDigits: 2,
-  }).format(number);
+  const amount = new Intl.NumberFormat("en", { maximumFractionDigits: 0 }).format(Math.round(Number(value)));
   return currency === "GEL" ? `${amount} ₾` : `${amount} ${currency}`;
 };
 // Browsers without Georgian locale data fall back to English in Intl; spell Georgian out ourselves.
