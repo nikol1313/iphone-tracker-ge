@@ -3,7 +3,6 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException, Query, Response, status
 
 from app.db.db_schemas import (
-    AbroadPricesResponse,
     Page,
     ProductCreate,
     ProductSpecsResponse,
@@ -11,7 +10,7 @@ from app.db.db_schemas import (
     ProductUpdate,
 )
 from app.dependencies import CurrentAdmin, SessionDep
-from app.services import abroad_service, product_service, spec_service
+from app.services import product_service, spec_service
 from app.services.errors import ConflictError, NotFoundError
 
 router = APIRouter(prefix="/products", tags=["products"])
@@ -74,18 +73,6 @@ async def get_product_specs(
         return await spec_service.get_product_specs(session, product_id)
     except NotFoundError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
-
-
-@router.get("/{product_id}/abroad", response_model=AbroadPricesResponse)
-async def get_abroad_prices(
-    product_id: int,
-    session: SessionDep,
-) -> AbroadPricesResponse:
-    try:
-        product = await product_service.require_active_product(session, product_id)
-    except NotFoundError as error:
-        raise HTTPException(status_code=404, detail=str(error)) from error
-    return await abroad_service.abroad_prices(product.model, product.storage)
 
 
 @router.patch("/{product_id}", response_model=ProductSummary)
