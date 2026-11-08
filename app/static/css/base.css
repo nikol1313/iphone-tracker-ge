@@ -1,54 +1,69 @@
 /* Shared theme tokens and browser defaults. Dark is the default theme. */
+/* Shared theme tokens and browser defaults. Dark is the default theme.
+   Nothing is pure black or white: every tone leans warm, like ink on old paper. */
 :root {
   color-scheme: dark;
-  --bg: #121314;
-  --surface: #1b1c1e;
-  --surface-2: #26272a;
-  --ink: #ececea;
-  --ink-2: #c4c4c0;
-  --muted: #95979c;
-  --line: #2e2f33;
-  --line-strong: #44454a;
-  /* Buttons and highlights stay neutral: in a price app red reads as "price went up". */
-  --accent: #ececea;
-  --accent-hover: #ffffff;
-  --accent-soft: #26272a;
-  --on-accent: #121314;
-  /* Green = cheaper, red = pricier; the flag red otherwise only marks the logo. */
-  --rise: #ef4250;
-  --brand: #ef4250;
-  --good: #4fc97a;
-  --good-soft: #17301f;
+  --bg: #1a1a19;
+  --surface: #20201e;
+  --surface-2: #2a2926;
+  --ink: #e9e7e2;
+  --ink-2: #a9a69e;
+  --muted: #7a776f;
+  --line: #2e2d2a;
+  --line-strong: #403e3a;
+  /* The main button is a light pill: the one bright thing on screen. */
+  --accent: #e9e7e2;
+  --accent-hover: #f4f2ed;
+  --accent-soft: #2a2926;
+  --on-accent: #1a1a19;
+  /* Amber for tiny touches, soft blue for the rare second highlight. */
+  --amber: #f2b84b;
+  --blue: #84afe3;
+  /* Green = cheaper, red = pricier. Both muted so they sit in the warm palette. */
+  /* Paper behind store photos (they ship on white). */
+  --photo: #ebe8e1;
+  --rise: #e07a62;
+  --brand: #f2b84b;
+  --good: #9cc58a;
+  --good-soft: #232a1f;
   --warn: #f2b84b;
-  --warn-soft: #33290f;
-  --danger: #ff7b72;
-  --shadow: 0 12px 32px rgba(0, 0, 0, .45);
-  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Georgian", "Helvetica Neue", Arial, sans-serif;
-  --radius: 8px;
+  --warn-soft: #2d2618;
+  --danger: #e8836f;
+  --shadow: 0 18px 40px rgba(10, 9, 7, .5);
+  --font: "Instrument Sans", "Noto Sans Georgian", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --serif: "Newsreader", "Noto Serif Georgian", Georgia, serif;
+  --radius: 10px;
+  --column: 760px;
+  --wide: 1120px;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+  --fade: 150ms ease;
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #f6f6f3;
-  --surface: #ffffff;
-  --surface-2: #efefeb;
-  --ink: #16181d;
-  --ink-2: #3d424d;
-  --muted: #676d78;
-  --line: #e2e2dc;
-  --line-strong: #cbcbc3;
-  --accent: #16181d;
-  --accent-hover: #3d424d;
-  --accent-soft: #efefeb;
-  --on-accent: #ffffff;
-  --rise: #c8102e;
-  --brand: #c8102e;
-  --good: #157a3c;
-  --good-soft: #e5f4ea;
-  --warn: #9a6700;
-  --warn-soft: #fbf3dc;
-  --danger: #b42318;
-  --shadow: 0 12px 32px rgba(22, 24, 29, .14);
+  --bg: #f1eee7;
+  --surface: #f7f5f0;
+  --surface-2: #e7e3da;
+  --ink: #1a1a19;
+  --ink-2: #4f4c46;
+  --muted: #7a776f;
+  --line: #ddd8cd;
+  --line-strong: #c7c1b4;
+  --accent: #1a1a19;
+  --accent-hover: #34332f;
+  --accent-soft: #e7e3da;
+  --on-accent: #f1eee7;
+  --amber: #b07a12;
+  --blue: #3d6fa8;
+  --photo: #f7f5f0;
+  --rise: #b5452c;
+  --brand: #b07a12;
+  --good: #4e7a3e;
+  --good-soft: #e3e8d8;
+  --warn: #8f6510;
+  --warn-soft: #f2e7cc;
+  --danger: #a8402b;
+  --shadow: 0 18px 40px rgba(60, 50, 30, .14);
 }
 
 * { box-sizing: border-box; }
@@ -71,7 +86,7 @@ body {
   color: var(--ink);
   background: var(--bg);
   font-family: var(--font);
-  font-size: 15px;
+  font-size: 15.5px;
   font-variant-numeric: tabular-nums;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -79,8 +94,21 @@ body {
 button, input, select { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 a { color: inherit; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+::selection { color: var(--on-accent); background: var(--amber); }
 svg { width: 1.1em; height: 1.1em; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .icon-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 h1, h2, h3, p { margin-top: 0; }
+h1, h2, h3 { font-weight: 500; letter-spacing: -.02em; }
+button, a, input, select, .product-card, .model-price, .chip, .use-option { transition: color var(--fade), background-color var(--fade), border-color var(--fade), box-shadow var(--fade), opacity var(--fade); }
+
+/* Theme switch (app.js): the new theme is revealed by a growing circle, so drop the default crossfade. */
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+
+/* Ink-named motion. All of it is switched off under prefers-reduced-motion (responsive.css). */
+@keyframes ink-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes ink-bleed { from { opacity: 0; filter: blur(3px); } to { opacity: 1; filter: none; } }
+@keyframes pencil-draw { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes blot-splat { 0% { transform: scale(0); } 70% { transform: scale(1.25); } 100% { transform: scale(1); } }
+@keyframes ink-drip { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }

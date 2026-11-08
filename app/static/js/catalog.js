@@ -232,7 +232,8 @@ function renderDayChanges() {
 function renderIntro() {
   const title = $("#overviewTitle");
   const { model, price, store } = title.dataset;
-  if (model) title.textContent = t("intro.headline", { model, price: money(price), store });
+  // Non-breaking space keeps "2,799 ₾" together when the headline wraps.
+  if (model) title.textContent = t("intro.headline", { model, price: money(price).replace(" ", "\u00a0"), store });
   const stats = $("#overviewStats");
   if (!stats.dataset.models) return;
   const parts = [

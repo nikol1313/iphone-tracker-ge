@@ -145,7 +145,7 @@ async def test_index_lists_cheapest_price_per_model(
     # The only model in stock leads the headline, with its cheapest store.
     assert (
         '<h1 id="overviewTitle" data-model="iPhone 17 Pro" data-price="3199.00" data-store="Store A">'
-        "iPhone 17 Pro დღეს ყველაზე იაფია Store A-ში: 3,199 ₾</h1>"
+        "iPhone 17 Pro დღეს ყველაზე იაფია Store A-ში: 3,199\u00a0₾</h1>"
     ) in html
     assert 'data-models="1" data-stores="1"' in html
 

@@ -102,7 +102,27 @@ function bindThemeToggle() {
   onLanguageChange(() => applyTheme(document.documentElement.dataset.theme));
   button.addEventListener("click", () => {
     const nextTheme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
-    applyTheme(nextTheme);
+    const swap = () => applyTheme(nextTheme);
+    const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!document.startViewTransition || reduceMotion) {
+      swap();
+    } else {
+      // The new theme spreads out from the button like ink, instead of snapping.
+      const { left, top, width, height } = button.getBoundingClientRect();
+      const x = left + width / 2;
+      const y = top + height / 2;
+      // Overshoot the farthest corner (bottom-left) so it is covered well before the
+      // animation's slow finish, instead of keeping the old color until the very end.
+      const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)) * 1.4;
+      document.startViewTransition(swap).ready.then(() => {
+        document.documentElement.animate(
+          { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
+          { duration: 600, easing: "cubic-bezier(.65, 0, .35, 1)", pseudoElement: "::view-transition-new(root)" },
+        );
+      }).catch(() => {
+        // Transition skipped (e.g. tab hidden): the theme has still been applied.
+      });
+    }
     try {
       localStorage.setItem("priceMonitorTheme", nextTheme);
     } catch {
