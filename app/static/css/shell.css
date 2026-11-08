@@ -44,13 +44,13 @@ main { min-height: calc(100vh - 150px); padding: clamp(28px, 6vw, 72px) 0 0; }
 .page-view[hidden] { display: none; }
 
 /* Two widths: a narrow reading column, and a wider one for the product grid and compare tables. */
-.intro { width: min(var(--column), calc(100% - 56px)); margin: 0 auto clamp(40px, 7vw, 72px); }
-/* 56px max keeps the live headline ("Cheapest iPhone 17 today: 2,799 ₾ at Zoommer") to two lines. */
-.intro h1 { margin: 0; font-size: clamp(1.75rem, 6vw, 3.5rem); font-weight: 500; line-height: 1.02; letter-spacing: -.04em; text-wrap: balance; }
-/* The headline with its model's 30-day price line beside it (below it on a phone). */
-.intro-head { display: flex; align-items: flex-end; gap: 12px 32px; flex-wrap: wrap; }
-.intro-head h1 { flex: 1 1 420px; }
-.intro-trend { flex: none; margin: 0 0 4px; color: var(--muted); font-size: .8rem; }
+/* The intro takes the wide column so the live headline fits on one line on a desktop. */
+.intro { width: min(var(--wide), calc(100% - 56px)); margin: 0 auto clamp(40px, 7vw, 72px); }
+/* 2.6rem max fits the longest headline ("… Megatechnica-ში: 2,799 ₾", ~1,100px) on one line. */
+.intro h1 { margin: 0; font-size: clamp(1.75rem, 3.4vw, 2.6rem); font-weight: 500; line-height: 1.02; letter-spacing: -.04em; text-wrap: balance; }
+/* Under the headline: the counts on the left, the model's 30-day price line on the right. */
+.intro-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 32px; flex-wrap: wrap; }
+.intro-trend { flex: none; margin: 0; color: var(--muted); font-size: .8rem; }
 .intro-trend[hidden] { display: none; }
 .intro-trend svg { display: block; width: 140px; height: 44px; margin-bottom: 4px; overflow: visible; }
 .intro-trend polyline { fill: none; stroke: var(--ink-2); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
