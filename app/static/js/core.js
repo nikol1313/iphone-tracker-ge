@@ -7,6 +7,7 @@ export const state = {
   searchQuery: "",
   tracked: [],
   selectedId: null,
+  gridScroll: 0,
   visibleCount: 12,
   currentPage: "overview",
   notificationSettings: null,
@@ -107,11 +108,13 @@ export function productIdFromLocation() {
 }
 
 // Keep the address bar on the phone being looked at, so it can be shared or bookmarked.
-export function setProductInLocation(productId) {
+// A pushed entry marks a phone opened from the grid, so going back returns to the grid.
+export function setProductInLocation(productId, { push = false } = {}) {
   const url = new URL(window.location.href);
   if (url.searchParams.get("id") === String(productId)) return;
   url.searchParams.set("id", productId);
-  window.history.replaceState(window.history.state, "", url);
+  if (push) window.history.pushState({ page: "products", detail: true }, "", url);
+  else window.history.replaceState(window.history.state, "", url);
 }
 
 function setPageTitle() {
@@ -133,7 +136,7 @@ export function showPage(page, updateHistory = false) {
   if (updateHistory) {
     const url = new URL(window.location.href);
     url.searchParams.set("page", nextPage);
-    if (nextPage !== "products") url.searchParams.delete("id");
+    url.searchParams.delete("id");
     url.hash = "";
     window.history.pushState({ page: nextPage }, "", url);
   }

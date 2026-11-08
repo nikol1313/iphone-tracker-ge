@@ -43,6 +43,14 @@
 .show-more-button[hidden], .show-less-button[hidden] { display: none; }
 .loading-state, .empty-state { grid-column: 1 / -1; min-height: 140px; display: grid; place-items: center; padding: 24px; color: var(--muted); text-align: center; border: 1px dashed var(--line-strong); border-radius: 18px; animation: ink-bleed 600ms ease backwards; }
 
+/* All iPhones shows the grid, or one phone's page with a way back (catalog.js sets data-detail). */
+[data-page-view="products"]:not([data-detail]) .product-detail-part,
+[data-page-view="products"][data-detail] .product-grid-part { display: none; }
+.detail-back { width: min(var(--wide), calc(100% - 56px)); margin: 0 auto 20px; }
+.back-button { display: inline-flex; align-items: center; gap: 4px; min-height: 40px; margin-left: -10px; padding: 0 14px 0 8px; color: var(--ink-2); background: transparent; border: 0; border-radius: 999px; font-size: .92rem; font-weight: 500; cursor: pointer; }
+.back-button:hover { color: var(--ink); background: var(--surface-2); }
+.back-button svg { width: 18px; height: 18px; transform: rotate(90deg); }
+
 .history-tools { display: grid; justify-items: end; gap: 12px; }
 .history-product { min-width: 0; display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: start; gap: 14px; }
 .history-product-image { width: 72px; height: 72px; display: grid; place-items: center; overflow: hidden; background: var(--photo); border: 1px solid var(--line); border-radius: 14px; }
@@ -92,7 +100,9 @@
 .all-time-price span { color: var(--muted); font-size: .8rem; }
 .all-time-price strong { font-size: 1.15rem; font-weight: 600; letter-spacing: -.01em; }
 
-.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 18px; }
+/* Positioned so the header's absolutely placed sr-only label stays inside the scroller
+   instead of widening the whole page on phones. */
+.table-wrap { position: relative; overflow-x: auto; border: 1px solid var(--line); border-radius: 18px; }
 table { width: 100%; min-width: 680px; border-collapse: collapse; }
 th, td { padding: 12px 14px; border-bottom: 1px solid var(--line); text-align: left; font-size: .88rem; }
 th { color: var(--muted); font-size: .78rem; font-weight: 500; }
