@@ -133,7 +133,9 @@ def _headline_product(models: Sequence[ProductSummary]) -> ProductSummary | None
 def _render_intro(html: str, intro: Intro | None) -> str:
     if intro is None:
         return html
-    title = f"{intro.model} დღეს ყველაზე იაფია {intro.store}-ში: {_price(intro.price)}"
+    # Non-breaking space keeps "2,799 ₾" together when the headline wraps.
+    price = _price(intro.price).replace(" ", "\u00a0")
+    title = f"{intro.model} დღეს ყველაზე იაფია {intro.store}-ში: {price}"
     html = html.replace(
         INTRO_TITLE,
         f'<h1 id="overviewTitle" data-model="{escape(intro.model)}" data-price="{intro.price}" '

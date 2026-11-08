@@ -5,26 +5,27 @@
 #refreshStatus:empty { display: none; }
 
 .catalog-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 12px; margin-bottom: 16px; }
-.filter-field { display: grid; gap: 4px; min-width: 150px; color: var(--muted); font-size: .78rem; font-weight: 600; }
-.filter-field select { width: 100%; min-width: 0; min-height: 36px; padding: 0 30px 0 10px; color: var(--ink); background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23767b85' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 10px center; border: 1px solid var(--line-strong); border-radius: var(--radius); font-size: .88rem; appearance: none; cursor: pointer; }
+.filter-field { display: grid; gap: 6px; min-width: 150px; color: var(--muted); font-size: .78rem; font-weight: 500; }
+.filter-field select { width: 100%; min-width: 0; min-height: 38px; padding: 0 34px 0 14px; color: var(--ink); background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%237a776f' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 14px center; border: 1px solid var(--line-strong); border-radius: 999px; font-size: .88rem; appearance: none; cursor: pointer; }
 .filter-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; color: var(--ink-2); font-size: .88rem; cursor: pointer; }
-.filter-toggle input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+.filter-toggle input { width: 16px; height: 16px; margin: 0; accent-color: var(--amber); }
 .catalog-filters .text-button { min-height: 36px; margin-left: auto; }
 .catalog-filters .text-button[hidden] { display: none; }
 
-.product-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-.product-card { display: flex; flex-direction: column; padding: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; cursor: pointer; }
-.product-card:hover { border-color: var(--line-strong); }
-.product-card.selected { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
-.product-image { position: relative; display: grid; place-items: center; height: 150px; margin-bottom: 10px; overflow: hidden; background: #fff; border-radius: 6px; }
-.product-image img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.product-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.product-card { display: flex; flex-direction: column; padding: 12px 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; cursor: pointer; }
+.product-card:hover { border-color: var(--line-strong); background: var(--surface-2); }
+.product-card.selected { border-color: var(--amber); box-shadow: inset 0 0 0 1px var(--amber); }
+.product-image { position: relative; display: grid; place-items: center; height: 150px; margin-bottom: 12px; overflow: hidden; background: var(--photo); border-radius: 12px; }
+/* Store photos sit on white; multiply blends that white into the warm paper tone. */
+.product-image img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
 .product-image-fallback { display: none; color: var(--muted); font-size: .8rem; }
 .product-image.no-image { background: var(--surface-2); }
 .product-image.no-image .product-image-fallback { display: block; }
-.product-card h3 { margin: 0; font-size: .9rem; font-weight: 600; line-height: 1.3; }
+.product-card h3 { margin: 0; font-size: .92rem; font-weight: 500; line-height: 1.3; letter-spacing: -.01em; }
 .product-variant { margin: 2px 0 8px; color: var(--muted); font-size: .8rem; }
 .card-price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin: auto 0 4px; }
-.card-price strong { font-size: 1.35rem; font-weight: 700; letter-spacing: -.01em; }
+.card-price strong { font-size: 1.35rem; font-weight: 600; letter-spacing: -.025em; }
 .product-card.out-of-stock .card-price strong { color: var(--muted); font-size: 1.1rem; }
 .card-change { font-size: .8rem; font-weight: 600; }
 .card-change.drop { color: var(--good); }
@@ -32,170 +33,174 @@
 .card-installment { margin: 0 0 4px; color: var(--ink-2); font-size: .8rem; }
 .card-meta { margin: 0; color: var(--muted); font-size: .78rem; }
 .card-meta .savings { color: var(--good); font-weight: 600; }
-.card-tag { align-self: flex-start; margin-bottom: 8px; padding: 2px 8px; color: var(--accent); background: var(--accent-soft); border-radius: 4px; font-size: .74rem; font-weight: 700; }
+.card-tag { align-self: flex-start; margin-bottom: 8px; padding: 2px 9px; color: var(--amber); border: 1px solid color-mix(in srgb, var(--amber) 45%, transparent); border-radius: 999px; font-size: .72rem; font-weight: 600; }
 .product-card.top-deal { border-color: var(--good); }
 
-.catalog-controls { display: flex; gap: 10px; margin-top: 14px; }
-.show-more-button, .show-less-button { min-height: 42px; padding: 0 18px; color: var(--ink); background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); font-size: .88rem; font-weight: 600; cursor: pointer; }
+.catalog-controls { display: flex; gap: 10px; margin-top: 20px; }
+.show-more-button, .show-less-button { min-height: 44px; padding: 0 22px; color: var(--ink); background: transparent; border: 1px solid var(--line-strong); border-radius: 999px; font-size: .88rem; font-weight: 500; cursor: pointer; }
 .show-more-button { flex: 1; }
 .show-more-button:hover, .show-less-button:hover { background: var(--surface-2); }
 .show-more-button[hidden], .show-less-button[hidden] { display: none; }
-.loading-state, .empty-state { grid-column: 1 / -1; min-height: 140px; display: grid; place-items: center; padding: 24px; color: var(--muted); text-align: center; border: 1px dashed var(--line-strong); border-radius: 10px; }
+.loading-state, .empty-state { grid-column: 1 / -1; min-height: 140px; display: grid; place-items: center; padding: 24px; color: var(--muted); text-align: center; border: 1px dashed var(--line-strong); border-radius: 18px; animation: ink-bleed 600ms ease backwards; }
 
 .history-tools { display: grid; justify-items: end; gap: 12px; }
 .history-product { min-width: 0; display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: start; gap: 14px; }
-.history-product-image { width: 72px; height: 72px; display: grid; place-items: center; overflow: hidden; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); }
-.history-product-image img { width: 100%; height: 100%; object-fit: contain; }
+.history-product-image { width: 72px; height: 72px; display: grid; place-items: center; overflow: hidden; background: var(--photo); border: 1px solid var(--line); border-radius: 14px; }
+.history-product-image img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
 .history-product-image span { color: var(--muted); font-size: .7rem; }
 .history-product-image.no-image { background: var(--surface-2); }
 .history-product-copy { min-width: 0; }
 .summary-strip { display: grid; grid-template-columns: repeat(2, minmax(120px, 1fr)); gap: 12px 20px; }
 .summary-item span { display: block; color: var(--muted); font-size: .78rem; }
-.summary-item strong { font-size: 1.05rem; font-weight: 700; }
+.summary-item strong { font-size: 1.05rem; font-weight: 600; }
 .selected-actions { display: flex; gap: 8px; width: 100%; }
 .selected-actions .small-button { flex: 1; }
 
 #priceChart { display: block; width: 100%; height: 320px; overflow: visible; }
 #priceChart text { stroke: none; }
-.chart-wrap { position: relative; min-height: 320px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); }
-.chart-line { fill: none; stroke: var(--accent); stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+.chart-wrap { position: relative; min-height: 320px; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; }
+.chart-line { fill: none; stroke: var(--ink); stroke-width: 2.25; vector-effect: non-scaling-stroke; animation: pencil-draw 900ms var(--ease) backwards; }
 .chart-baseline { stroke-dasharray: 9 8; opacity: .8; }
 .chart-tooltip-link { fill: none; stroke: var(--line-strong); stroke-width: 2; vector-effect: non-scaling-stroke; }
 .chart-tooltip { fill: var(--surface); stroke: var(--line-strong); stroke-width: 2; vector-effect: non-scaling-stroke; }
-.chart-tooltip-price { fill: var(--ink); font: 700 28px var(--font); }
+.chart-tooltip-price { fill: var(--ink); font: 600 28px var(--font); }
 .chart-tooltip-date { fill: var(--muted); font: 21px var(--font); }
 .chart-axis-price { fill: var(--muted); font-size: 26px; }
-.chart-snapshot { fill: var(--accent); stroke: var(--surface); stroke-width: 3; vector-effect: non-scaling-stroke; }
+/* Price points land as small amber blots once the line has been drawn. */
+.chart-snapshot { fill: var(--amber); stroke: var(--bg); stroke-width: 3; vector-effect: non-scaling-stroke; transform-box: fill-box; transform-origin: center; animation: blot-splat 350ms 700ms var(--ease) backwards; }
 .chart-snapshot-large { stroke-width: 5; }
 .chart-annotation { fill: var(--muted); font: 24px var(--font); }
-.chart-note { fill: var(--ink); font: 600 17px var(--font); }
+.chart-note { fill: var(--ink); font: 500 17px var(--font); }
 .chart-label { fill: var(--muted); font: 14px var(--font); }
-.chart-point-price { fill: var(--ink); font: 600 15px var(--font); }
+.chart-point-price { fill: var(--ink); font: 500 15px var(--font); }
+.chart-point-price, .chart-point-date { animation: ink-bleed 400ms 800ms ease backwards; }
 .chart-point-date { fill: var(--muted); font: 12px var(--font); }
 .chart-empty { position: absolute; inset: 0; display: grid; place-items: center; padding: 20px; color: var(--muted); font-size: .88rem; text-align: center; }
 .chart-empty[hidden] { display: none; }
 /* "Buy now or wait?": a colored edge says which. */
-.verdict { margin: 0 0 14px; padding: 12px 16px; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--verdict-color, var(--line-strong)); border-radius: var(--radius); }
-.verdict strong { display: block; font-size: 1rem; }
-.verdict p { margin: 2px 0 0; color: var(--ink-2); font-size: .88rem; line-height: 1.45; }
+.verdict { margin: 0 0 18px; padding: 14px 18px; background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--verdict-color, var(--line-strong)); border-radius: 4px 14px 14px 4px; animation: ink-rise 350ms var(--ease) backwards; }
+.verdict strong { display: block; font-size: 1rem; font-weight: 600; }
+/* The advice reads like a handwritten note: serif. */
+.verdict p { margin: 4px 0 0; color: var(--ink-2); font-family: var(--serif); font-size: 1.05rem; line-height: 1.45; }
 .verdict-good { --verdict-color: var(--good); background: var(--good-soft); }
 .verdict-wait { --verdict-color: var(--warn); background: var(--warn-soft); }
 .verdict-good strong { color: var(--good); }
 .verdict-wait strong { color: var(--warn); }
 .compare-card .verdict { margin: 10px 0 0; padding: 8px 12px; }
 .all-time-prices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
-.all-time-price { display: grid; gap: 2px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); }
+.all-time-price { display: grid; gap: 2px; padding: 14px 18px; border: 1px solid var(--line); border-radius: 14px; }
 .all-time-price span { color: var(--muted); font-size: .8rem; }
-.all-time-price strong { font-size: 1.05rem; font-weight: 700; }
+.all-time-price strong { font-size: 1.15rem; font-weight: 600; letter-spacing: -.01em; }
 
-.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 18px; }
 table { width: 100%; min-width: 680px; border-collapse: collapse; }
 th, td { padding: 12px 14px; border-bottom: 1px solid var(--line); text-align: left; font-size: .88rem; }
-th { color: var(--muted); font-size: .78rem; font-weight: 600; }
+th { color: var(--muted); font-size: .78rem; font-weight: 500; }
 tbody tr:last-child td { border-bottom: 0; }
-tbody tr:hover { background: var(--surface-2); }
+tbody tr:hover { background: var(--surface); }
 tbody tr.best-offer td:first-child { box-shadow: inset 3px 0 0 var(--good); }
 .listing-title { display: block; max-width: 280px; margin-top: 2px; overflow: hidden; color: var(--muted); font-size: .78rem; text-overflow: ellipsis; white-space: nowrap; }
-.listing-price { font-weight: 700; white-space: nowrap; }
+.listing-price { font-weight: 600; white-space: nowrap; }
 .listing-installment { display: block; margin-top: 2px; color: var(--muted); font-size: .78rem; font-weight: 400; }
 .listing-diff { color: var(--muted); white-space: nowrap; }
 .best-tag { margin-left: 8px; color: var(--good); font-size: .78rem; font-weight: 600; }
 .status { color: var(--good); font-weight: 600; }
 .status.unavailable { color: var(--muted); font-weight: 400; }
-.store-link { display: grid; place-items: center; width: 32px; height: 32px; color: var(--ink-2); border: 1px solid var(--line); border-radius: var(--radius); }
+.store-link { display: grid; place-items: center; width: 32px; height: 32px; color: var(--ink-2); border: 1px solid var(--line); border-radius: 50%; }
 .store-link:hover { color: var(--ink); background: var(--surface-2); }
-.empty-inline { padding: 24px; color: var(--muted); border: 1px dashed var(--line-strong); border-radius: var(--radius); text-align: center; }
+.empty-inline { padding: 24px; color: var(--muted); border: 1px dashed var(--line-strong); border-radius: 18px; text-align: center; }
 
-.account-panel { min-height: 120px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius); }
+.account-panel { min-height: 120px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 22px 24px; border: 1px solid var(--line); border-radius: 18px; }
 .account-panel > p { margin: 0; color: var(--muted); }
 .tracked-list { width: 100%; }
 .tracked-row { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(140px, .8fr) auto; align-items: center; gap: 18px; padding: 14px 0; border-bottom: 1px solid var(--line); }
 .tracked-row:last-child { border-bottom: 0; }
 .tracked-row h3 { margin: 0 0 2px; font-size: .95rem; }
 .tracked-row p { margin: 0; color: var(--muted); font-size: .85rem; }
-.tracked-row .tracked-price { color: var(--ink); font-size: 1.05rem; font-weight: 700; }
+.tracked-row .tracked-price { color: var(--ink); font-size: 1.05rem; font-weight: 600; }
 .tracked-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
-.alert-value { color: var(--ink-2) !important; font-weight: 600; }
+.alert-value { color: var(--ink-2) !important; font-weight: 500; }
 .alert-value.reached { color: var(--good) !important; }
 
 /* Compare page */
 .compare-pickers { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: start; gap: 14px; margin-bottom: 22px; }
 .compare-slot { display: grid; gap: 8px; min-width: 0; }
-.compare-slot > label { color: var(--muted); font-size: .78rem; font-weight: 600; }
-.picker-search { position: relative; display: flex; align-items: center; min-height: 44px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); }
+.compare-slot > label { color: var(--muted); font-size: .78rem; font-weight: 500; }
+.picker-search { position: relative; display: flex; align-items: center; min-height: 46px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 999px; }
 .picker-search:focus-within { border-color: var(--ink-2); }
-.picker-search > svg { flex: 0 0 auto; width: 16px; height: 16px; margin-left: 12px; color: var(--muted); }
-.picker-search input { min-width: 0; flex: 1; padding: 0 12px; color: var(--ink); background: transparent; border: 0; outline: 0; font-weight: 600; }
+.picker-search > svg { flex: 0 0 auto; width: 16px; height: 16px; margin-left: 16px; color: var(--muted); }
+.picker-search input { min-width: 0; flex: 1; padding: 0 12px; color: var(--ink); background: transparent; border: 0; outline: 0; font-weight: 500; }
 .picker-options { display: grid; gap: 8px; }
 .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
-.chip { min-height: 32px; padding: 0 12px; color: var(--ink-2); background: var(--surface); border: 1px solid var(--line-strong); border-radius: 999px; font-size: .82rem; font-weight: 600; cursor: pointer; }
+.chip { min-height: 32px; padding: 0 12px; color: var(--ink-2); background: var(--surface); border: 1px solid var(--line-strong); border-radius: 999px; font-size: .82rem; font-weight: 500; cursor: pointer; }
 .chip:hover { color: var(--ink); background: var(--surface-2); }
 .chip.selected { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
-.compare-vs { align-self: center; margin-top: 22px; color: var(--muted); font-size: .85rem; font-weight: 700; text-transform: uppercase; }
-.compare-result h2 { margin: 28px 0 12px; font-size: 1.15rem; }
+.compare-vs { align-self: center; margin-top: 22px; color: var(--muted); font-family: var(--serif); font-size: 1.15rem; font-style: italic; }
+.compare-result h2 { margin: 36px 0 14px; font-size: 1.2rem; }
 .compare-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.compare-card { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 10px; }
-.compare-card h3 { margin: 0; font-size: 1rem; }
+.compare-card { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 14px; padding: 18px; border: 1px solid var(--line); border-radius: 18px; animation: ink-rise 350ms var(--ease) backwards; }
+.compare-card h3 { margin: 0; font-size: 1rem; font-weight: 500; }
 .compare-card .muted { margin: 2px 0 8px; }
 .spec-table { min-width: 0; table-layout: fixed; }
 .spec-table th:first-child { width: 28%; }
-.spec-table thead th { color: var(--ink); font-size: .85rem; }
+.spec-table thead th { color: var(--ink); font-size: .85rem; font-weight: 500; }
 .spec-table thead small { display: block; color: var(--muted); font-weight: 400; }
-.spec-table tbody th { color: var(--muted); font-weight: 600; }
+.spec-table tbody th { color: var(--muted); font-weight: 500; }
 .spec-table td { overflow-wrap: anywhere; }
-.spec-table td.spec-win { color: var(--ink); font-weight: 700; }
+.spec-table td.spec-win { color: var(--ink); font-weight: 600; }
 .spec-check { color: var(--good); }
 .compare-result td a { color: var(--ink); text-decoration: none; }
 .compare-result td a:hover { text-decoration: underline; }
 .compare-chart { display: block; width: 100%; height: 280px; }
 .compare-chart text { stroke: none; }
-.compare-line { fill: none; stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+.compare-line { fill: none; stroke-width: 2.25; vector-effect: non-scaling-stroke; animation: pencil-draw 900ms var(--ease) backwards; }
 .compare-line-a, .compare-key-a::before { stroke: var(--accent); background: var(--accent); }
-.compare-line-b, .compare-key-b::before { stroke: #4ea1ff; background: #4ea1ff; }
+.compare-line-b, .compare-key-b::before { stroke: var(--blue); background: var(--blue); }
 .compare-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 8px; padding: 0; list-style: none; color: var(--ink-2); font-size: .85rem; }
 .compare-legend li::before { display: inline-block; width: 14px; height: 3px; margin: 0 6px 3px 0; content: ""; border-radius: 2px; vertical-align: middle; }
-.compare-pick { margin-top: 24px; padding: 24px 28px; background: var(--good-soft); border: 1px solid color-mix(in srgb, var(--good) 40%, transparent); border-radius: 12px; }
+.compare-pick { margin-top: 28px; padding: clamp(22px, 4vw, 36px); background: var(--surface); border: 1px solid var(--line); border-radius: 22px; animation: ink-rise 400ms var(--ease) backwards; }
 .compare-pick-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
-.compare-pick h2 { margin: 0 0 8px; color: var(--good); font-size: .85rem; text-transform: uppercase; letter-spacing: .05em; }
+.compare-pick h2 { margin: 0 0 8px; color: var(--amber); font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; }
 .compare-pick-head h2 { margin: 0; }
 .compare-pick-phone { display: grid; gap: 16px; margin: 0 0 22px; }
-.compare-pick-phone > p { margin: 0; font-size: 1.45rem; font-weight: 400; line-height: 1.25; }
-.compare-pick-phone > p strong { font-weight: 700; }
-.compare-pick-phone > p span { color: var(--ink-2); font-size: 1.05rem; }
+/* The pick is the "written reply": serif. */
+.compare-pick-phone > p { margin: 0; font-family: var(--serif); font-size: 1.75rem; font-weight: 400; line-height: 1.25; letter-spacing: -.01em; }
+.compare-pick-phone > p strong { font-weight: 500; }
+.compare-pick-phone > p span { color: var(--ink-2); font-size: 1.15rem; font-style: italic; }
 /* The two buttons share the box's full width. */
 .compare-pick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .compare-pick-actions > * { width: 100%; min-height: 48px; font-size: .95rem; }
 .compare-pick-store { display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
 .compare-pick-store svg { width: 15px; height: 15px; }
-.compare-pick-headline { margin: 0 0 10px; padding-top: 20px; border-top: 1px solid color-mix(in srgb, var(--good) 30%, transparent); font-size: 1.1rem; font-weight: 700; line-height: 1.4; }
+.compare-pick-headline { margin: 0 0 10px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 1.1rem; font-weight: 600; line-height: 1.4; }
 /* "What's the phone for?" buttons inside the pick box. */
 .use-picker { min-width: 0; margin: 0 0 20px; padding: 0; border: 0; }
-.use-picker legend { margin-bottom: 12px; padding: 0; font-size: 1.05rem; font-weight: 700; }
+.use-picker legend { margin-bottom: 12px; padding: 0; font-size: 1.05rem; font-weight: 600; }
 .use-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-.use-option { display: grid; justify-items: start; gap: 4px; padding: 12px 14px; color: var(--ink); background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); font: inherit; text-align: left; cursor: pointer; }
-.use-option:hover { background: var(--surface-2); }
-.use-option.selected { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
-.use-option strong { font-size: .95rem; }
+.use-option { display: grid; justify-items: start; gap: 4px; padding: 12px 14px; color: var(--ink); background: var(--bg); border: 1px solid var(--line-strong); border-radius: 14px; font: inherit; text-align: left; cursor: pointer; }
+.use-option:hover { border-color: var(--ink-2); }
+.use-option.selected { border-color: var(--amber); box-shadow: inset 0 0 0 1px var(--amber); }
+.use-option strong { font-size: .95rem; font-weight: 600; }
 .use-option small { color: var(--muted); font-size: .78rem; line-height: 1.35; }
 .compare-pick ul { margin: 0 0 12px; padding-left: 20px; }
 .compare-pick li { margin: 4px 0; line-height: 1.45; }
 .compare-pick .muted { margin: 8px 0 0; line-height: 1.6; }
 /* Where each phone beats the other, two columns. */
-.compare-edges { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 18px; padding-top: 18px; border-top: 1px solid color-mix(in srgb, var(--good) 30%, transparent); }
-.compare-edge h3 { margin: 0 0 8px; font-size: .95rem; font-weight: 700; line-height: 1.35; }
+.compare-edges { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); }
+.compare-edge h3 { margin: 0 0 8px; font-size: .95rem; font-weight: 600; line-height: 1.35; }
 .compare-edge ul { margin: 0; }
 .compare-edge .muted { margin: 0; }
 .edge-minor { color: var(--muted); }
 .edge-tag { display: inline-block; margin-left: 4px; padding: 1px 8px; color: var(--good); border: 1px solid color-mix(in srgb, var(--good) 50%, transparent); border-radius: 999px; font-size: .75rem; font-weight: 600; white-space: nowrap; }
 .edge-note { font-size: .82rem; }
 /* Spec score bar: one segment per phone, in the history chart's colors. */
-.pick-label { margin: 0 0 8px; color: var(--ink-2); font-size: .85rem; font-weight: 700; }
+.pick-label { margin: 0 0 8px; color: var(--ink-2); font-size: .85rem; font-weight: 600; }
 .score-meter { margin-top: 18px; }
-.score-bar { display: flex; gap: 2px; height: 12px; overflow: hidden; background: color-mix(in srgb, var(--good) 15%, transparent); border-radius: 6px; }
+.score-bar { display: flex; gap: 3px; height: 10px; overflow: hidden; background: var(--surface-2); border-radius: 999px; }
 .score-bar span { width: var(--share); }
 .score-a, .score-key-a::before { background: var(--accent); }
-.score-b, .score-key-b::before { background: #4ea1ff; }
-.compare-pick .score-labels { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin: 8px 0 0; padding: 0; list-style: none; font-size: .88rem; font-weight: 600; }
+.score-b, .score-key-b::before { background: var(--blue); }
+.compare-pick .score-labels { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin: 8px 0 0; padding: 0; list-style: none; font-size: .88rem; font-weight: 500; }
 .score-labels li::before { display: inline-block; width: 10px; height: 10px; margin-right: 6px; content: ""; border-radius: 50%; }
 .compare-pick .score-note { margin: 4px 0 0; font-size: .8rem; }
 .compare-pick-timing .verdict { margin: 0; }

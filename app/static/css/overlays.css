@@ -1,34 +1,35 @@
 /* Account menu, dialogs, and status feedback. */
 .account-menu[hidden] { display: none; }
-.account-menu { position: absolute; z-index: 40; top: calc(100% + 10px); right: 0; width: min(300px, calc(100vw - 28px)); padding: 8px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 10px; box-shadow: var(--shadow); }
-.account-menu-heading { display: grid; gap: 1px; padding: 8px 10px 12px; border-bottom: 1px solid var(--line); }
-.account-menu-heading strong { overflow: hidden; font-size: .9rem; text-overflow: ellipsis; white-space: nowrap; }
+.account-menu { position: absolute; z-index: 40; top: calc(100% + 10px); right: 0; width: min(300px, calc(100vw - 28px)); padding: 8px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 18px; box-shadow: var(--shadow); animation: ink-drip 150ms var(--ease) backwards; }
+.account-menu-heading { display: grid; gap: 1px; padding: 8px 12px 12px; border-bottom: 1px solid var(--line); }
+.account-menu-heading strong { overflow: hidden; font-size: .9rem; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .account-menu-heading span { color: var(--muted); font-size: .8rem; }
-.menu-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; margin-top: 4px; padding: 10px; color: var(--ink); background: transparent; border: 0; border-radius: 6px; font-size: .88rem; text-align: left; cursor: pointer; }
+.menu-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; margin-top: 4px; padding: 10px 12px; color: var(--ink); background: transparent; border: 0; border-radius: 12px; font-size: .88rem; text-align: left; cursor: pointer; }
 .menu-item:hover { background: var(--surface-2); }
 .menu-item small { color: var(--muted); font-size: .78rem; }
 .menu-item[hidden] { display: none; }
 .menu-item.danger { color: var(--danger); }
 
-dialog { width: min(440px, calc(100vw - 30px)); padding: 0; overflow: hidden; color: var(--ink); background: var(--surface); border: 1px solid var(--line-strong); border-radius: 10px; box-shadow: var(--shadow); }
-dialog::backdrop { background: rgba(10, 11, 13, .45); }
-.dialog-head { display: flex; align-items: flex-start; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--line); }
-.dialog-head h2 { margin: 0; font-size: 1.25rem; font-weight: 700; }
-.icon-button { display: grid; place-items: center; width: 34px; height: 34px; color: var(--ink-2); background: transparent; border: 1px solid var(--line); border-radius: var(--radius); cursor: pointer; }
+dialog { width: min(440px, calc(100vw - 30px)); padding: 0; overflow: hidden; color: var(--ink); background: var(--surface); border: 1px solid var(--line-strong); border-radius: 22px; box-shadow: var(--shadow); }
+dialog[open] { animation: ink-rise 200ms var(--ease) backwards; }
+dialog::backdrop { background: rgba(14, 13, 11, .6); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+.dialog-head { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--line); }
+.dialog-head h2 { margin: 0; font-size: 1.35rem; font-weight: 500; }
+.icon-button { display: grid; place-items: center; width: 34px; height: 34px; color: var(--ink-2); background: transparent; border: 1px solid var(--line); border-radius: 50%; cursor: pointer; }
 .icon-button:hover { background: var(--surface-2); }
-dialog form { display: grid; gap: 14px; padding: 20px 22px; }
-dialog label { display: grid; gap: 6px; color: var(--ink-2); font-size: .85rem; font-weight: 600; }
-dialog input, dialog select { width: 100%; min-height: 42px; padding: 8px 12px; color: var(--ink); background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); outline: none; }
+dialog form { display: grid; gap: 14px; padding: 22px 24px; }
+dialog label { display: grid; gap: 6px; color: var(--ink-2); font-size: .85rem; font-weight: 500; }
+dialog input, dialog select { width: 100%; min-height: 44px; padding: 8px 16px; color: var(--ink); background: var(--bg); border: 1px solid var(--line-strong); border-radius: 999px; outline: none; }
 dialog input:focus, dialog select:focus { border-color: var(--ink-2); }
 .full { width: 100%; }
-.dialog-links { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; padding: 0 22px 20px; }
+.dialog-links { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; padding: 0 24px 22px; }
 .dialog-links .text-button[hidden] { display: none; }
 .form-error { min-height: 20px; margin: 0; color: var(--danger); font-size: .85rem; }
 .form-success { min-height: 20px; margin: 0; color: var(--good); font-size: .85rem; }
 .form-error:empty, .form-success:empty { display: none; }
 .settings-help { margin: 0; color: var(--ink-2); font-size: .88rem; }
 .settings-note { margin: -6px 0 0; color: var(--muted); font-size: .8rem; }
-.toast { position: fixed; z-index: 50; right: 20px; bottom: 20px; max-width: 400px; padding: 12px 16px; color: var(--surface); background: var(--ink); border-radius: var(--radius); box-shadow: var(--shadow); font-size: .88rem; opacity: 0; visibility: hidden; transform: translateY(12px); transition: opacity 200ms ease, transform 200ms ease, visibility 200ms ease; }
+.toast { position: fixed; z-index: 50; right: 20px; bottom: 20px; max-width: 400px; padding: 12px 20px; color: var(--on-accent); background: var(--accent); border-radius: 999px; box-shadow: var(--shadow); font-size: .88rem; opacity: 0; visibility: hidden; transform: translateY(12px); transition: opacity 200ms var(--ease), transform 200ms var(--ease), visibility 200ms ease; }
 .toast.show { opacity: 1; visibility: visible; transform: none; }
 
 /* Alert price: own ±100 buttons replace the native ±1 spinner. */
@@ -36,15 +37,15 @@ dialog input:focus, dialog select:focus { border-color: var(--ink-2); }
 .price-stepper input { text-align: center; appearance: textfield; -moz-appearance: textfield; }
 .price-stepper input::-webkit-outer-spin-button,
 .price-stepper input::-webkit-inner-spin-button { margin: 0; -webkit-appearance: none; }
-.stepper-button { min-width: 64px; min-height: 42px; padding: 0 12px; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: var(--radius); font-weight: 600; cursor: pointer; }
+.stepper-button { min-width: 64px; min-height: 44px; padding: 0 14px; color: var(--ink); background: transparent; border: 1px solid var(--line-strong); border-radius: 999px; font-weight: 500; cursor: pointer; }
 .stepper-button:hover { border-color: var(--ink-2); }
 .alert-explainer p { margin: 0 0 4px; color: var(--ink-2); font-size: .88rem; }
 .alert-explainer .settings-note { margin: 0; }
 /* Alert dialog: "back in stock" or "price drops to my target". */
 .alert-kind { display: grid; gap: 8px; min-width: 0; margin: 0; padding: 0; border: 0; }
-.alert-kind legend { margin-bottom: 8px; padding: 0; color: var(--ink-2); font-size: .85rem; font-weight: 600; }
-.alert-kind label { display: flex; align-items: center; gap: 10px; padding: 10px 12px; color: var(--ink); border: 1px solid var(--line-strong); border-radius: var(--radius); font-weight: 500; cursor: pointer; }
-.alert-kind label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
-.alert-kind input { width: auto; min-height: 0; margin: 0; accent-color: var(--accent); }
+.alert-kind legend { margin-bottom: 8px; padding: 0; color: var(--ink-2); font-size: .85rem; font-weight: 500; }
+.alert-kind label { display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: var(--ink); border: 1px solid var(--line-strong); border-radius: 14px; font-weight: 400; cursor: pointer; }
+.alert-kind label:has(input:checked) { border-color: var(--amber); background: var(--accent-soft); }
+.alert-kind input { width: auto; min-height: 0; margin: 0; accent-color: var(--amber); }
 #alertPriceFields { display: grid; gap: 14px; }
 .alert-kind[hidden], #alertPriceFields[hidden] { display: none; }

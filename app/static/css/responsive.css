@@ -13,15 +13,16 @@
   .account-actions { gap: 6px; }
   main { padding-top: 14px; }
   .intro, .search-band, .section, footer { width: calc(100% - 28px); }
-  .intro h1 { font-size: 1.7rem; }
-  .section { padding: 18px 16px; }
+  .intro h1 { font-size: 1.75rem; letter-spacing: -.03em; }
+  .section { margin-bottom: 56px; }
+  [data-page-view] .section { width: calc(100% - 28px); }
   .section-heading { align-items: flex-start; flex-direction: column; gap: 8px; margin-bottom: 16px; }
   .catalog-meta { align-items: flex-start; }
   .catalog-filters { display: grid; grid-template-columns: 1fr 1fr; }
   .filter-field { min-width: 0; }
   .catalog-filters .text-button { margin-left: 0; }
   .product-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
-  .product-card { padding: 10px; }
+  .product-card { padding: 10px; border-radius: 16px; }
   .product-image { height: 120px; }
   .card-price strong { font-size: 1.15rem; }
   .history-product { grid-template-columns: 56px minmax(0, 1fr); gap: 12px; }
@@ -39,7 +40,9 @@
   /* Room for language, theme and account buttons: keep the logo, drop the wordmark. */
   .brand-name { display: none; }
 }
+/* Reduced motion: no ink animations at all; everything shows in its final state. */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-delay: 0s !important; }
+  *, *::before, *::after { transition-duration: .01ms !important; animation: none !important; }
+  .ink-underline path { stroke-dashoffset: 0; }
 }
