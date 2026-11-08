@@ -510,8 +510,22 @@ function turningPoints(series) {
   });
 }
 
+// The chart is drawn in the SVG's own pixels, so lines and labels keep their size on a phone
+// instead of a fixed 1000-wide drawing being shrunk to a third. Redrawn when its width changes.
+let chartData = null;
+let chartWidth = 0;
+function chartSize(svg) {
+  return { W: Math.round(svg.clientWidth) || 1000, H: Math.round(svg.clientHeight) || 320 };
+}
+new ResizeObserver(() => {
+  const { W } = chartSize($("#priceChart"));
+  if (chartData && W !== chartWidth) renderChart(...chartData);
+}).observe($("#priceChart"));
+
 export function renderChart(items, product) {
   const svg = $("#priceChart");
+  chartData = [items, product];
+  chartWidth = chartSize(svg).W;
   const empty = $("#chartEmpty");
   const ordered = items?.length ? bestPriceSeries(items, product.currency || items[0].currency) : [];
   if (!ordered.length) {
@@ -537,8 +551,10 @@ export function renderChart(items, product) {
   const low = min - padding;
   const high = max + padding;
   const singleRecord = ordered.length === 1;
-  const W = 1000, H = 320, left = singleRecord ? 132 : 28;
-  const right = singleRecord ? 60 : 110, top = 42, bottom = 48;
+  const { W, H } = chartSize(svg);
+  const compact = W < 640;
+  const left = singleRecord ? (compact ? 84 : 132) : 28;
+  const right = singleRecord ? (compact ? 16 : 60) : 110, top = 42, bottom = 48;
   const plotW = W - left - right, plotH = H - top - bottom;
   const x = index => left + (singleRecord ? plotW * .2 : index * plotW / (ordered.length - 1));
   const y = value => top + (high - value) * plotH / (high - low || 1);
@@ -550,9 +566,10 @@ export function renderChart(items, product) {
   const firstDate = new Date(ordered[0].recorded_at);
   const lastDate = new Date(last.recorded_at);
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-  const tooltipX = lastX + 54;
+  // Narrow screens: the price box sits above the point and stays inside the chart.
+  const tooltipWidth = compact ? Math.min(240, W - 24) : 320;
+  const tooltipX = compact ? Math.max(12, Math.min(lastX - 40, W - tooltipWidth - 12)) : lastX + 54;
   const tooltipY = Math.max(top, lastY - 100);
-  const tooltipWidth = 320;
   const tooltipHeight = 76;
   svg.innerHTML = `
     ${singleRecord
@@ -565,15 +582,25 @@ export function renderChart(items, product) {
       <rect class="chart-tooltip" x="${tooltipX}" y="${tooltipY}" width="${tooltipWidth}" height="${tooltipHeight}" rx="12"/>
       <text class="chart-tooltip-price" x="${tooltipX + 16}" y="${tooltipY + 33}">${escapeHtml(money(last.price, currency))}</text>
       <text class="chart-tooltip-date" x="${tooltipX + 16}" y="${tooltipY + 59}">${escapeHtml(t("chart.recorded", { date: dayDate(lastDate) }))}</text>
-      <text class="chart-label chart-annotation" text-anchor="middle" x="${left + plotW / 2}" y="${lastY + 42}">${t("chart.trendStarts")}</text>` : `
+      <text class="chart-label chart-annotation" text-anchor="middle" x="${compact ? W / 2 : left + plotW / 2}" y="${lastY + (compact ? 32 : 42)}">${trendNote(compact, W / 2)}</text>` : `
       <circle class="chart-snapshot" cx="${lastX}" cy="${lastY}" r="5"><title>${escapeHtml(last.store_name)} — ${escapeHtml(money(last.price, currency))} — ${escapeHtml(dateTime(last.recorded_at))}</title></circle>
       <text class="chart-note" x="${lastX + 13}" y="${lastY + 4}">${escapeHtml(money(last.price, currency))}</text>`}
     <text class="chart-label" x="${left}" y="${H - 12}">${escapeHtml(dayDate(firstDate))}</text>
     ${singleRecord ? "" : `<text class="chart-label" text-anchor="end" x="${W - right}" y="${H - 12}">${escapeHtml(dayDate(lastDate))}</text>`}`;
 }
 
+// SVG text doesn't wrap: on a phone the note goes on two lines, split between words.
+function trendNote(compact, x) {
+  const note = t("chart.trendStarts");
+  if (!compact) return escapeHtml(note);
+  const words = note.split(" ");
+  const half = Math.ceil(words.length / 2);
+  return `<tspan x="${x}">${escapeHtml(words.slice(0, half).join(" "))}</tspan><tspan x="${x}" dy="1.3em">${escapeHtml(words.slice(half).join(" "))}</tspan>`;
+}
+
 function renderTrend(svg, series) {
-  const W = 1000, H = 320, left = 40, right = 40, top = 56, bottom = 56;
+  const { W, H } = chartSize(svg);
+  const left = 40, right = 40, top = 56, bottom = 56;
   const plotW = W - left - right, plotH = H - top - bottom;
   const values = series.map(point => point.price);
   const min = Math.min(...values);
@@ -611,7 +638,8 @@ function renderTrend(svg, series) {
 }
 
 function renderCurrentSnapshot(svg, product) {
-  const W = 1000, H = 320, left = 28, right = 110, centerY = 220;
+  const { W, H } = chartSize(svg);
+  const left = 28, right = 110, centerY = Math.round(H * .69);
   const label = money(product.lowest_price, product.currency || "GEL");
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   svg.innerHTML = `

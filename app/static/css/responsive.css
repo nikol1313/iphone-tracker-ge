@@ -36,6 +36,11 @@
   .selected-actions .small-button { min-height: 44px; white-space: normal; }
   .summary-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .all-time-prices { grid-template-columns: 1fr; }
+  #priceChart { height: 260px; }
+  .chart-wrap { min-height: 260px; }
+  .chart-tooltip-price { font-size: 22px; }
+  .chart-tooltip-date { font-size: 15px; }
+  .chart-annotation { font-size: 13px; }
   .account-panel { align-items: flex-start; flex-direction: column; }
   .tracked-row { grid-template-columns: 1fr; gap: 10px; }
   .tracked-actions { display: grid; grid-template-columns: 1fr 1fr; }
