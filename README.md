@@ -14,7 +14,10 @@ Collects prices from 10+ retailers, records every price change, and tells you wh
 
 
 
-https://github.com/user-attachments/assets/bba44bf1-6105-4a8c-bb27-97827d865f46
+
+https://github.com/user-attachments/assets/c69a6fb6-965b-44cf-97c7-aaf3850a00cb
+
+
 
 
 
