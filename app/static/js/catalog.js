@@ -434,14 +434,16 @@ export async function selectProduct(productId) {
     <div class="summary-item"><span>${t("detail.inStock")}</span><strong>${t("detail.storesInStock", { available: product.available_listing_count, count: product.listing_count })}</strong></div>`;
   try {
     const currency = product.currency || "GEL";
-    const [prices, listings, extremes] = await Promise.all([
+    const [prices, listings, extremes, abroad] = await Promise.all([
       api(`/products/${product.id}/prices?limit=100`),
       api(`/products/${product.id}/listings?limit=100`),
       api(`/products/${product.id}/prices/extremes?currency=${encodeURIComponent(currency)}`),
+      api(`/products/${product.id}/abroad`),
     ]);
     renderChart(prices.items, product);
     renderListings(listings.items);
     renderAllTimePrices(extremes);
+    renderAbroad(abroad, product);
   } catch (error) {
     showToast(error.message);
   }
@@ -490,6 +492,29 @@ function renderAllTimePrices(extremes) {
     : money(value, extremes.currency);
   $("#allTimeLow").textContent = formatPrice(extremes.lowest_price);
   $("#allTimeHigh").textContent = formatPrice(extremes.highest_price);
+}
+
+// Apple's price in the US and Germany in lari, next to the cheapest price here.
+function renderAbroad(abroad, product) {
+  const section = $("#abroadPrices");
+  section.hidden = !abroad.items.length;
+  if (!abroad.items.length) return;
+  const here = inStock(product) ? priceOf(product) : null;
+  $("#abroadBoxes").innerHTML = abroad.items.map(item => {
+    const priceGel = Number(item.price_gel);
+    const change = here == null ? 0 : Math.round(here - priceGel);
+    const comparison = change ? ` · <span class="card-change ${change > 0 ? "rise" : "drop"}">${escapeHtml(t(change > 0 ? "abroad.moreHere" : "abroad.lessHere", {
+      amount: money(Math.abs(change)),
+      percent: percent(change, priceGel),
+    }))}</span>` : "";
+    return `
+      <div class="all-time-price">
+        <span>${escapeHtml(t(`abroad.${item.country}`))}</span>
+        <strong>${escapeHtml(money(priceGel))}</strong>
+        <small>${escapeHtml(money(item.price, item.currency))}${comparison}</small>
+      </div>`;
+  }).join("");
+  $("#abroadNote").textContent = t("abroad.rate", { date: dayDate(abroad.rate_date) });
 }
 
 // Records from one crawl (all stores) land within minutes; treat them as one moment.

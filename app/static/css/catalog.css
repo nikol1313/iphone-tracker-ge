@@ -100,6 +100,8 @@
 .all-time-price { display: grid; gap: 2px; padding: 14px 18px; border: 1px solid var(--line); border-radius: 14px; }
 .all-time-price span { color: var(--muted); font-size: .8rem; }
 .all-time-price strong { font-size: 1.15rem; font-weight: 600; letter-spacing: -.01em; }
+.all-time-price small { color: var(--muted); font-size: .8rem; }
+.abroad-note { margin: 8px 0 0; color: var(--muted); font-size: .78rem; }
 
 /* Positioned so the header's absolutely placed sr-only label stays inside the scroller
    instead of widening the whole page on phones. */

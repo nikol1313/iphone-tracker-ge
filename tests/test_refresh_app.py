@@ -352,6 +352,7 @@ def test_openapi_contains_all_requested_routes():
         "/products/{product_id}/prices",
         "/products/{product_id}/prices/extremes",
         "/products/{product_id}/specs",
+        "/products/{product_id}/abroad",
         "/tracked-products",
         "/tracked-products/{product_id}",
         "/products/{product_id}/alerts",
