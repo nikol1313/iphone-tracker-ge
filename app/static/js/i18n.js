@@ -239,7 +239,6 @@ const en = {
   "alerts.reached": " · reached",
   "alerts.none": "No price alert",
 
-  "footer.disclaimer": "Prices are collected from store websites and may be out of date. Check the store before you buy.",
   "footer.author": "Made by Nikusha Avsajanishvili",
   "title.about": "About and privacy",
   "about.title": "About iPhone Tracker.ge",
@@ -574,7 +573,6 @@ const ka = {
   "alerts.reached": " · მიღწეულია",
   "alerts.none": "შეტყობინება არ არის",
 
-  "footer.disclaimer": "ფასები აღებულია მაღაზიების საიტებიდან და შეიძლება მოძველებული იყოს. ყიდვამდე გადაამოწმეთ მაღაზიაში.",
   "footer.author": "ავტორი: ნიკუშა ავსაჯანიშვილი",
   "title.about": "ჩვენ შესახებ და კონფიდენციალურობა",
   "about.title": "iPhone Tracker.ge-ს შესახებ",
