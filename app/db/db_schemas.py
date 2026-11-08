@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Generic, Literal, TypeVar
 
@@ -90,6 +90,20 @@ class EmailSettingsResponse(BaseModel):
 
 class EmailVerificationRequest(BaseModel):
     token: str = Field(min_length=1, max_length=2000)
+
+
+class AbroadPrice(BaseModel):
+    country: Literal["US", "DE"]
+    currency: str
+    # Apple's price there: before sales tax in the US, with VAT in Germany.
+    price: Decimal
+    price_gel: Decimal
+
+
+class AbroadPricesResponse(BaseModel):
+    items: list[AbroadPrice]
+    # The National Bank of Georgia rate's day.
+    rate_date: date | None
 
 
 class ProductSpecsResponse(BaseModel):
