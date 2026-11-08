@@ -214,11 +214,6 @@ const en = {
   "extremes.low": "Lowest we've seen",
   "extremes.high": "Highest we've seen",
   "extremes.none": "No recorded price",
-  "abroad.US": "Apple, USA (before sales tax)",
-  "abroad.DE": "Apple, Germany (with VAT)",
-  "abroad.moreHere": "here {amount} more (+{percent})",
-  "abroad.lessHere": "here {amount} less (−{percent})",
-  "abroad.rate": "Apple's prices in lari at the National Bank of Georgia rate for {date}.",
 
   "stores.title": "Prices by store",
   "stores.description": "Always confirm the price on the store's site.",
@@ -554,11 +549,6 @@ const ka = {
   "extremes.low": "ყველაზე დაბალი, რაც გვინახავს",
   "extremes.high": "ყველაზე მაღალი, რაც გვინახავს",
   "extremes.none": "ფასი არ არის ჩაწერილი",
-  "abroad.US": "Apple, აშშ (გაყიდვების გადასახადის გარეშე)",
-  "abroad.DE": "Apple, გერმანია (დღგ-ს ჩათვლით)",
-  "abroad.moreHere": "აქ {amount}-ით ძვირია (+{percent})",
-  "abroad.lessHere": "აქ {amount}-ით იაფია (−{percent})",
-  "abroad.rate": "Apple-ის ფასები ლარში, ეროვნული ბანკის კურსით ({date}).",
 
   "stores.title": "ფასები მაღაზიების მიხედვით",
   "stores.description": "ყიდვამდე ფასი გადაამოწმეთ მაღაზიის საიტზე.",
