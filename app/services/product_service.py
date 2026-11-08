@@ -92,58 +92,34 @@ def price_verdict(
     return "normal"
 
 
+def _cheapest_listing_value(column):
+    """A column of the cheapest in-stock listing, or of the cheapest listed one when none is."""
+
+    def cheapest(*conditions):
+        return (
+            select(column)
+            .select_from(ProductListing)
+            .join(Store, Store.id == ProductListing.store_id)
+            .where(
+                ProductListing.product_id == Product.id,
+                ProductListing.is_active.is_(True),
+                *conditions,
+            )
+            .order_by(ProductListing.current_price, ProductListing.id)
+            .limit(1)
+            .correlate(Product)
+            .scalar_subquery()
+        )
+
+    return func.coalesce(cheapest(ProductListing.is_available.is_(True)), cheapest())
+
+
 def _lowest_price_expression():
-    available = (
-        select(ProductListing.current_price)
-        .where(
-            ProductListing.product_id == Product.id,
-            ProductListing.is_active.is_(True),
-            ProductListing.is_available.is_(True),
-        )
-        .order_by(ProductListing.current_price, ProductListing.id)
-        .limit(1)
-        .correlate(Product)
-        .scalar_subquery()
-    )
-    last_listed = (
-        select(ProductListing.current_price)
-        .where(
-            ProductListing.product_id == Product.id,
-            ProductListing.is_active.is_(True),
-        )
-        .order_by(ProductListing.current_price, ProductListing.id)
-        .limit(1)
-        .correlate(Product)
-        .scalar_subquery()
-    )
-    return func.coalesce(available, last_listed)
+    return _cheapest_listing_value(ProductListing.current_price)
 
 
 def _lowest_currency_expression():
-    available = (
-        select(ProductListing.currency)
-        .where(
-            ProductListing.product_id == Product.id,
-            ProductListing.is_active.is_(True),
-            ProductListing.is_available.is_(True),
-        )
-        .order_by(ProductListing.current_price, ProductListing.id)
-        .limit(1)
-        .correlate(Product)
-        .scalar_subquery()
-    )
-    last_listed = (
-        select(ProductListing.currency)
-        .where(
-            ProductListing.product_id == Product.id,
-            ProductListing.is_active.is_(True),
-        )
-        .order_by(ProductListing.current_price, ProductListing.id)
-        .limit(1)
-        .correlate(Product)
-        .scalar_subquery()
-    )
-    return func.coalesce(available, last_listed)
+    return _cheapest_listing_value(ProductListing.currency)
 
 
 def _listing_count_expression():
@@ -208,6 +184,7 @@ def product_summary_select() -> Select:
         _available_listing_count_expression().label("available_listing_count"),
         _highest_available_price_expression().label("highest_price"),
         _lowest_installment_expression().label("lowest_installment_monthly"),
+        _cheapest_listing_value(Store.title).label("lowest_price_store"),
     )
 
 
@@ -219,6 +196,7 @@ def product_summary(
     available_listing_count: int,
     highest_price: Decimal | None = None,
     lowest_installment_monthly: Decimal | None = None,
+    lowest_price_store: str | None = None,
 ) -> ProductSummary:
     return ProductSummary(
         id=product.id,
@@ -233,6 +211,7 @@ def product_summary(
         available_listing_count=available_listing_count,
         highest_price=highest_price,
         lowest_installment_monthly=lowest_installment_monthly,
+        lowest_price_store=lowest_price_store,
     )
 
 
@@ -443,6 +422,33 @@ async def cheapest_in_stock_per_model(session: AsyncSession) -> list[ProductSumm
         if best is None or summary.lowest_price < best.lowest_price:
             cheapest[summary.model] = summary
     return await with_price_trends(session, list(cheapest.values()))
+
+
+async def model_daily_best_prices(
+    session: AsyncSession, model: str, currency: str, window: timedelta
+) -> list[Decimal]:
+    """Cheapest in-stock price of any variant of a model at the end of each day in the window."""
+    rows = (
+        await session.execute(
+            select(
+                PriceHist.listing_id, PriceHist.price, PriceHist.is_available, PriceHist.recorded_at
+            )
+            .join(ProductListing, ProductListing.id == PriceHist.listing_id)
+            .join(Product, Product.id == ProductListing.product_id)
+            .where(
+                Product.model == model,
+                Product.is_active.is_(True),
+                ProductListing.is_active.is_(True),
+                PriceHist.currency == currency,
+            )
+            .order_by(PriceHist.recorded_at, PriceHist.id)
+        )
+    ).all()
+    events = [
+        (listing_id, price, available, at if at.tzinfo else at.replace(tzinfo=UTC))
+        for listing_id, price, available, at in rows
+    ]
+    return daily_best_prices(events, datetime.now(UTC), window)
 
 
 async def count_stores_in_stock(session: AsyncSession) -> int:

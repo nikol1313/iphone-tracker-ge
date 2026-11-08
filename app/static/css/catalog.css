@@ -27,6 +27,7 @@
 .card-price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin: auto 0 4px; }
 .card-price strong { font-size: 1.35rem; font-weight: 600; letter-spacing: -.025em; }
 .product-card.out-of-stock .card-price strong { color: var(--muted); font-size: 1.1rem; }
+.product-card.out-of-stock { opacity: .6; }
 .card-change { font-size: .8rem; font-weight: 600; }
 .card-change.drop { color: var(--good); }
 .card-change.rise { color: var(--rise); }
@@ -116,6 +117,8 @@ tbody tr.best-offer td:first-child { box-shadow: inset 3px 0 0 var(--good); }
 .best-tag { margin-left: 8px; color: var(--good); font-size: .78rem; font-weight: 600; }
 .status { color: var(--good); font-weight: 600; }
 .status.unavailable { color: var(--muted); font-weight: 400; }
+/* A store without stock keeps its row for reference, greyed so its price isn't read as an offer. */
+tbody tr.unavailable-offer td { color: var(--muted); }
 .store-link { display: grid; place-items: center; width: 32px; height: 32px; color: var(--ink-2); border: 1px solid var(--line); border-radius: 50%; }
 .store-link:hover { color: var(--ink); background: var(--surface-2); }
 .empty-inline { padding: 24px; color: var(--muted); border: 1px dashed var(--line-strong); border-radius: 18px; text-align: center; }

@@ -145,12 +145,24 @@ export async function loadProducts() {
 
 export const inStock = product => product.available_listing_count > 0 && product.lowest_price != null;
 
-// "−150 ₾ this week" when the best price fell by at least 1% over the last week.
+// "9%" of the earlier price, or "<1%" for a move that rounds to nothing (pages.py _percent).
+const percent = (change, base) => {
+  const share = Math.round(Math.abs(change) * 100 / Number(base));
+  return share ? `${share}%` : "<1%";
+};
+
+// "−150 ₾ (−5%) this week" when the best price fell by at least 1% over the last week.
 function weekDrop(product) {
   const drop = weeklyDropAmount(product);
   if (!drop) return "";
-  return `<span class="card-change drop">${escapeHtml(t("card.weekDrop", { amount: money(drop, product.currency || "GEL") }))}</span>`;
+  const amount = money(drop, product.currency || "GEL");
+  return `<span class="card-change drop">${escapeHtml(t("card.weekDrop", { amount, percent: percent(drop, product.price_week_ago) }))}</span>`;
 }
+
+// Where the best price is: rows only show the price, so name the store before the details.
+const storePrefix = product => product.lowest_price_store
+  ? `<span class="model-price-store">${escapeHtml(product.lowest_price_store)}</span> · `
+  : "";
 
 // Price extremes span every store, so require the best price itself to have just fallen.
 const isLowestEver = product => inStock(product)
@@ -188,7 +200,7 @@ function renderWeeklyDrops() {
     <li class="model-price" data-model="${escapeHtml(product.model)}" data-product-id="${product.id}" tabindex="0">
       <span class="model-price-name">${escapeHtml(productName(product))}<small>${escapeHtml(variant(product))}</small></span>
       <span class="model-price-value">${escapeHtml(money(product.lowest_price, product.currency || "GEL"))}</span>
-      <span class="model-price-meta">${weekDrop(product)} · ${escapeHtml(t("drops.was", { price: money(product.price_week_ago, product.currency || "GEL") }))}</span>
+      <span class="model-price-meta">${storePrefix(product)}${weekDrop(product)} · ${escapeHtml(t("drops.was", { price: money(product.price_week_ago, product.currency || "GEL") }))}</span>
     </li>`).join("");
 }
 
@@ -214,12 +226,12 @@ function renderDayChanges() {
     ? changes.map(product => {
       const change = dayChangeAmount(product);
       const currency = product.currency || "GEL";
-      const label = t(change < 0 ? "day.down" : "day.up", { amount: money(Math.abs(change), currency) });
+      const label = t(change < 0 ? "day.down" : "day.up", { amount: money(Math.abs(change), currency), percent: percent(change, product.price_day_ago) });
       return `
     <li class="model-price" data-model="${escapeHtml(product.model)}" data-product-id="${product.id}" tabindex="0">
       <span class="model-price-name">${escapeHtml(productName(product))}<small>${escapeHtml(variant(product))}</small></span>
       <span class="model-price-value">${escapeHtml(money(product.lowest_price, currency))}</span>
-      <span class="model-price-meta"><span class="card-change ${change < 0 ? "drop" : "rise"}">${escapeHtml(label)}</span> · ${escapeHtml(t("day.was", { price: money(product.price_day_ago, currency) }))}</span>
+      <span class="model-price-meta">${storePrefix(product)}<span class="card-change ${change < 0 ? "drop" : "rise"}">${escapeHtml(label)}</span> · ${escapeHtml(t("day.was", { price: money(product.price_day_ago, currency) }))}</span>
     </li>`;
     }).join("")
     : `<li class="empty-state">${t("day.none")}</li>`;
@@ -255,6 +267,10 @@ function renderIntro() {
   ];
   if (stats.dataset.checked) parts.push(t("intro.checked", { time: relativeTime(stats.dataset.checked) }));
   stats.textContent = parts.join(" · ");
+  const trend = $("#introTrend");
+  if (trend.dataset.low) {
+    trend.querySelector("figcaption").textContent = t("intro.trend", { low: money(trend.dataset.low), high: money(trend.dataset.high) });
+  }
 }
 
 // The Today list starts folded to the newest few models.
@@ -284,7 +300,7 @@ export function renderOverview() {
       <li class="model-price" data-model="${escapeHtml(product.model)}" data-product-id="${product.id}" tabindex="0">
         <span class="model-price-name">${escapeHtml(productName(product))}<small>${escapeHtml(variant(product))}</small></span>
         <span class="model-price-value">${escapeHtml(money(product.lowest_price, product.currency || "GEL"))}</span>
-        <span class="model-price-meta">${t("card.inStockAt", { count: product.available_listing_count })}${weekDrop(product) ? ` · ${weekDrop(product)}` : ""}</span>
+        <span class="model-price-meta">${storePrefix(product)}${t("card.inStockAt", { count: product.available_listing_count })}${weekDrop(product) ? ` · ${weekDrop(product)}` : ""}</span>
       </li>`).join("")
     : `<li class="empty-state">${t("models.empty")}</li>`;
   list.removeAttribute("data-server-rendered");
@@ -664,7 +680,7 @@ function renderListings(items) {
       ? Number(item.current_price) - Number(best.current_price)
       : null;
     return `
-    <tr class="${isBest ? "best-offer" : ""}">
+    <tr class="${isBest ? "best-offer" : ""}${item.is_available ? "" : " unavailable-offer"}">
       <td>
         <strong>${escapeHtml(item.store_name)}</strong>
         ${item.variant_name ? `<small class="listing-title">${escapeHtml(item.variant_name)}</small>` : ""}

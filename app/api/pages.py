@@ -8,8 +8,8 @@ cheapest price per model, are written here.
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime
-from decimal import Decimal
+from datetime import datetime, timedelta
+from decimal import ROUND_HALF_UP, Decimal
 from html import escape, unescape
 from pathlib import Path
 from xml.sax.saxutils import escape as xml_escape
@@ -37,6 +37,10 @@ MODELS_TOGGLE = (
 )
 INTRO_TITLE = '<h1 id="overviewTitle" data-i18n="intro.title">iPhone-ის ფასები საქართველოში</h1>'
 INTRO_STATS = '<p class="intro-stats" id="overviewStats" role="status"></p>'
+INTRO_TREND = '<figure class="intro-trend" id="introTrend" hidden></figure>'
+# The sparkline next to the headline: the model's best price over this window.
+TREND_WINDOW = timedelta(days=30)
+TREND_W, TREND_H, TREND_PAD = 140, 44, 4
 # The headline's phone: the newest standard model (e.g. "iPhone 17"), the one most people buy.
 HEADLINE_MODEL = re.compile(r"iPhone \d+")
 # Same as catalog.js: the Today list starts folded to the newest few models.
@@ -47,8 +51,8 @@ NO_CACHE = {"Cache-Control": "no-cache, no-store, must-revalidate"}
 
 
 def _price(value: Decimal, currency: str | None = "GEL") -> str:
-    # "3,199 ₾" like the page itself; tetri only when there are any.
-    amount = f"{value:,.0f}" if value == value.to_integral() else f"{value:,.2f}"
+    # "3,199 ₾" like the page itself: whole lari, as core.js money() rounds them.
+    amount = f"{value.quantize(Decimal(1), ROUND_HALF_UP):,.0f}"
     return f"{amount} ₾" if currency in (None, "GEL") else f"{amount} {currency}"
 
 
@@ -71,14 +75,23 @@ def _phone_name(product: ProductSummary) -> str:
     return model if re.match(r"iphone\b", model, re.IGNORECASE) else f"iPhone {model}"
 
 
+def _percent(change: Decimal, base: Decimal) -> str:
+    # Same as catalog.js percent(): "9%", or "<1%" for a move that rounds to nothing.
+    share = int((abs(change) * 100 / base).quantize(Decimal(1), ROUND_HALF_UP))
+    return f"{share}%" if share else "<1%"
+
+
 def _model_row(product: ProductSummary, *, hidden: bool) -> str:
     # The same markup catalog.js renderOverview writes, in Georgian.
     variant = " · ".join(part for part in (product.storage, product.color) if part)
     meta = f"მარაგშია {product.available_listing_count} მაღაზიაში"
+    if product.lowest_price_store:
+        meta = f'<span class="model-price-store">{escape(product.lowest_price_store)}</span> · {meta}'
     week_ago = product.price_week_ago
     if week_ago is not None and week_ago - product.lowest_price >= week_ago * Decimal("0.01"):
-        drop = _price(week_ago - product.lowest_price, product.currency)
-        meta += f' · <span class="card-change drop">{escape(f"−{drop} ამ კვირაში")}</span>'
+        change = week_ago - product.lowest_price
+        drop = f"−{_price(change, product.currency)} (−{_percent(change, week_ago)}) ამ კვირაში"
+        meta += f' · <span class="card-change drop">{escape(drop)}</span>'
     return (
         f'<li class="model-price" data-model="{escape(product.model)}" '
         f'data-product-id="{product.id}" tabindex="0"{" hidden" if hidden else ""}>'
@@ -122,6 +135,28 @@ class Intro:
     models: int
     stores: int
     checked_at: datetime | None
+    # The model's best price at the end of each of the last TREND_WINDOW days, oldest first.
+    history: Sequence[Decimal] = ()
+
+
+def _sparkline(history: Sequence[Decimal]) -> str:
+    """A small line of the history, drawn on the server so it shows before any script runs."""
+    low, high = min(history), max(history)
+    spread = high - low or 1
+    step = (TREND_W - 2 * TREND_PAD) / (len(history) - 1)
+    points = [
+        (
+            round(TREND_PAD + index * step, 1),
+            round(TREND_H - TREND_PAD - float((price - low) / spread) * (TREND_H - 2 * TREND_PAD), 1),
+        )
+        for index, price in enumerate(history)
+    ]
+    line = " ".join(f"{x},{y}" for x, y in points)
+    end_x, end_y = points[-1]
+    return (
+        f'<svg viewBox="0 0 {TREND_W} {TREND_H}" aria-hidden="true">'
+        f'<polyline points="{line}"/><circle cx="{end_x}" cy="{end_y}" r="3"/></svg>'
+    )
 
 
 def _headline_product(models: Sequence[ProductSummary]) -> ProductSummary | None:
@@ -142,6 +177,15 @@ def _render_intro(html: str, intro: Intro | None) -> str:
         f'data-store="{escape(intro.store)}">{escape(title)}</h1>',
         1,
     )
+    if len(intro.history) >= 2:
+        low, high = _price(min(intro.history)), _price(max(intro.history))
+        html = html.replace(
+            INTRO_TREND,
+            f'<figure class="intro-trend" id="introTrend" data-low="{min(intro.history)}" '
+            f'data-high="{max(intro.history)}">{_sparkline(intro.history)}'
+            f"<figcaption>ბოლო 30 დღე: {escape(low)} – {escape(high)}</figcaption></figure>",
+            1,
+        )
     checked = f' data-checked="{intro.checked_at.isoformat()}"' if intro.checked_at else ""
     return html.replace(
         INTRO_STATS,
@@ -153,20 +197,18 @@ def _render_intro(html: str, intro: Intro | None) -> str:
 
 async def _load_intro(session: AsyncSession, models: Sequence[ProductSummary]) -> Intro | None:
     product = _headline_product(models)
-    if product is None:
-        return None
-    cheapest = await product_service.list_product_listings(
-        session, product_id=product.id, limit=1, offset=0
-    )
-    if not cheapest.items:
+    if product is None or product.lowest_price_store is None:
         return None
     return Intro(
         model=_phone_name(product),
         price=product.lowest_price,
-        store=cheapest.items[0].store_name,
+        store=product.lowest_price_store,
         models=len(models),
         stores=await product_service.count_stores_in_stock(session),
         checked_at=await scraper_service.last_refresh_started_at(session),
+        history=await product_service.model_daily_best_prices(
+            session, product.model, product.currency or "GEL", TREND_WINDOW
+        ),
     )
 
 
