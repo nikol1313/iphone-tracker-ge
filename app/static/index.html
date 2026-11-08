@@ -30,13 +30,13 @@
   <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
   <link rel="preload" href="/static/fonts/instrumentsans-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/static/fonts/notosansgeorgian-normal-georgian.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/static/css/fonts.css?v=20261108-4">
-  <link rel="stylesheet" href="/static/css/base.css?v=20261108-4">
-  <link rel="stylesheet" href="/static/css/shell.css?v=20261108-4">
-  <link rel="stylesheet" href="/static/css/catalog.css?v=20261108-4">
-  <link rel="stylesheet" href="/static/css/overlays.css?v=20261108-4">
-  <link rel="stylesheet" href="/static/css/responsive.css?v=20261108-4">
-  <script type="module" src="/static/js/app.js?v=20261108-4"></script>
+  <link rel="stylesheet" href="/static/css/fonts.css?v=20261108-6">
+  <link rel="stylesheet" href="/static/css/base.css?v=20261108-6">
+  <link rel="stylesheet" href="/static/css/shell.css?v=20261108-6">
+  <link rel="stylesheet" href="/static/css/catalog.css?v=20261108-6">
+  <link rel="stylesheet" href="/static/css/overlays.css?v=20261108-6">
+  <link rel="stylesheet" href="/static/css/responsive.css?v=20261108-6">
+  <script type="module" src="/static/js/app.js?v=20261108-6"></script>
 </head>
 <body>
   <svg class="icon-sprite" aria-hidden="true">
@@ -109,7 +109,7 @@
     </div>
 
     <div class="page-view" data-page-view="products" aria-labelledby="productsTitle" hidden>
-      <section class="search-band" data-i18n-attr="aria-label:search.label">
+      <section class="search-band product-grid-part" data-i18n-attr="aria-label:search.label">
         <form id="searchForm" class="search-form">
           <svg><use href="#i-search"/></svg>
           <label class="sr-only" for="searchInput" data-i18n="search.label">iPhone მოდელების ძებნა</label>
@@ -118,7 +118,7 @@
         </form>
       </section>
 
-      <section class="section">
+      <section class="section product-grid-part">
         <div class="section-heading">
           <div>
             <h1 id="productsTitle" data-i18n="products.title">ყველა iPhone</h1>
@@ -151,7 +151,10 @@
         </div>
       </section>
 
-      <section class="section" id="historySection" hidden>
+      <div class="detail-back product-detail-part">
+        <button class="back-button" id="backToGrid" type="button"><svg aria-hidden="true"><use href="#i-chevron"/></svg><span data-i18n="nav.products">ყველა iPhone</span></button>
+      </div>
+      <section class="section product-detail-part" id="historySection" hidden>
         <div class="section-heading compact">
           <div class="history-product">
             <div id="historyProductImage" class="history-product-image no-image" aria-hidden="true"><span>iPhone</span></div>
@@ -180,7 +183,7 @@
         </div>
       </section>
 
-      <section class="section" id="storesSection" hidden>
+      <section class="section product-detail-part" id="storesSection" hidden>
         <div class="section-heading compact">
           <div>
             <h2 data-i18n="stores.title">ფასები მაღაზიების მიხედვით</h2>

@@ -1,6 +1,6 @@
 /* Connect the page controls to their feature modules. */
 import { $, $$, pageFromLocation, productIdFromLocation, showPage, state } from "./core.js";
-import { applyFilters, loadProducts, openProductInCatalog, renderOverview, renderProducts, searchSuggestions, selectProduct, updateSelectedActions } from "./catalog.js";
+import { applyFilters, closeProductDetail, loadProducts, openProductDetail, openProductInCatalog, renderOverview, renderProducts, searchSuggestions, syncProductsView, updateSelectedActions } from "./catalog.js";
 import { attachSuggestions } from "./combobox.js";
 import { loadTracked, logout, track } from "./account.js";
 import { bindDialogs, confirmEmailFromLink, openAlert, openAuth, openEmailSettings, openPasswordResetFromLink } from "./dialogs.js";
@@ -13,10 +13,10 @@ function bindSearchAndCatalog() {
     state.searchQuery = $("#searchInput").value.trim();
     applyFilters();
   };
+  // A search that leaves one phone opens it; otherwise the grid shows the matches.
   const searchAndOpenFirst = () => {
     search();
-    const first = state.visibleProducts[0];
-    if (first) selectProduct(first.id, { scroll: true });
+    if (state.visibleProducts.length === 1) openProductDetail(state.visibleProducts[0].id);
   };
   $("#searchForm").addEventListener("submit", event => {
     event.preventDefault();
@@ -56,12 +56,12 @@ function bindSearchAndCatalog() {
   });
   $("#productGrid").addEventListener("click", event => {
     const card = event.target.closest("[data-product-id]");
-    if (card) selectProduct(card.dataset.productId, { scroll: true });
+    if (card) openProductDetail(card.dataset.productId);
   });
   $("#productGrid").addEventListener("keydown", event => {
     if ((event.key === "Enter" || event.key === " ") && event.target.matches("[data-product-id]")) {
       event.preventDefault();
-      selectProduct(event.target.dataset.productId, { scroll: true });
+      openProductDetail(event.target.dataset.productId);
     }
   });
   // Today page: a model row opens the catalog filtered to that model, on its cheapest variant.
@@ -84,6 +84,7 @@ function bindSearchAndCatalog() {
       }
     });
   });
+  $("#backToGrid").addEventListener("click", closeProductDetail);
   $("#selectedTrackButton").addEventListener("click", () => state.selectedId && track(state.selectedId));
   $("#selectedAlertButton").addEventListener("click", () => state.selectedId && openAlert(state.selectedId));
 }
@@ -166,6 +167,7 @@ function bindNavigation() {
       event.preventDefault();
       showPage(pageLink.dataset.pageLink, true);
       if (pageLink.dataset.pageLink === "compare") renderComparePage();
+      syncProductsView();
       if (pageLink.hasAttribute("data-focus-search")) {
         requestAnimationFrame(() => $("#searchInput")?.focus());
       }
@@ -176,7 +178,7 @@ function bindNavigation() {
   window.addEventListener("popstate", () => {
     showPage(pageFromLocation());
     if (state.currentPage === "compare") renderComparePage();
-    openLinkedProduct();
+    syncProductsView();
   });
 }
 

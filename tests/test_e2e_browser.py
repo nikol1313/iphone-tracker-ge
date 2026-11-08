@@ -7,6 +7,7 @@ Start the app first with `docker compose up`, then run:
     uv run pytest -m e2e
 """
 
+import re
 import time
 
 import pytest
@@ -136,6 +137,21 @@ def test_site_opens_in_georgian_and_switches_to_english(browser):
     assert scrolled > 0
     assert page.evaluate("window.scrollY") > scrolled / 2
     page.close()
+
+
+def test_tapping_a_phone_shows_only_its_page(page: Page):
+    open_first_iphone(page)
+
+    # The phone's page replaces the grid, with a way back.
+    expect(page.locator("#historySection")).to_be_visible()
+    expect(page.locator("#storesSection")).to_be_visible()
+    expect(page.locator("#productGrid")).to_be_hidden()
+    expect(page).to_have_url(re.compile(r"[?&]id=\d+"))
+
+    page.click("#backToGrid")
+    expect(page.locator("#productGrid")).to_be_visible()
+    expect(page.locator("#historySection")).to_be_hidden()
+    expect(page).not_to_have_url(re.compile(r"[?&]id="))
 
 
 def test_search_waits_for_the_search_button(page: Page):

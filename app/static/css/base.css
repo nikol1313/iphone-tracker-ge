@@ -105,6 +105,8 @@ button, a, input, select, .product-card, .model-price, .chip, .use-option { tran
 
 /* Theme switch (app.js): the new theme is revealed by a growing circle, so drop the default crossfade. */
 ::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+/* Taps pass through the transition overlay, so the toggle works again mid-animation. */
+::view-transition { pointer-events: none; }
 
 /* Ink-named motion. All of it is switched off under prefers-reduced-motion (responsive.css). */
 @keyframes ink-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }

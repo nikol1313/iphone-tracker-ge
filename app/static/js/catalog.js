@@ -1,5 +1,5 @@
 /* Catalog search, offer cards, charts, and retailer comparison. */
-import { $, $$, api, dateTime, dayDate, escapeHtml, money, productName, relativeTime, safeUrl, setProductInLocation, shortDate, showPage, state, variant, showToast } from "./core.js";
+import { $, $$, api, dateTime, dayDate, escapeHtml, money, productIdFromLocation, productName, relativeTime, safeUrl, setProductInLocation, shortDate, showPage, state, variant, showToast } from "./core.js";
 import { onLanguageChange, t } from "./i18n.js";
 
 const PAGE_LIMIT = 100;
@@ -135,9 +135,6 @@ export async function loadProducts() {
     applyFilters({ resetVisible: false });
     if (state.selectedId != null && state.products.some(item => item.id === state.selectedId)) {
       selectProduct(state.selectedId);
-    } else if (state.visibleProducts.length) {
-      const priced = state.visibleProducts.find(item => item.lowest_price != null) || state.visibleProducts[0];
-      selectProduct(priced.id);
     }
   } catch (error) {
     $("#overviewStats").textContent = t("intro.failed");
@@ -228,12 +225,28 @@ function renderDayChanges() {
     : `<li class="empty-state">${t("day.none")}</li>`;
 }
 
+// The amber underline runs as far as the headline's widest line. CSS can't size it: a wrapped
+// heading's box is as wide as the column, not as its text.
+function fitIntroUnderline() {
+  const title = $("#overviewTitle");
+  const underline = $(".intro .ink-underline");
+  const range = document.createRange();
+  range.selectNodeContents(title);
+  const rects = [...range.getClientRects()];
+  if (!rects.length) return;
+  const width = Math.max(...rects.map(rect => rect.right)) - Math.min(...rects.map(rect => rect.left));
+  if (width > 0) underline.style.width = `${Math.round(width)}px`;
+}
+new ResizeObserver(fitIntroUnderline).observe($("#overviewTitle"));
+document.fonts?.ready.then(fitIntroUnderline);
+
 // Today headline: the server picks the phone and counts; this writes them in the page language.
 function renderIntro() {
   const title = $("#overviewTitle");
   const { model, price, store } = title.dataset;
   // Non-breaking space keeps "2,799 ₾" together when the headline wraps.
   if (model) title.textContent = t("intro.headline", { model, price: money(price).replace(" ", "\u00a0"), store });
+  fitIntroUnderline();
   const stats = $("#overviewStats");
   if (!stats.dataset.models) return;
   const parts = [
@@ -321,7 +334,7 @@ export function renderProducts() {
   }, { once: true }));
 }
 
-/* Open one phone in All iPhones: list filtered to its model, the phone selected and in view. */
+/* Open one phone in All iPhones, with the grid behind it filtered to its model. */
 export function openProductInCatalog(productId, { updateHistory = true } = {}) {
   const product = state.products.find(item => item.id === Number(productId));
   if (!product) return;
@@ -330,15 +343,58 @@ export function openProductInCatalog(productId, { updateHistory = true } = {}) {
   $("#modelFilter").value = product.model;
   showPage("products", updateHistory);
   applyFilters();
-  selectProduct(product.id, { scroll: true });
+  openProductDetail(product.id, { fromGrid: false });
 }
 
-export async function selectProduct(productId, { scroll = false } = {}) {
+/* All iPhones shows either the grid or one phone's page (history and stores); ?id= says which. */
+const productsView = () => $('[data-page-view="products"]');
+const showingDetail = () => productsView().hasAttribute("data-detail");
+
+function setDetailMode(on) {
+  productsView().toggleAttribute("data-detail", on);
+}
+
+// fromGrid: opened from the grid, so the back button and the browser's Back return to it.
+export function openProductDetail(productId, { fromGrid = true } = {}) {
+  const id = Number(productId);
+  if (!state.products.some(item => item.id === id)) return;
+  if (!showingDetail()) state.gridScroll = window.scrollY;
+  setProductInLocation(id, { push: fromGrid });
+  setDetailMode(true);
+  window.scrollTo({ top: 0, behavior: "instant" });
+  selectProduct(id);
+}
+
+export function closeProductDetail() {
+  // Opened from the grid: step back to that history entry; syncProductsView redraws the grid.
+  if (window.history.state?.detail) {
+    window.history.back();
+    return;
+  }
+  const url = new URL(window.location.href);
+  url.searchParams.delete("id");
+  window.history.replaceState({ page: "products" }, "", url);
+  syncProductsView();
+}
+
+// Match All iPhones to the address after Back/Forward or a nav click.
+export function syncProductsView() {
+  if (state.currentPage !== "products") return;
+  const id = productIdFromLocation();
+  if (id && state.products.some(item => item.id === id)) {
+    setDetailMode(true);
+    selectProduct(id);
+    return;
+  }
+  const wasDetail = showingDetail();
+  setDetailMode(false);
+  if (wasDetail) window.scrollTo({ top: state.gridScroll || 0, behavior: "instant" });
+}
+
+export async function selectProduct(productId) {
   state.selectedId = Number(productId);
   const product = state.products.find(item => item.id === state.selectedId);
   if (!product) return;
-  // A phone the visitor chose (not the one picked by default) gets its own address.
-  if (scroll && state.currentPage === "products") setProductInLocation(product.id);
   $$(".product-card").forEach(card => card.classList.toggle("selected", Number(card.dataset.productId) === state.selectedId));
   $("#historySection").hidden = false;
   $("#storesSection").hidden = false;
@@ -370,11 +426,6 @@ export async function selectProduct(productId, { scroll = false } = {}) {
     renderChart(prices.items, product);
     renderListings(listings.items);
     renderAllTimePrices(extremes);
-    if (scroll) {
-      const details = $("#historySection");
-      const top = details.getBoundingClientRect().top + window.scrollY - 88;
-      window.scrollTo({ top: Math.max(top, 0), behavior: "instant" });
-    }
   } catch (error) {
     showToast(error.message);
   }

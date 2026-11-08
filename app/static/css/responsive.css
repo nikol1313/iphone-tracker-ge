@@ -1,18 +1,21 @@
 /* Narrow-screen layout and reduced-motion preferences. */
 @media (max-width: 1020px) {
-  .topbar { grid-template-columns: 1fr auto; padding: 0 20px; }
+  /* Logo and buttons on one row, page links below; padding keeps both off the bar's edges. */
+  .topbar { grid-template-columns: 1fr auto; gap: 8px 12px; padding: 10px 20px 6px; }
   .account-actions { grid-column: 2; grid-row: 1; }
-  nav { grid-column: 1 / -1; padding: 0 0 6px; }
+  nav { grid-column: 1 / -1; }
   .nav-link { flex: 1; text-align: center; }
   .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 700px) {
-  .topbar { min-height: 56px; padding: 0 14px; gap: 2px; }
+  .topbar { min-height: 56px; padding: 10px 14px 4px; gap: 6px 8px; }
   .brand-name, .nav-link { white-space: nowrap; }
-  .nav-link { padding: 8px 4px; font-size: .84rem; }
+  /* Four links share the width; long Georgian labels shrink and clip instead of widening the page. */
+  .nav-link { flex: 1 1 auto; min-width: 0; padding: 10px 4px; overflow: hidden; font-size: .84rem; text-overflow: ellipsis; }
   .account-actions { gap: 6px; }
   main { padding-top: 14px; }
-  .intro, .search-band, .section, footer { width: calc(100% - 28px); }
+  .intro, .search-band, .section, .detail-back, footer { width: calc(100% - 28px); }
+  .detail-back { margin-bottom: 12px; }
   .intro h1 { font-size: 1.75rem; letter-spacing: -.03em; }
   .section { margin-bottom: 56px; }
   [data-page-view] .section { width: calc(100% - 28px); }
@@ -28,6 +31,10 @@
   .history-product { grid-template-columns: 56px minmax(0, 1fr); gap: 12px; }
   .history-product-image { width: 56px; height: 56px; }
   .history-tools { width: 100%; justify-items: stretch; }
+  /* Action buttons stack full-width instead of overflowing the screen side by side. */
+  .selected-actions { flex-direction: column; gap: 10px; }
+  .selected-actions .small-button { min-height: 44px; white-space: normal; }
+  .summary-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .all-time-prices { grid-template-columns: 1fr; }
   .account-panel { align-items: flex-start; flex-direction: column; }
   .tracked-row { grid-template-columns: 1fr; gap: 10px; }
@@ -37,6 +44,8 @@
 }
 @media (max-width: 420px) {
   .product-grid { grid-template-columns: 1fr; }
+  /* Smallest phones (320px): Georgian nav labels still fit without clipping. */
+  .nav-link { padding: 10px 2px; font-size: .76rem; }
   /* Room for language, theme and account buttons: keep the logo, drop the wordmark. */
   .brand-name { display: none; }
 }
