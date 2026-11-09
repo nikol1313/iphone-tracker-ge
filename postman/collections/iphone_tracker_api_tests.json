@@ -252,6 +252,170 @@
               "type": "noauth"
             }
           }
+        },
+        {
+          "name": "05 Login with the right password → 200 + token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const reply = pm.response.json();",
+                  "",
+                  "pm.test(\"Reply has a bearer token\", () => {",
+                  "    pm.expect(reply.access_token).to.be.a(\"string\").and.not.be.empty;",
+                  "    pm.expect(reply.token_type).to.equal(\"bearer\");",
+                  "});",
+                  "",
+                  "// Every request that inherits the collection's auth now sends this token.",
+                  "pm.collectionVariables.set(\"token\", reply.access_token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "This API's login takes JSON (`email`, `password`), not form-data."
+          }
+        },
+        {
+          "name": "06 Login with a wrong password → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 401 Unauthorized\", () => {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test(\"No token is given out\", () => {",
+                  "    pm.expect(pm.response.json()).to.not.have.property(\"access_token\");",
+                  "});",
+                  "",
+                  "// Test 07 checks that an unknown email gets this exact same message.",
+                  "pm.collectionVariables.set(\"loginErrorMessage\", pm.response.json().detail);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"Wrong-password-1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "07 Login with an unknown email → same 401 as #06 🔐",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 401 Unauthorized\", () => {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test(\"Same error message as a wrong password (#06)\", () => {",
+                  "    pm.expect(pm.response.json().detail).to.equal(pm.collectionVariables.get(\"loginErrorMessage\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nobody.{{$timestamp}}@example.com\",\n  \"password\": \"Passw0rd-123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "User enumeration check: if 'wrong password' and 'no such user' gave different answers,\nan attacker could find out which emails have accounts."
+          }
         }
       ]
     }
