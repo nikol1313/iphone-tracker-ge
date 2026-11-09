@@ -29,9 +29,41 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  # Starts the whole app with docker compose and runs the Postman collection against it.
+  api-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write a throwaway .env
+        run: |
+          {
+            echo "POSTGRES_PASSWORD=$(openssl rand -hex 24)"
+            echo "JWT_SECRET=$(openssl rand -hex 32)"
+            echo "PROD=false"
+            # No scraping in CI: the tests use the sample data below.
+            echo "REFRESH_SCHEDULER_ENABLED=false"
+          } > .env
+
+      - name: Start the app
+        run: docker compose up -d --build --wait
+
+      - name: Load sample phone data
+        run: docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < postman/seed.sql
+
+      - name: Install Postman CLI
+        run: curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
+
+      - name: Run API tests
+        run: postman collection run postman/collections/iphone_tracker_api_tests.json
+
+      - name: Show backend logs
+        if: failure()
+        run: docker compose logs backend
+
   # Runs scripts/deploy.sh on the server after tests and the image build pass on main.
   deploy:
-    needs: [test, docker]
+    needs: [test, docker, api-tests]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     # One deploy at a time; a newer push waits for the running one instead of cancelling it mid-build.
