@@ -1181,6 +1181,92 @@
               ]
             }
           }
+        },
+        {
+          "name": "25 Price extremes → lowest ≤ highest",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const extremes = pm.response.json();",
+                  "",
+                  "pm.test(\"Reply has currency, lowest and highest price\", () => {",
+                  "    pm.expect(extremes).to.have.keys(\"currency\", \"lowest_price\", \"highest_price\");",
+                  "    pm.expect(extremes.currency).to.equal(\"GEL\");",
+                  "});",
+                  "",
+                  "pm.test(\"Lowest price ≤ highest price\", () => {",
+                  "    pm.expect(Number(extremes.lowest_price)).to.be.at.most(Number(extremes.highest_price));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{existingProductId}}/prices/extremes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{existingProductId}}",
+                "prices",
+                "extremes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "26 ⭐ History (#23) and extremes (#25) agree on the lowest price",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const extremesLowest = Number(pm.response.json().lowest_price);",
+                  "const historyLowest = Number(pm.collectionVariables.get(\"historyLowest\"));",
+                  "",
+                  "if (pm.collectionVariables.get(\"historyIsComplete\") === \"yes\") {",
+                  "    pm.test(\"Lowest price in history equals extremes' lowest price\", () => {",
+                  "        pm.expect(extremesLowest).to.equal(historyLowest);",
+                  "    });",
+                  "} else {",
+                  "    // #23 saw only the newest 100 rows, so older rows may hold a lower price.",
+                  "    pm.test(\"Extremes' lowest price is not above anything in the history we saw\", () => {",
+                  "        pm.expect(extremesLowest).to.be.at.most(historyLowest);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{existingProductId}}/prices/extremes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{existingProductId}}",
+                "prices",
+                "extremes"
+              ]
+            },
+            "description": "Consistency test: two endpoints describe the same data, so they must agree."
+          }
         }
       ]
     }
