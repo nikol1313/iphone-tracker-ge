@@ -416,6 +416,167 @@
             },
             "description": "User enumeration check: if 'wrong password' and 'no such user' gave different answers,\nan attacker could find out which emails have accounts."
           }
+        },
+        {
+          "name": "08 Password reset for my email → 204",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const status = pm.response.code;",
+                  "",
+                  "// Test 09 compares its answer with these.",
+                  "pm.collectionVariables.set(\"resetStatus\", String(status));",
+                  "pm.collectionVariables.set(\"resetBody\", pm.response.text());",
+                  "",
+                  "if (status === 503) {",
+                  "    pm.test.skip(\"Reset request accepted (skipped: server has no SMTP settings)\", () => {});",
+                  "} else {",
+                  "    pm.test(\"Status is 200, 202 or 204\", () => {",
+                  "        pm.expect(status).to.be.oneOf([200, 202, 204]);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/password-reset",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "password-reset"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "The API answers 204 No Content. A server without SMTP settings answers 503 instead;\nthen this test is skipped, but #09 still checks both answers match."
+          }
+        },
+        {
+          "name": "09 Password reset for an unknown email → same as #08 🔐",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Same status as for a real account (#08)\", () => {",
+                  "    pm.expect(String(pm.response.code)).to.equal(pm.collectionVariables.get(\"resetStatus\"));",
+                  "});",
+                  "",
+                  "pm.test(\"Same body as for a real account (#08)\", () => {",
+                  "    pm.expect(pm.response.text()).to.equal(pm.collectionVariables.get(\"resetBody\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/password-reset",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "password-reset"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nobody.{{$timestamp}}@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "10 Confirm reset with a fake token → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 400 Bad Request\", () => {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Error message explains the problem\", () => {",
+                  "    pm.expect(pm.response.json().detail).to.be.a(\"string\").and.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/password-reset/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "password-reset",
+                "confirm"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"this-is-not-a-real-token\",\n  \"password\": \"New-Passw0rd-123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
         }
       ]
     }
