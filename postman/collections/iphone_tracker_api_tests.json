@@ -1092,6 +1092,95 @@
               ]
             }
           }
+        },
+        {
+          "name": "23 Price history → sorted newest first",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const page = pm.response.json();",
+                  "const history = page.items;",
+                  "",
+                  "pm.test(\"Phone has price history\", () => {",
+                  "    pm.expect(history).to.not.be.empty;",
+                  "});",
+                  "",
+                  "pm.test(\"Sorted by date, newest first\", () => {",
+                  "    for (let i = 1; i < history.length; i++) {",
+                  "        const previous = new Date(history[i - 1].recorded_at);",
+                  "        const current = new Date(history[i].recorded_at);",
+                  "        pm.expect(current.getTime()).to.be.at.most(previous.getTime());",
+                  "    }",
+                  "});",
+                  "",
+                  "// Test 26 compares this with /prices/extremes. Extremes are in lari (GEL).",
+                  "const lariPrices = history.filter((row) => row.currency === \"GEL\").map((row) => Number(row.price));",
+                  "pm.collectionVariables.set(\"historyLowest\", Math.min(...lariPrices));",
+                  "pm.collectionVariables.set(\"historyIsComplete\", page.total <= history.length ? \"yes\" : \"no\");"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{existingProductId}}/prices?limit=100",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{existingProductId}}",
+                "prices"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            },
+            "description": "This API lists price history newest first, so each date must be ≤ the one before it."
+          }
+        },
+        {
+          "name": "24 Price history of a missing product → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404 Not Found\", () => {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/999999/prices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "999999",
+                "prices"
+              ]
+            }
+          }
         }
       ]
     }
