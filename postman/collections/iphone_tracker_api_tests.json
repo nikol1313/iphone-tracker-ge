@@ -1756,6 +1756,82 @@
             },
             "description": "Every alert field has a default (no target_price = \"tell me when it's back in stock\"),\nso the only thing PUT can be missing is the whole body."
           }
+        },
+        {
+          "name": "38 ⭐ Another user deletes my alert → 404, alert survives 🔐",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Make a second user and log them in. Their token goes in user2Token.",
+                  "const user2 = { email: `intruder.${Date.now()}@example.com`, password: \"Passw0rd-123\" };",
+                  "const jsonPost = (path, body) => ({",
+                  "    url: pm.variables.replaceIn(`{{baseUrl}}${path}`),",
+                  "    method: \"POST\",",
+                  "    header: [{ key: \"Content-Type\", value: \"application/json\" }],",
+                  "    body: { mode: \"raw\", raw: JSON.stringify(body) },",
+                  "});",
+                  "",
+                  "pm.sendRequest(jsonPost(\"/auth/register\", user2), () => {",
+                  "    pm.sendRequest(jsonPost(\"/auth/login\", user2), (error, response) => {",
+                  "        pm.collectionVariables.set(\"user2Token\", response.json().access_token);",
+                  "    });",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"User 2 is refused (403 or 404)\", () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([403, 404]);",
+                  "});",
+                  "",
+                  "// Log back in as user 1 and check the alert is still there.",
+                  "pm.sendRequest({",
+                  "    url: pm.variables.replaceIn(\"{{baseUrl}}/alerts\"),",
+                  "    method: \"GET\",",
+                  "    header: [{ key: \"Authorization\", value: `Bearer ${pm.collectionVariables.get(\"token\")}` }],",
+                  "}, (error, response) => {",
+                  "    const ids = response.json().items.map((alert) => alert.id);",
+                  "",
+                  "    pm.test(\"User 1's alert still exists\", () => {",
+                  "        pm.expect(ids).to.include(Number(pm.collectionVariables.get(\"alertId\")));",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/alerts/{{alertId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "alerts",
+                "{{alertId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user2Token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "IDOR check: user 2 must not be able to touch user 1's alert."
+          }
         }
       ]
     }
