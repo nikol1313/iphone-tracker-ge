@@ -1834,6 +1834,212 @@
           }
         }
       ]
+    },
+    {
+      "name": "7. Notifications & refresh",
+      "item": [
+        {
+          "name": "39 Save my alert email, then read it back",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"notifyEmail\", `alerts.${Date.now()}@example.com`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const saved = pm.collectionVariables.get(\"notifyEmail\");",
+                  "",
+                  "pm.test(\"Reply shows the saved email\", () => {",
+                  "    pm.expect(pm.response.json().notification_email).to.equal(saved);",
+                  "});",
+                  "",
+                  "// Round trip: a GET must return what the PUT stored.",
+                  "pm.sendRequest({",
+                  "    url: pm.variables.replaceIn(\"{{baseUrl}}/notification-settings/email\"),",
+                  "    method: \"GET\",",
+                  "    header: [{ key: \"Authorization\", value: `Bearer ${pm.collectionVariables.get(\"token\")}` }],",
+                  "}, (error, response) => {",
+                  "    pm.test(\"GET returns the email we PUT\", () => {",
+                  "        pm.expect(response.code).to.equal(200);",
+                  "        pm.expect(response.json().notification_email).to.equal(saved);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notification-settings/email",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notification-settings",
+                "email"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notification_email\": \"{{notifyEmail}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "40 Save an invalid alert email → 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 422 Unprocessable\", () => {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test(\"Error points at notification_email\", () => {",
+                  "    const error = pm.response.json().detail[0];",
+                  "    pm.expect(error.loc).to.include(\"notification_email\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notification-settings/email",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notification-settings",
+                "email"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notification_email\": \"not-an-email\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "41 Verify email with a wrong code → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 400 Bad Request\", () => {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notification-settings/email/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notification-settings",
+                "email",
+                "verify"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"wrong-code\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "42 Start a price refresh without logging in → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 401 Unauthorized\", () => {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "refresh"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "A stranger must not be able to start our scraper."
+          }
+        }
+      ]
     }
   ]
 }
