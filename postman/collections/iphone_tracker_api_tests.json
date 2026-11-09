@@ -1269,6 +1269,214 @@
           }
         }
       ]
+    },
+    {
+      "name": "5. Tracked products",
+      "item": [
+        {
+          "name": "27 Track a real phone → 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 201 Created\", () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Reply names the phone we tracked\", () => {",
+                  "    pm.expect(pm.response.json().product_id).to.equal(Number(pm.collectionVariables.get(\"existingProductId\")));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tracked-products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tracked-products"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": {{existingProductId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "28 Track the same phone again → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 409 Conflict\", () => {",
+                  "    pm.response.to.have.status(409);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tracked-products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tracked-products"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": {{existingProductId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Decision: tracking twice is a conflict (409). Test 29 also checks no duplicate was made."
+          }
+        },
+        {
+          "name": "29 My tracked list → contains the phone once",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const id = Number(pm.collectionVariables.get(\"existingProductId\"));",
+                  "const matches = pm.response.json().items.filter((entry) => entry.product.id === id);",
+                  "",
+                  "pm.test(\"Phone appears exactly once (no duplicate from #28)\", () => {",
+                  "    pm.expect(matches).to.have.lengthOf(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tracked-products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tracked-products"
+              ]
+            }
+          }
+        },
+        {
+          "name": "30 Tracked list without logging in → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 401 Unauthorized\", () => {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tracked-products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tracked-products"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "31 Stop tracking → 204, then gone from the list",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 204 No Content\", () => {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "// Ask for the list again to prove the phone is really gone.",
+                  "pm.sendRequest({",
+                  "    url: pm.variables.replaceIn(\"{{baseUrl}}/tracked-products\"),",
+                  "    method: \"GET\",",
+                  "    header: [{ key: \"Authorization\", value: `Bearer ${pm.collectionVariables.get(\"token\")}` }],",
+                  "}, (error, response) => {",
+                  "    const id = Number(pm.collectionVariables.get(\"existingProductId\"));",
+                  "    const ids = response.json().items.map((entry) => entry.product.id);",
+                  "",
+                  "    pm.test(\"Phone is no longer in the tracked list\", () => {",
+                  "        pm.expect(ids).to.not.include(id);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tracked-products/{{existingProductId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tracked-products",
+                "{{existingProductId}}"
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }
