@@ -1,0 +1,2045 @@
+{
+  "info": {
+    "name": "iPhone Tracker API — 42 tests",
+    "description": "Run the folders in order: later tests use values saved by earlier ones.\nEvery run makes its own fresh user in #01, so nothing needs setting up first.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "01 Register a new user → 201, no password in reply",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Start of a run: forget what an earlier run saved.",
+                  "[\"token\", \"user2Token\", \"alertId\"].forEach((name) => pm.collectionVariables.unset(name));",
+                  "",
+                  "// A new email every run. example.com is reserved for tests, so no real inbox ever gets mail.",
+                  "const name = pm.variables.replaceIn(\"{{$randomUserName}}\").replace(/[^a-z0-9]/gi, \"\");",
+                  "pm.collectionVariables.set(\"email\", `${name}.${Date.now()}@example.com`.toLowerCase());",
+                  "pm.collectionVariables.set(\"password\", \"Passw0rd-123\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 201 Created\", () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const user = pm.response.json();",
+                  "",
+                  "pm.test(\"Reply shows the email we registered\", () => {",
+                  "    pm.expect(user.email).to.equal(pm.collectionVariables.get(\"email\"));",
+                  "});",
+                  "",
+                  "pm.test(\"Reply never contains the password\", () => {",
+                  "    pm.expect(user).to.not.have.property(\"password\");",
+                  "    pm.expect(user).to.not.have.property(\"password_hash\");",
+                  "    pm.expect(pm.response.text()).to.not.include(pm.collectionVariables.get(\"password\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "02 Register the same email again → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 409 Conflict (not 500)\", () => {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "",
+                  "pm.test(\"Error message explains the problem\", () => {",
+                  "    pm.expect(pm.response.json().detail).to.be.a(\"string\").and.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "03 Register with a bad email → 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 422 Unprocessable\", () => {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test(\"Error points at the email field\", () => {",
+                  "    const error = pm.response.json().detail[0];",
+                  "    pm.expect(error.loc).to.include(\"email\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"not-an-email\",\n  \"password\": \"Passw0rd-123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "04 Register without a password → 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 422 Unprocessable\", () => {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test(\"Error points at the password field\", () => {",
+                  "    const error = pm.response.json().detail[0];",
+                  "    pm.expect(error.loc).to.include(\"password\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nopassword@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "05 Login with the right password → 200 + token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const reply = pm.response.json();",
+                  "",
+                  "pm.test(\"Reply has a bearer token\", () => {",
+                  "    pm.expect(reply.access_token).to.be.a(\"string\").and.not.be.empty;",
+                  "    pm.expect(reply.token_type).to.equal(\"bearer\");",
+                  "});",
+                  "",
+                  "// Every request that inherits the collection's auth now sends this token.",
+                  "pm.collectionVariables.set(\"token\", reply.access_token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "This API's login takes JSON (`email`, `password`), not form-data."
+          }
+        },
+        {
+          "name": "06 Login with a wrong password → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 401 Unauthorized\", () => {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test(\"No token is given out\", () => {",
+                  "    pm.expect(pm.response.json()).to.not.have.property(\"access_token\");",
+                  "});",
+                  "",
+                  "// Test 07 checks that an unknown email gets this exact same message.",
+                  "pm.collectionVariables.set(\"loginErrorMessage\", pm.response.json().detail);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"Wrong-password-1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "07 Login with an unknown email → same 401 as #06 🔐",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 401 Unauthorized\", () => {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test(\"Same error message as a wrong password (#06)\", () => {",
+                  "    pm.expect(pm.response.json().detail).to.equal(pm.collectionVariables.get(\"loginErrorMessage\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nobody.{{$timestamp}}@example.com\",\n  \"password\": \"Passw0rd-123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "User enumeration check: if 'wrong password' and 'no such user' gave different answers,\nan attacker could find out which emails have accounts."
+          }
+        },
+        {
+          "name": "08 Password reset for my email → 204",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const status = pm.response.code;",
+                  "",
+                  "// Test 09 compares its answer with these.",
+                  "pm.collectionVariables.set(\"resetStatus\", String(status));",
+                  "pm.collectionVariables.set(\"resetBody\", pm.response.text());",
+                  "",
+                  "if (status === 503) {",
+                  "    pm.test.skip(\"Reset request accepted (skipped: server has no SMTP settings)\", () => {});",
+                  "} else {",
+                  "    pm.test(\"Status is 200, 202 or 204\", () => {",
+                  "        pm.expect(status).to.be.oneOf([200, 202, 204]);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/password-reset",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "password-reset"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "The API answers 204 No Content. A server without SMTP settings answers 503 instead;\nthen this test is skipped, but #09 still checks both answers match."
+          }
+        },
+        {
+          "name": "09 Password reset for an unknown email → same as #08 🔐",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Same status as for a real account (#08)\", () => {",
+                  "    pm.expect(String(pm.response.code)).to.equal(pm.collectionVariables.get(\"resetStatus\"));",
+                  "});",
+                  "",
+                  "pm.test(\"Same body as for a real account (#08)\", () => {",
+                  "    pm.expect(pm.response.text()).to.equal(pm.collectionVariables.get(\"resetBody\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/password-reset",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "password-reset"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nobody.{{$timestamp}}@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "10 Confirm reset with a fake token → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 400 Bad Request\", () => {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Error message explains the problem\", () => {",
+                  "    pm.expect(pm.response.json().detail).to.be.a(\"string\").and.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/password-reset/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "password-reset",
+                "confirm"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"this-is-not-a-real-token\",\n  \"password\": \"New-Passw0rd-123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Products",
+      "item": [
+        {
+          "name": "11 List products → 200, valid page",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const page = pm.response.json();",
+                  "",
+                  "pm.test(\"Reply is a page: items, total, limit, offset\", () => {",
+                  "    pm.expect(page).to.have.keys(\"items\", \"total\", \"limit\", \"offset\");",
+                  "    pm.expect(page.items).to.be.an(\"array\").that.is.not.empty;",
+                  "    pm.expect(page.total).to.be.at.least(page.items.length);",
+                  "});",
+                  "",
+                  "pm.test(\"Every product has an id, brand and model\", () => {",
+                  "    page.items.forEach((product) => {",
+                  "        pm.expect(product.id).to.be.a(\"number\");",
+                  "        pm.expect(product.brand).to.be.a(\"string\").and.not.be.empty;",
+                  "        pm.expect(product.model).to.be.a(\"string\").and.not.be.empty;",
+                  "    });",
+                  "});",
+                  "",
+                  "// Folders 4-6 need a real phone that stores already sell, so it has prices.",
+                  "const withPrices = page.items.find((product) => product.lowest_price !== null);",
+                  "",
+                  "pm.test(\"At least one product has scraped prices\", () => {",
+                  "    pm.expect(withPrices).to.not.be.undefined;",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set(\"existingProductId\", (withPrices || page.items[0]).id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
+            }
+          }
+        },
+        {
+          "name": "12 Create a product without logging in → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 401 Unauthorized\", () => {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"brand\": \"Apple\",\n  \"model\": \"Should Not Exist\",\n  \"storage\": \"128GB\",\n  \"color\": \"Black\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "13 Get a product that does not exist → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404 Not Found\", () => {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "999999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "14 Get a product with a text id → 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 422 Unprocessable\", () => {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test(\"Error points at the product id\", () => {",
+                  "    const error = pm.response.json().detail[0];",
+                  "    pm.expect(error.loc).to.include(\"product_id\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "abc"
+              ]
+            }
+          }
+        },
+        {
+          "name": "15 Get specs of a real phone → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const specs = pm.response.json();",
+                  "",
+                  "pm.test(\"Reply has product_id, model and a specs object\", () => {",
+                  "    pm.expect(specs).to.include.keys(\"product_id\", \"model\", \"specs\");",
+                  "    pm.expect(specs.specs).to.be.an(\"object\");",
+                  "});",
+                  "",
+                  "pm.test(\"Specs are for the phone we asked about\", () => {",
+                  "    pm.expect(specs.product_id).to.equal(Number(pm.collectionVariables.get(\"existingProductId\")));",
+                  "});",
+                  "",
+                  "pm.test(\"Every spec value is text\", () => {",
+                  "    Object.values(specs.specs).forEach((value) => pm.expect(value).to.be.a(\"string\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{existingProductId}}/specs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{existingProductId}}",
+                "specs"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Search",
+      "item": [
+        {
+          "name": "16 Search \"iphone\" → every result matches",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const results = pm.response.json().items;",
+                  "",
+                  "pm.test(\"Search found something\", () => {",
+                  "    pm.expect(results).to.not.be.empty;",
+                  "});",
+                  "",
+                  "pm.test(\"Every result contains \\\"iphone\\\" (any case)\", () => {",
+                  "    results.forEach((product) => {",
+                  "        const text = [product.brand, product.model, product.storage, product.color].join(\" \");",
+                  "        pm.expect(text.toLowerCase()).to.include(\"iphone\");",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search?q=iphone",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "iphone"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "17 Search nonsense → 200 with no results",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK (not 404)\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"No results\", () => {",
+                  "    const page = pm.response.json();",
+                  "    pm.expect(page.items).to.be.an(\"array\").that.is.empty;",
+                  "    pm.expect(page.total).to.equal(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search?q=zzqqxx",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "zzqqxx"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "18 Search without q → 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 422 Unprocessable\", () => {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test(\"Error points at the q parameter\", () => {",
+                  "    const error = pm.response.json().detail[0];",
+                  "    pm.expect(error.loc).to.include(\"q\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search"
+              ]
+            }
+          }
+        },
+        {
+          "name": "19 Search with SQL injection → not 500 🔐",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Server did not crash (status below 500)\", () => {",
+                  "    pm.expect(pm.response.code).to.be.below(500);",
+                  "});",
+                  "",
+                  "pm.test(\"Reply is a normal search page\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json().items).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search?q=' OR 1=1 --",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "' OR 1=1 --"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "20 Search with 1000 characters → not 500",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"longQuery\", \"a\".repeat(1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Server did not crash (status below 500)\", () => {",
+                  "    pm.expect(pm.response.code).to.be.below(500);",
+                  "});",
+                  "",
+                  "pm.test(\"Too-long query is rejected with 422 (max is 100 characters)\", () => {",
+                  "    pm.response.to.have.status(422);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search?q={{longQuery}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{longQuery}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Listings & prices",
+      "item": [
+        {
+          "name": "21 Listings of a real phone → every price > 0",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const listings = pm.response.json().items;",
+                  "",
+                  "pm.test(\"Phone has at least one listing\", () => {",
+                  "    pm.expect(listings).to.not.be.empty;",
+                  "});",
+                  "",
+                  "// Prices come back as text (\"1999.00\"), so turn them into numbers first.",
+                  "pm.test(\"Every listing has a price above 0\", () => {",
+                  "    listings.forEach((listing) => pm.expect(Number(listing.current_price)).to.be.above(0));",
+                  "});",
+                  "",
+                  "pm.test(\"Every listing belongs to this phone\", () => {",
+                  "    const id = Number(pm.collectionVariables.get(\"existingProductId\"));",
+                  "    listings.forEach((listing) => pm.expect(listing.product_id).to.equal(id));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{existingProductId}}/listings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{existingProductId}}",
+                "listings"
+              ]
+            }
+          }
+        },
+        {
+          "name": "22 Listings of a missing product → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404 Not Found\", () => {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/999999/listings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "999999",
+                "listings"
+              ]
+            }
+          }
+        },
+        {
+          "name": "23 Price history → sorted newest first",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const page = pm.response.json();",
+                  "const history = page.items;",
+                  "",
+                  "pm.test(\"Phone has price history\", () => {",
+                  "    pm.expect(history).to.not.be.empty;",
+                  "});",
+                  "",
+                  "pm.test(\"Sorted by date, newest first\", () => {",
+                  "    for (let i = 1; i < history.length; i++) {",
+                  "        const previous = new Date(history[i - 1].recorded_at);",
+                  "        const current = new Date(history[i].recorded_at);",
+                  "        pm.expect(current.getTime()).to.be.at.most(previous.getTime());",
+                  "    }",
+                  "});",
+                  "",
+                  "// Test 26 compares this with /prices/extremes. Extremes are in lari (GEL).",
+                  "const lariPrices = history.filter((row) => row.currency === \"GEL\").map((row) => Number(row.price));",
+                  "pm.collectionVariables.set(\"historyLowest\", Math.min(...lariPrices));",
+                  "pm.collectionVariables.set(\"historyIsComplete\", page.total <= history.length ? \"yes\" : \"no\");"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{existingProductId}}/prices?limit=100",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{existingProductId}}",
+                "prices"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            },
+            "description": "This API lists price history newest first, so each date must be ≤ the one before it."
+          }
+        },
+        {
+          "name": "24 Price history of a missing product → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404 Not Found\", () => {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/999999/prices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "999999",
+                "prices"
+              ]
+            }
+          }
+        },
+        {
+          "name": "25 Price extremes → lowest ≤ highest",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const extremes = pm.response.json();",
+                  "",
+                  "pm.test(\"Reply has currency, lowest and highest price\", () => {",
+                  "    pm.expect(extremes).to.have.keys(\"currency\", \"lowest_price\", \"highest_price\");",
+                  "    pm.expect(extremes.currency).to.equal(\"GEL\");",
+                  "});",
+                  "",
+                  "pm.test(\"Lowest price ≤ highest price\", () => {",
+                  "    pm.expect(Number(extremes.lowest_price)).to.be.at.most(Number(extremes.highest_price));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{existingProductId}}/prices/extremes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{existingProductId}}",
+                "prices",
+                "extremes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "26 ⭐ History (#23) and extremes (#25) agree on the lowest price",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const extremesLowest = Number(pm.response.json().lowest_price);",
+                  "const historyLowest = Number(pm.collectionVariables.get(\"historyLowest\"));",
+                  "",
+                  "if (pm.collectionVariables.get(\"historyIsComplete\") === \"yes\") {",
+                  "    pm.test(\"Lowest price in history equals extremes' lowest price\", () => {",
+                  "        pm.expect(extremesLowest).to.equal(historyLowest);",
+                  "    });",
+                  "} else {",
+                  "    // #23 saw only the newest 100 rows, so older rows may hold a lower price.",
+                  "    pm.test(\"Extremes' lowest price is not above anything in the history we saw\", () => {",
+                  "        pm.expect(extremesLowest).to.be.at.most(historyLowest);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{existingProductId}}/prices/extremes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{existingProductId}}",
+                "prices",
+                "extremes"
+              ]
+            },
+            "description": "Consistency test: two endpoints describe the same data, so they must agree."
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Tracked products",
+      "item": [
+        {
+          "name": "27 Track a real phone → 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 201 Created\", () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Reply names the phone we tracked\", () => {",
+                  "    pm.expect(pm.response.json().product_id).to.equal(Number(pm.collectionVariables.get(\"existingProductId\")));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tracked-products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tracked-products"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": {{existingProductId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "28 Track the same phone again → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 409 Conflict\", () => {",
+                  "    pm.response.to.have.status(409);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tracked-products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tracked-products"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": {{existingProductId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Decision: tracking twice is a conflict (409). Test 29 also checks no duplicate was made."
+          }
+        },
+        {
+          "name": "29 My tracked list → contains the phone once",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const id = Number(pm.collectionVariables.get(\"existingProductId\"));",
+                  "const matches = pm.response.json().items.filter((entry) => entry.product.id === id);",
+                  "",
+                  "pm.test(\"Phone appears exactly once (no duplicate from #28)\", () => {",
+                  "    pm.expect(matches).to.have.lengthOf(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tracked-products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tracked-products"
+              ]
+            }
+          }
+        },
+        {
+          "name": "30 Tracked list without logging in → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 401 Unauthorized\", () => {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tracked-products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tracked-products"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "31 Stop tracking → 204, then gone from the list",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 204 No Content\", () => {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "// Ask for the list again to prove the phone is really gone.",
+                  "pm.sendRequest({",
+                  "    url: pm.variables.replaceIn(\"{{baseUrl}}/tracked-products\"),",
+                  "    method: \"GET\",",
+                  "    header: [{ key: \"Authorization\", value: `Bearer ${pm.collectionVariables.get(\"token\")}` }],",
+                  "}, (error, response) => {",
+                  "    const id = Number(pm.collectionVariables.get(\"existingProductId\"));",
+                  "    const ids = response.json().items.map((entry) => entry.product.id);",
+                  "",
+                  "    pm.test(\"Phone is no longer in the tracked list\", () => {",
+                  "        pm.expect(ids).to.not.include(id);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tracked-products/{{existingProductId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tracked-products",
+                "{{existingProductId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Alerts",
+      "item": [
+        {
+          "name": "32 Add a price alert → 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 201 Created\", () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const alert = pm.response.json();",
+                  "",
+                  "pm.test(\"Alert has the target price we sent\", () => {",
+                  "    pm.expect(Number(alert.target_price)).to.equal(1500);",
+                  "    pm.expect(alert.currency).to.equal(\"GEL\");",
+                  "});",
+                  "",
+                  "pm.test(\"Alert is for the phone we chose\", () => {",
+                  "    pm.expect(alert.product.id).to.equal(Number(pm.collectionVariables.get(\"existingProductId\")));",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set(\"alertId\", alert.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{existingProductId}}/alerts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{existingProductId}}",
+                "alerts"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target_price\": 1500,\n  \"currency\": \"GEL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "33 Alert with a negative price → 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 422 Unprocessable\", () => {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test(\"Error points at target_price\", () => {",
+                  "    const error = pm.response.json().detail[0];",
+                  "    pm.expect(error.loc).to.include(\"target_price\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{existingProductId}}/alerts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{existingProductId}}",
+                "alerts"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target_price\": -5,\n  \"currency\": \"GEL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "34 Alert for a missing product → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404 Not Found\", () => {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/999999/alerts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "999999",
+                "alerts"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target_price\": 1500,\n  \"currency\": \"GEL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "35 My alerts → contains the new alert",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"List contains the alert from #32\", () => {",
+                  "    const ids = pm.response.json().items.map((alert) => alert.id);",
+                  "    pm.expect(ids).to.include(Number(pm.collectionVariables.get(\"alertId\")));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/alerts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "alerts"
+              ]
+            }
+          }
+        },
+        {
+          "name": "36 PUT the alert with a full body → 200, all fields replaced",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const alert = pm.response.json();",
+                  "",
+                  "pm.test(\"Same alert, new values\", () => {",
+                  "    pm.expect(alert.id).to.equal(Number(pm.collectionVariables.get(\"alertId\")));",
+                  "    pm.expect(Number(alert.target_price)).to.equal(1200);",
+                  "    pm.expect(alert.currency).to.equal(\"GEL\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/alerts/{{alertId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "alerts",
+                "{{alertId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target_price\": 1200,\n  \"currency\": \"GEL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "PUT = replace the whole page. We send every field."
+          }
+        },
+        {
+          "name": "37 PUT the alert without a body → 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 422 Unprocessable\", () => {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test(\"Error says the body is missing\", () => {",
+                  "    const error = pm.response.json().detail[0];",
+                  "    pm.expect(error.loc).to.include(\"body\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/alerts/{{alertId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "alerts",
+                "{{alertId}}"
+              ]
+            },
+            "description": "Every alert field has a default (no target_price = \"tell me when it's back in stock\"),\nso the only thing PUT can be missing is the whole body."
+          }
+        },
+        {
+          "name": "38 ⭐ Another user deletes my alert → 404, alert survives 🔐",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Make a second user and log them in. Their token goes in user2Token.",
+                  "const user2 = { email: `intruder.${Date.now()}@example.com`, password: \"Passw0rd-123\" };",
+                  "const jsonPost = (path, body) => ({",
+                  "    url: pm.variables.replaceIn(`{{baseUrl}}${path}`),",
+                  "    method: \"POST\",",
+                  "    header: [{ key: \"Content-Type\", value: \"application/json\" }],",
+                  "    body: { mode: \"raw\", raw: JSON.stringify(body) },",
+                  "});",
+                  "",
+                  "pm.sendRequest(jsonPost(\"/auth/register\", user2), () => {",
+                  "    pm.sendRequest(jsonPost(\"/auth/login\", user2), (error, response) => {",
+                  "        pm.collectionVariables.set(\"user2Token\", response.json().access_token);",
+                  "    });",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"User 2 is refused (403 or 404)\", () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([403, 404]);",
+                  "});",
+                  "",
+                  "// Log back in as user 1 and check the alert is still there.",
+                  "pm.sendRequest({",
+                  "    url: pm.variables.replaceIn(\"{{baseUrl}}/alerts\"),",
+                  "    method: \"GET\",",
+                  "    header: [{ key: \"Authorization\", value: `Bearer ${pm.collectionVariables.get(\"token\")}` }],",
+                  "}, (error, response) => {",
+                  "    const ids = response.json().items.map((alert) => alert.id);",
+                  "",
+                  "    pm.test(\"User 1's alert still exists\", () => {",
+                  "        pm.expect(ids).to.include(Number(pm.collectionVariables.get(\"alertId\")));",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/alerts/{{alertId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "alerts",
+                "{{alertId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user2Token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "IDOR check: user 2 must not be able to touch user 1's alert."
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Notifications & refresh",
+      "item": [
+        {
+          "name": "39 Save my alert email, then read it back",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"notifyEmail\", `alerts.${Date.now()}@example.com`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const saved = pm.collectionVariables.get(\"notifyEmail\");",
+                  "",
+                  "pm.test(\"Reply shows the saved email\", () => {",
+                  "    pm.expect(pm.response.json().notification_email).to.equal(saved);",
+                  "});",
+                  "",
+                  "// Round trip: a GET must return what the PUT stored.",
+                  "pm.sendRequest({",
+                  "    url: pm.variables.replaceIn(\"{{baseUrl}}/notification-settings/email\"),",
+                  "    method: \"GET\",",
+                  "    header: [{ key: \"Authorization\", value: `Bearer ${pm.collectionVariables.get(\"token\")}` }],",
+                  "}, (error, response) => {",
+                  "    pm.test(\"GET returns the email we PUT\", () => {",
+                  "        pm.expect(response.code).to.equal(200);",
+                  "        pm.expect(response.json().notification_email).to.equal(saved);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notification-settings/email",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notification-settings",
+                "email"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notification_email\": \"{{notifyEmail}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "40 Save an invalid alert email → 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 422 Unprocessable\", () => {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test(\"Error points at notification_email\", () => {",
+                  "    const error = pm.response.json().detail[0];",
+                  "    pm.expect(error.loc).to.include(\"notification_email\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notification-settings/email",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notification-settings",
+                "email"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notification_email\": \"not-an-email\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "41 Verify email with a wrong code → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 400 Bad Request\", () => {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notification-settings/email/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notification-settings",
+                "email",
+                "verify"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"wrong-code\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "42 Start a price refresh without logging in → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 401 Unauthorized\", () => {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "refresh"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "A stranger must not be able to start our scraper."
+          }
+        }
+      ]
+    }
+  ]
+}
