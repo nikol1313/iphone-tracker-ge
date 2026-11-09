@@ -1011,6 +1011,89 @@
           }
         }
       ]
+    },
+    {
+      "name": "4. Listings & prices",
+      "item": [
+        {
+          "name": "21 Listings of a real phone → every price > 0",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const listings = pm.response.json().items;",
+                  "",
+                  "pm.test(\"Phone has at least one listing\", () => {",
+                  "    pm.expect(listings).to.not.be.empty;",
+                  "});",
+                  "",
+                  "// Prices come back as text (\"1999.00\"), so turn them into numbers first.",
+                  "pm.test(\"Every listing has a price above 0\", () => {",
+                  "    listings.forEach((listing) => pm.expect(Number(listing.current_price)).to.be.above(0));",
+                  "});",
+                  "",
+                  "pm.test(\"Every listing belongs to this phone\", () => {",
+                  "    const id = Number(pm.collectionVariables.get(\"existingProductId\"));",
+                  "    listings.forEach((listing) => pm.expect(listing.product_id).to.equal(id));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{existingProductId}}/listings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{existingProductId}}",
+                "listings"
+              ]
+            }
+          }
+        },
+        {
+          "name": "22 Listings of a missing product → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404 Not Found\", () => {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/999999/listings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "999999",
+                "listings"
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }
