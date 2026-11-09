@@ -1667,6 +1667,95 @@
               ]
             }
           }
+        },
+        {
+          "name": "36 PUT the alert with a full body → 200, all fields replaced",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const alert = pm.response.json();",
+                  "",
+                  "pm.test(\"Same alert, new values\", () => {",
+                  "    pm.expect(alert.id).to.equal(Number(pm.collectionVariables.get(\"alertId\")));",
+                  "    pm.expect(Number(alert.target_price)).to.equal(1200);",
+                  "    pm.expect(alert.currency).to.equal(\"GEL\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/alerts/{{alertId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "alerts",
+                "{{alertId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target_price\": 1200,\n  \"currency\": \"GEL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "PUT = replace the whole page. We send every field."
+          }
+        },
+        {
+          "name": "37 PUT the alert without a body → 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 422 Unprocessable\", () => {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test(\"Error says the body is missing\", () => {",
+                  "    const error = pm.response.json().detail[0];",
+                  "    pm.expect(error.loc).to.include(\"body\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/alerts/{{alertId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "alerts",
+                "{{alertId}}"
+              ]
+            },
+            "description": "Every alert field has a default (no target_price = \"tell me when it's back in stock\"),\nso the only thing PUT can be missing is the whole body."
+          }
         }
       ]
     }
