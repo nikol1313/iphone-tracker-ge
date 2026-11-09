@@ -795,6 +795,134 @@
           }
         }
       ]
+    },
+    {
+      "name": "3. Search",
+      "item": [
+        {
+          "name": "16 Search \"iphone\" → every result matches",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const results = pm.response.json().items;",
+                  "",
+                  "pm.test(\"Search found something\", () => {",
+                  "    pm.expect(results).to.not.be.empty;",
+                  "});",
+                  "",
+                  "pm.test(\"Every result contains \\\"iphone\\\" (any case)\", () => {",
+                  "    results.forEach((product) => {",
+                  "        const text = [product.brand, product.model, product.storage, product.color].join(\" \");",
+                  "        pm.expect(text.toLowerCase()).to.include(\"iphone\");",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search?q=iphone",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "iphone"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "17 Search nonsense → 200 with no results",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK (not 404)\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"No results\", () => {",
+                  "    const page = pm.response.json();",
+                  "    pm.expect(page.items).to.be.an(\"array\").that.is.empty;",
+                  "    pm.expect(page.total).to.equal(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search?q=zzqqxx",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "zzqqxx"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "18 Search without q → 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 422 Unprocessable\", () => {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test(\"Error points at the q parameter\", () => {",
+                  "    const error = pm.response.json().detail[0];",
+                  "    pm.expect(error.loc).to.include(\"q\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search"
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }
