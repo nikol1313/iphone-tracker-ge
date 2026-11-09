@@ -579,6 +579,111 @@
           }
         }
       ]
+    },
+    {
+      "name": "2. Products",
+      "item": [
+        {
+          "name": "11 List products → 200, valid page",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const page = pm.response.json();",
+                  "",
+                  "pm.test(\"Reply is a page: items, total, limit, offset\", () => {",
+                  "    pm.expect(page).to.have.keys(\"items\", \"total\", \"limit\", \"offset\");",
+                  "    pm.expect(page.items).to.be.an(\"array\").that.is.not.empty;",
+                  "    pm.expect(page.total).to.be.at.least(page.items.length);",
+                  "});",
+                  "",
+                  "pm.test(\"Every product has an id, brand and model\", () => {",
+                  "    page.items.forEach((product) => {",
+                  "        pm.expect(product.id).to.be.a(\"number\");",
+                  "        pm.expect(product.brand).to.be.a(\"string\").and.not.be.empty;",
+                  "        pm.expect(product.model).to.be.a(\"string\").and.not.be.empty;",
+                  "    });",
+                  "});",
+                  "",
+                  "// Folders 4-6 need a real phone that stores already sell, so it has prices.",
+                  "const withPrices = page.items.find((product) => product.lowest_price !== null);",
+                  "",
+                  "pm.test(\"At least one product has scraped prices\", () => {",
+                  "    pm.expect(withPrices).to.not.be.undefined;",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set(\"existingProductId\", (withPrices || page.items[0]).id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
+            }
+          }
+        },
+        {
+          "name": "12 Create a product without logging in → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 401 Unauthorized\", () => {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"brand\": \"Apple\",\n  \"model\": \"Should Not Exist\",\n  \"storage\": \"128GB\",\n  \"color\": \"Black\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
     }
   ]
 }
