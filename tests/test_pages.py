@@ -224,9 +224,41 @@ async def test_headline_has_the_models_30_day_price_line(
 
     html = (await client.get("/")).text
 
-    assert '<figure class="intro-trend" id="introTrend" data-low="3199.00" data-high="3399.00">' in html
-    assert "<polyline points=" in html
-    assert "<figcaption>ბოლო 30 დღე: 3,199 ₾ – 3,399 ₾</figcaption>" in html
+    assert '<figure class="intro-trend" id="introTrend" data-low="3199.00" data-high="3399.00" data-series=' in html
+    assert '<svg id="introChart"' in html
+    assert "ბოლო 30 დღე: 3,199 ₾ – 3,399 ₾</figcaption>" in html
+    # Only the price changes go to the chart: 3,399 then 3,199.
+    assert html.count("&quot;price&quot;") == 2
+    # The history speaks: a 10-day low, reached by one cut.
+    assert '<li data-insight="low" data-days="10">10 დღის ყველაზე დაბალი ფასი</li>' in html
+    assert 'data-insight="moves" data-days="10" data-up="0" data-down="1">ბოლო 10 დღეში 1-ჯერ გაიაფდა</li>' in html
+
+
+@pytest.mark.asyncio
+async def test_headline_lists_every_stores_price_with_its_gap(
+    client: httpx.AsyncClient,
+    session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    _, product = await create_admin_product(client, session_factory)
+    await _priced_product(session_factory, product["id"])
+    async with session_factory() as session:
+        store = Store(title="Store B", web_url="https://b.example")
+        session.add(store)
+        await session.flush()
+        session.add(ProductListing(
+            product_id=product["id"], store_id=store.id, product_url="https://b.example/phone",
+            current_price=Decimal("3349.00"), currency="GEL", is_available=True,
+            last_checked_at=datetime.now(UTC),
+        ))
+        await session.commit()
+
+    html = (await client.get("/")).text
+
+    table = html[html.index('<table class="intro-stores"'):html.index("</table>")]
+    assert "<caption>iPhone 17 Pro 256GB</caption>" in table
+    assert table.index("Store A") < table.index("Store B")
+    assert '<td class="intro-store-gap best" data-i18n="intro.cheapest">ყველაზე იაფი</td>' in table
+    assert '<td class="intro-store-price">3,349 ₾</td><td class="intro-store-gap">+150 ₾</td>' in table
 
 
 @pytest.mark.asyncio
@@ -267,3 +299,28 @@ def test_prices_are_whole_lari_and_drops_show_a_percentage() -> None:
 
     assert '<span class="model-price-store">Zoommer</span> · მარაგშია 2 მაღაზიაში' in row
     assert "−630 ₾ (−9%) ამ კვირაში" in row
+
+
+@pytest.mark.asyncio
+async def test_headline_names_the_store_that_cuts_prices_on_one_weekday(
+    client: httpx.AsyncClient,
+    session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    _, product = await create_admin_product(client, session_factory)
+    await _priced_product(session_factory, product["id"])
+    # Noon UTC on each of the last four Fridays (afternoon in Tbilisi): a raise, then a cut that day.
+    today = datetime.now(UTC).replace(hour=12, minute=0, second=0, microsecond=0)
+    last_friday = today - timedelta(days=(today.weekday() - 4) % 7 or 7)
+    async with session_factory() as session:
+        listing_id = await session.scalar(select(ProductListing.id))
+        for week in range(4):
+            friday = last_friday - timedelta(weeks=week)
+            session.add_all([
+                PriceHist(listing_id=listing_id, price=Decimal("3399.00"), recorded_at=friday - timedelta(hours=2)),
+                PriceHist(listing_id=listing_id, price=Decimal("3199.00"), recorded_at=friday),
+            ])
+        await session.commit()
+
+    html = (await client.get("/")).text
+
+    assert '<li data-insight="weekday" data-store="Store A" data-day="4">Store A ფასებს ჩვეულებრივ პარასკევობით აკლებს</li>' in html
