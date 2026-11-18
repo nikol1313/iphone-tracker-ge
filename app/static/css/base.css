@@ -69,6 +69,14 @@
   --shadow: 0 18px 40px rgba(60, 50, 30, .14);
 }
 
+/* Big screens get the whole app at 125%, like Chrome's zoom: text, spacing and controls together.
+   Only from 1400px wide, so the zoomed layout still has 1120px; tablets and phones stay 1:1.
+   Viewport units don't scale with zoom, so full-height rules divide by --zoom. */
+:root { --zoom: 1; }
+@media (min-width: 1400px) {
+  :root { --zoom: 1.25; zoom: var(--zoom); }
+}
+
 * { box-sizing: border-box; }
 /* Always reserve the scrollbar's space so pages don't shift sideways when one is shorter than the window. */
 html {
@@ -83,7 +91,7 @@ html {
 ::-webkit-scrollbar-thumb { background: var(--line-strong); border: 3px solid var(--bg); border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 body {
-  min-height: 100vh;
+  min-height: calc(100vh / var(--zoom));
   margin: 0;
   overflow-x: clip;
   color: var(--ink);
