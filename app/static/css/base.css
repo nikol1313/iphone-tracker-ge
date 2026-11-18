@@ -8,7 +8,7 @@
   --surface-2: #2a2926;
   --ink: #e9e7e2;
   --ink-2: #a9a69e;
-  --muted: #94918a;
+  --muted: #7a776f;
   --line: #2e2d2a;
   --line-strong: #403e3a;
   /* The main button is a light pill: the one bright thing on screen. */
@@ -46,7 +46,7 @@
   --surface-2: #e7e3da;
   --ink: #1a1a19;
   --ink-2: #4f4c46;
-  --muted: #625f57;
+  --muted: #7a776f;
   --line: #ddd8cd;
   --line-strong: #c7c1b4;
   --accent: #1a1a19;
@@ -97,8 +97,6 @@ a { color: inherit; }
 :focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
 ::selection { color: var(--on-accent); background: var(--amber); }
 svg { width: 1.1em; height: 1.1em; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-/* The icon stroke above must not outline chart labels. */
-svg text { stroke: none; }
 .icon-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 h1, h2, h3, p { margin-top: 0; }

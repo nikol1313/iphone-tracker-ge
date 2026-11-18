@@ -66,6 +66,7 @@
 .selected-actions .small-button { flex: 1; }
 
 #priceChart { display: block; width: 100%; height: 320px; overflow: visible; }
+#priceChart text { stroke: none; }
 .chart-wrap { position: relative; min-height: 320px; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; }
 .chart-line { fill: none; stroke: var(--ink); stroke-width: 2.25; vector-effect: non-scaling-stroke; animation: pencil-draw 900ms var(--ease) backwards; }
 .chart-baseline { stroke-dasharray: 9 8; opacity: .8; }
@@ -85,8 +86,8 @@
 .chart-point-date { fill: var(--muted); font: 12px var(--font); }
 .chart-empty { position: absolute; inset: 0; display: grid; place-items: center; padding: 20px; color: var(--muted); font-size: .88rem; text-align: center; }
 .chart-empty[hidden] { display: none; }
-/* "Buy now or wait?": the tint and its hairline say which. */
-.verdict { margin: 0 0 18px; padding: 14px 18px; background: var(--surface); border: 1px solid color-mix(in srgb, var(--verdict-color, var(--line-strong)) 35%, transparent); border-radius: 14px; animation: ink-rise 350ms var(--ease) backwards; }
+/* "Buy now or wait?": a colored edge says which. */
+.verdict { margin: 0 0 18px; padding: 14px 18px; background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--verdict-color, var(--line-strong)); border-radius: 4px 14px 14px 4px; animation: ink-rise 350ms var(--ease) backwards; }
 .verdict strong { display: block; font-size: 1rem; font-weight: 600; }
 /* The advice reads like a handwritten note: serif. */
 .verdict p { margin: 4px 0 0; color: var(--ink-2); font-family: var(--serif); font-size: 1.05rem; line-height: 1.45; }
@@ -108,7 +109,7 @@ th, td { padding: 12px 14px; border-bottom: 1px solid var(--line); text-align: l
 th { color: var(--muted); font-size: .78rem; font-weight: 500; }
 tbody tr:last-child td { border-bottom: 0; }
 tbody tr:hover { background: var(--surface); }
-tbody tr.best-offer, tbody tr.best-offer:hover { background: var(--good-soft); }
+tbody tr.best-offer td:first-child { box-shadow: inset 3px 0 0 var(--good); }
 .listing-title { display: block; max-width: 280px; margin-top: 2px; overflow: hidden; color: var(--muted); font-size: .78rem; text-overflow: ellipsis; white-space: nowrap; }
 .listing-price { font-weight: 600; white-space: nowrap; }
 .listing-installment { display: block; margin-top: 2px; color: var(--muted); font-size: .78rem; font-weight: 400; }
@@ -164,6 +165,7 @@ tbody tr.unavailable-offer td { color: var(--muted); }
 .compare-result td a { color: var(--ink); text-decoration: none; }
 .compare-result td a:hover { text-decoration: underline; }
 .compare-chart { display: block; width: 100%; height: 280px; }
+.compare-chart text { stroke: none; }
 .compare-line { fill: none; stroke-width: 2.25; vector-effect: non-scaling-stroke; animation: pencil-draw 900ms var(--ease) backwards; }
 .compare-line-a, .compare-key-a::before { stroke: var(--accent); background: var(--accent); }
 .compare-line-b, .compare-key-b::before { stroke: var(--blue); background: var(--blue); }
@@ -171,7 +173,7 @@ tbody tr.unavailable-offer td { color: var(--muted); }
 .compare-legend li::before { display: inline-block; width: 14px; height: 3px; margin: 0 6px 3px 0; content: ""; border-radius: 2px; vertical-align: middle; }
 .compare-pick { margin-top: 28px; padding: clamp(22px, 4vw, 36px); background: var(--surface); border: 1px solid var(--line); border-radius: 22px; animation: ink-rise 400ms var(--ease) backwards; }
 .compare-pick-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
-.compare-pick h2 { margin: 0 0 8px; color: var(--amber); font-size: 1rem; font-weight: 600; letter-spacing: 0; }
+.compare-pick h2 { margin: 0 0 8px; color: var(--amber); font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; }
 .compare-pick-head h2 { margin: 0; }
 .compare-pick-phone { display: grid; gap: 16px; margin: 0 0 22px; }
 /* The pick is the "written reply": serif. */
