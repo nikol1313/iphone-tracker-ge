@@ -7,7 +7,7 @@
   .nav-link { flex: 1; text-align: center; }
   .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .intro-proof { grid-template-columns: minmax(0, 1fr); }
-  .intro-chart { height: 200px; }
+  .intro-chart { min-height: 200px; }
 }
 @media (max-width: 700px) {
   .topbar { min-height: 56px; padding: 10px 14px 4px; gap: 6px 8px; }
@@ -16,11 +16,15 @@
   .nav-link { flex: 1 1 auto; min-width: 0; padding: 10px 4px; overflow: hidden; font-size: .84rem; text-overflow: ellipsis; }
   .account-actions { gap: 6px; }
   main { padding-top: 14px; }
-  .intro, .search-band, .section, .detail-back, footer { width: calc(100% - 28px); }
+  .intro, .search-band, .section, .detail-back, .overview-cols, footer { width: calc(100% - 28px); }
   .detail-back { margin-bottom: 12px; }
-  .intro h1 { font-size: 1.75rem; letter-spacing: -.03em; }
+  .intro h1 { font-size: 1rem; }
   .section { margin-bottom: 56px; }
   [data-page-view] .section { width: calc(100% - 28px); }
+  .overview-cols > .section { width: auto; }
+  .intro-price { font-size: 3rem; }
+  .intro-store-range { width: 22%; }
+  .intro-stores th, .intro-stores td { padding: 0 6px; }
   .section-heading { align-items: flex-start; flex-direction: column; gap: 8px; margin-bottom: 16px; }
   .catalog-meta { align-items: flex-start; }
   .catalog-filters { display: grid; grid-template-columns: 1fr 1fr; }
