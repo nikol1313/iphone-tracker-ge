@@ -30,13 +30,13 @@
   <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
   <link rel="preload" href="/static/fonts/instrumentsans-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/static/fonts/notosansgeorgian-normal-georgian.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/static/css/fonts.css?v=20261118-2">
-  <link rel="stylesheet" href="/static/css/base.css?v=20261118-2">
-  <link rel="stylesheet" href="/static/css/shell.css?v=20261118-2">
-  <link rel="stylesheet" href="/static/css/catalog.css?v=20261118-2">
-  <link rel="stylesheet" href="/static/css/overlays.css?v=20261118-2">
-  <link rel="stylesheet" href="/static/css/responsive.css?v=20261118-2">
-  <script type="module" src="/static/js/app.js?v=20261118-2"></script>
+  <link rel="stylesheet" href="/static/css/fonts.css?v=20261118-7">
+  <link rel="stylesheet" href="/static/css/base.css?v=20261118-7">
+  <link rel="stylesheet" href="/static/css/shell.css?v=20261118-7">
+  <link rel="stylesheet" href="/static/css/catalog.css?v=20261118-7">
+  <link rel="stylesheet" href="/static/css/overlays.css?v=20261118-7">
+  <link rel="stylesheet" href="/static/css/responsive.css?v=20261118-7">
+  <script type="module" src="/static/js/app.js?v=20261118-7"></script>
 </head>
 <body>
   <svg class="icon-sprite" aria-hidden="true">
@@ -77,13 +77,15 @@
     <div class="page-view" data-page-view="overview" aria-labelledby="overviewTitle">
       <section class="intro">
         <h1 id="overviewTitle" data-i18n="intro.title">iPhone-ის ფასები საქართველოში</h1>
+        <p class="intro-change" id="introChange" hidden></p>
+        <p class="intro-stats" id="overviewStats" role="status"></p>
         <div class="intro-proof">
           <table class="intro-stores" id="introStores" hidden></table>
           <figure class="intro-trend" id="introTrend" hidden></figure>
         </div>
         <ul class="intro-insights" id="introInsights" hidden></ul>
-        <p class="intro-stats" id="overviewStats" role="status"></p>
       </section>
+      <div class="overview-cols">
       <section class="section" id="dayChangesSection" hidden>
         <div class="section-heading">
           <div>
@@ -110,6 +112,7 @@
         <ul id="modelPrices" class="model-prices" aria-live="polite"><!--server-models--></ul>
         <button class="fold-toggle" id="modelPricesToggle" type="button" aria-controls="modelPrices" aria-expanded="false" hidden><span></span><svg aria-hidden="true"><use href="#i-chevron"/></svg></button>
       </section>
+      </div>
     </div>
 
     <div class="page-view" data-page-view="products" aria-labelledby="productsTitle" hidden>

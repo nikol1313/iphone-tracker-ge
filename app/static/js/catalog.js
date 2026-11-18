@@ -159,11 +159,6 @@ function weekDrop(product) {
   return `<span class="card-change drop">${escapeHtml(t("card.weekDrop", { amount, percent: percent(drop, product.price_week_ago) }))}</span>`;
 }
 
-// Where the best price is: rows only show the price, so name the store before the details.
-const storePrefix = product => product.lowest_price_store
-  ? `<span class="model-price-store">${escapeHtml(product.lowest_price_store)}</span> · `
-  : "";
-
 // Price extremes span every store, so require the best price itself to have just fallen.
 const isLowestEver = product => inStock(product)
   && product.price_week_ago != null
@@ -193,7 +188,7 @@ const WEEKLY_DROPS_SHOWN = 6;
 function groupColors(products, move) {
   const groups = new Map();
   for (const product of products) {
-    const key = [product.model, product.storage, product.lowest_price, product.lowest_price_store, move(product)].join("|");
+    const key = [product.model, product.storage, product.lowest_price, move(product)].join("|");
     if (!groups.has(key)) groups.set(key, { product, colors: [] });
     if (product.color) groups.get(key).colors.push(product.color);
   }
@@ -217,7 +212,7 @@ function renderWeeklyDrops() {
     <li class="model-price" data-model="${escapeHtml(product.model)}" data-product-id="${product.id}" tabindex="0">
       ${groupedName({ product, colors })}
       <span class="model-price-value">${escapeHtml(money(product.lowest_price, product.currency || "GEL"))}</span>
-      <span class="model-price-meta">${storePrefix(product)}${weekDrop(product)} · ${escapeHtml(t("drops.was", { price: money(product.price_week_ago, product.currency || "GEL") }))}</span>
+      <span class="model-price-meta">${weekDrop(product)} · ${escapeHtml(t("drops.was", { price: money(product.price_week_ago, product.currency || "GEL") }))}</span>
     </li>`).join("");
 }
 
@@ -249,7 +244,7 @@ function renderDayChanges() {
     <li class="model-price" data-model="${escapeHtml(product.model)}" data-product-id="${product.id}" tabindex="0">
       ${groupedName(group)}
       <span class="model-price-value">${escapeHtml(money(product.lowest_price, currency))}</span>
-      <span class="model-price-meta">${storePrefix(product)}<span class="card-change ${change < 0 ? "drop" : "rise"}">${escapeHtml(label)}</span> · ${escapeHtml(t("day.was", { price: money(product.price_day_ago, currency) }))}</span>
+      <span class="model-price-meta"><span class="card-change ${change < 0 ? "drop" : "rise"}">${escapeHtml(label)}</span> · ${escapeHtml(t("day.was", { price: money(product.price_day_ago, currency) }))}</span>
     </li>`;
     }).join("")
     : `<li class="empty-state">${t("day.none")}</li>`;
@@ -278,12 +273,54 @@ if ($("#introChart")) {
   }).observe($("#introChart"));
 }
 
+// Once per page load the headline price counts down from the 30-day high to today's price,
+// so the drop is the first thing a visitor sees. Skipped when the price didn't fall or motion is reduced.
+let priceCounted = false;
+function countDownPrice(span, target) {
+  const high = Number($("#introTrend")?.dataset.high);
+  if (priceCounted || !(high > target) || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  priceCounted = true;
+  const start = performance.now();
+  const step = now => {
+    const progress = Math.min(1, (now - start) / 900);
+    const value = high - (high - target) * (1 - (1 - progress) ** 4);
+    if (span.isConnected) span.textContent = money(value).replace(" ", " ");
+    if (progress < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+// How the headline price moved since the first day of its recorded series: green when it fell.
+function renderIntroChange(price) {
+  const box = $("#introChange");
+  let first;
+  try {
+    [first] = JSON.parse($("#introTrend")?.dataset.series || "[]");
+  } catch {
+    first = null;
+  }
+  const delta = first ? price - Number(first.price) : 0;
+  box.hidden = !delta;
+  if (!delta) return;
+  const days = Math.max(1, Math.round((Date.now() - new Date(first.recorded_at)) / 86400000));
+  const percent = Math.abs(delta / Number(first.price) * 100).toFixed(1);
+  const amount = `${delta < 0 ? "−" : "+"}${money(Math.abs(delta))} (${delta < 0 ? "−" : "+"}${percent}%)`;
+  box.className = `intro-change ${delta < 0 ? "drop" : "rise"}`;
+  box.textContent = t("intro.change", { amount, days });
+}
+
 // Today headline: the server picks the phone and counts; this writes them in the page language.
 function renderIntro() {
   const title = $("#overviewTitle");
   const { model, price, store } = title.dataset;
+  // The price is the answer, so it gets its own span; \u0000 marks its slot in the escaped sentence.
   // Non-breaking space keeps "2,799 ₾" together when the headline wraps.
-  if (model) title.textContent = t("intro.headline", { model, price: money(price).replace(" ", "\u00a0"), store });
+  if (model) {
+    const priceHtml = `<span class="intro-price">${escapeHtml(money(price).replace(" ", "\u00a0"))}</span>`;
+    title.innerHTML = escapeHtml(t("intro.headline", { model, price: "\u0000", store })).replace("\u0000", priceHtml);
+    countDownPrice(title.querySelector(".intro-price"), Number(price));
+  }
+  renderIntroChange(Number(price));
   // Written by the server in Georgian; the data attributes say which sentence and its numbers.
   $$("#introInsights li").forEach(item => {
     const { insight, store: shop, ...numbers } = item.dataset;
@@ -332,7 +369,7 @@ export function renderOverview() {
       <li class="model-price" data-model="${escapeHtml(product.model)}" data-product-id="${product.id}" tabindex="0">
         <span class="model-price-name">${escapeHtml(productName(product))}<small>${escapeHtml(variant(product))}</small></span>
         <span class="model-price-value">${escapeHtml(money(product.lowest_price, product.currency || "GEL"))}</span>
-        <span class="model-price-meta">${storePrefix(product)}${t("card.inStockAt", { count: product.available_listing_count })}${weekDrop(product) ? ` · ${weekDrop(product)}` : ""}</span>
+        <span class="model-price-meta">${t("card.inStockAt", { count: product.available_listing_count })}${weekDrop(product) ? ` · ${weekDrop(product)}` : ""}</span>
       </li>`).join("")
     : `<li class="empty-state">${t("models.empty")}</li>`;
   list.removeAttribute("data-server-rendered");
