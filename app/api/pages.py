@@ -5,12 +5,14 @@ the title, description and preview image of a shared phone link, and the Today p
 cheapest price per model, are written here.
 """
 
+import json
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from html import escape, unescape
+from itertools import pairwise
 from pathlib import Path
 from xml.sax.saxutils import escape as xml_escape
 
@@ -38,9 +40,13 @@ MODELS_TOGGLE = (
 INTRO_TITLE = '<h1 id="overviewTitle" data-i18n="intro.title">iPhone-ის ფასები საქართველოში</h1>'
 INTRO_STATS = '<p class="intro-stats" id="overviewStats" role="status"></p>'
 INTRO_TREND = '<figure class="intro-trend" id="introTrend" hidden></figure>'
-# The sparkline next to the headline: the model's best price over this window.
+INTRO_STORES = '<table class="intro-stores" id="introStores" hidden></table>'
+INTRO_INSIGHTS = '<ul class="intro-insights" id="introInsights" hidden></ul>'
+# The chart under the headline: the model's best price over this window.
 TREND_WINDOW = timedelta(days=30)
-TREND_W, TREND_H, TREND_PAD = 140, 44, 4
+# "Lowest price in N days" needs at least this much history to mean anything.
+INSIGHT_MIN_DAYS = 7
+WEEKDAYS_KA = ("ორშაბათობით", "სამშაბათობით", "ოთხშაბათობით", "ხუთშაბათობით", "პარასკევობით", "შაბათობით", "კვირაობით")
 # The headline's phone: the newest standard model (e.g. "iPhone 17"), the one most people buy.
 HEADLINE_MODEL = re.compile(r"iPhone \d+")
 # Same as catalog.js: the Today list starts folded to the newest few models.
@@ -135,28 +141,68 @@ class Intro:
     models: int
     stores: int
     checked_at: datetime | None
-    # The model's best price at the end of each of the last TREND_WINDOW days, oldest first.
-    history: Sequence[Decimal] = ()
+    # (day end, the model's best price), for each of the last TREND_WINDOW days, oldest first.
+    history: Sequence[tuple[datetime, Decimal]] = ()
+    storage: str | None = None
+    # (store, cheapest in-stock price) for the headline's model and storage, cheapest first.
+    store_prices: Sequence[tuple[str, Decimal]] = ()
+    # (store, weekday with Monday = 0) when one store's price cuts cluster on a weekday.
+    drop_weekday: tuple[str, int] | None = None
 
 
-def _sparkline(history: Sequence[Decimal]) -> str:
-    """A small line of the history, drawn on the server so it shows before any script runs."""
-    low, high = min(history), max(history)
-    spread = high - low or 1
-    step = (TREND_W - 2 * TREND_PAD) / (len(history) - 1)
-    points = [
-        (
-            round(TREND_PAD + index * step, 1),
-            round(TREND_H - TREND_PAD - float((price - low) / spread) * (TREND_H - 2 * TREND_PAD), 1),
+def _store_table(intro: Intro) -> str:
+    """Every store's price for the headline phone, with each one's gap to the cheapest."""
+    cheapest = intro.store_prices[0][1]
+    rows = "".join(
+        f'<tr><th scope="row">{escape(store)}</th>'
+        f'<td class="intro-store-price">{escape(_price(price))}</td>'
+        + (
+            f'<td class="intro-store-gap">+{escape(_price(price - cheapest))}</td>'
+            if price > cheapest
+            else '<td class="intro-store-gap best" data-i18n="intro.cheapest">ყველაზე იაფი</td>'
         )
-        for index, price in enumerate(history)
-    ]
-    line = " ".join(f"{x},{y}" for x, y in points)
-    end_x, end_y = points[-1]
-    return (
-        f'<svg viewBox="0 0 {TREND_W} {TREND_H}" aria-hidden="true">'
-        f'<polyline points="{line}"/><circle cx="{end_x}" cy="{end_y}" r="3"/></svg>'
+        + "</tr>"
+        # The headline's store leads a tie for cheapest, as the headline names it.
+        for store, price in sorted(intro.store_prices, key=lambda row: (row[1], row[0] != intro.store))
     )
+    caption = " ".join(part for part in (intro.model, intro.storage) if part)
+    return f'<table class="intro-stores" id="introStores"><caption>{escape(caption)}</caption><tbody>{rows}</tbody></table>'
+
+
+def _moves_ka(days: int, up: int, down: int) -> str:
+    # Mirrors i18n.js "intro.moves".
+    parts = [f"{up}-ჯერ გაძვირდა"] * bool(up) + [f"{down}-ჯერ გაიაფდა"] * bool(down)
+    return f"ბოლო {days} დღეში {' და '.join(parts)}"
+
+
+def _insights(intro: Intro) -> list[tuple[dict[str, str | int], str]]:
+    """What only the price history shows: (data for catalog.js, the Georgian sentence)."""
+    found: list[tuple[dict[str, str | int], str]] = []
+    prices = [price for _, price in intro.history]
+    if len(prices) >= 2:
+        days = (intro.history[-1][0] - intro.history[0][0]).days + 1
+        if days >= INSIGHT_MIN_DAYS and min(prices) < max(prices) and intro.price <= min(prices):
+            found.append(({"insight": "low", "days": days}, f"{days} დღის ყველაზე დაბალი ფასი"))
+        up = sum(after > before for before, after in pairwise(prices))
+        down = sum(after < before for before, after in pairwise(prices))
+        if up or down:
+            found.append(({"insight": "moves", "days": days, "up": up, "down": down}, _moves_ka(days, up, down)))
+    if intro.drop_weekday:
+        store, weekday = intro.drop_weekday
+        found.append((
+            {"insight": "weekday", "store": store, "day": weekday},
+            f"{store} ფასებს ჩვეულებრივ {WEEKDAYS_KA[weekday]} აკლებს",
+        ))
+    return found
+
+
+def _chart_series(history: Sequence[tuple[datetime, Decimal]]) -> str:
+    """The best price at each change, as catalog.js renderTrend draws it."""
+    points: list[dict[str, str]] = []
+    for at, price in history:
+        if not points or Decimal(points[-1]["price"]) != price:
+            points.append({"recorded_at": at.isoformat(), "price": str(price)})
+    return json.dumps(points)
 
 
 def _headline_product(models: Sequence[ProductSummary]) -> ProductSummary | None:
@@ -177,13 +223,26 @@ def _render_intro(html: str, intro: Intro | None) -> str:
         f'data-store="{escape(intro.store)}">{escape(title)}</h1>',
         1,
     )
+    if intro.store_prices:
+        html = html.replace(INTRO_STORES, _store_table(intro), 1)
+    insights = _insights(intro)
+    if insights:
+        items = "".join(
+            "<li"
+            + "".join(f' data-{key}="{escape(str(value))}"' for key, value in data.items())
+            + f">{escape(text)}</li>"
+            for data, text in insights
+        )
+        html = html.replace(INTRO_INSIGHTS, f'<ul class="intro-insights" id="introInsights">{items}</ul>', 1)
     if len(intro.history) >= 2:
-        low, high = _price(min(intro.history)), _price(max(intro.history))
+        prices = [price for _, price in intro.history]
+        low, high = min(prices), max(prices)
         html = html.replace(
             INTRO_TREND,
-            f'<figure class="intro-trend" id="introTrend" data-low="{min(intro.history)}" '
-            f'data-high="{max(intro.history)}">{_sparkline(intro.history)}'
-            f"<figcaption>ბოლო 30 დღე: {escape(low)} – {escape(high)}</figcaption></figure>",
+            f'<figure class="intro-trend" id="introTrend" data-low="{low}" data-high="{high}" '
+            f'data-series="{escape(_chart_series(intro.history))}">'
+            '<svg id="introChart" class="intro-chart" role="img" aria-labelledby="introTrendCaption"></svg>'
+            f'<figcaption id="introTrendCaption">ბოლო 30 დღე: {escape(_price(low))} – {escape(_price(high))}</figcaption></figure>',
             1,
         )
     checked = f' data-checked="{intro.checked_at.isoformat()}"' if intro.checked_at else ""
@@ -199,6 +258,7 @@ async def _load_intro(session: AsyncSession, models: Sequence[ProductSummary]) -
     product = _headline_product(models)
     if product is None or product.lowest_price_store is None:
         return None
+    currency = product.currency or "GEL"
     return Intro(
         model=_phone_name(product),
         price=product.lowest_price,
@@ -207,8 +267,13 @@ async def _load_intro(session: AsyncSession, models: Sequence[ProductSummary]) -
         stores=await product_service.count_stores_in_stock(session),
         checked_at=await scraper_service.last_refresh_started_at(session),
         history=await product_service.model_daily_best_prices(
-            session, product.model, product.currency or "GEL", TREND_WINDOW
+            session, product.model, currency, TREND_WINDOW
         ),
+        storage=product.storage,
+        store_prices=await product_service.model_store_prices(
+            session, product.model, product.storage, currency
+        ),
+        drop_weekday=await product_service.store_drop_weekday(session),
     )
 
 
