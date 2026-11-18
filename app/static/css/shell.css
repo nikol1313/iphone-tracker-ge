@@ -9,7 +9,8 @@
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 32px;
-  padding: 0 max(24px, calc((100vw - var(--wide)) / 2));
+  /* % (not vw) so the side padding scales with the page zoom. */
+  padding: 0 max(24px, calc((100% - var(--wide)) / 2));
   background: var(--surface);
   border-bottom: 1px solid var(--line-strong);
 }
@@ -36,7 +37,7 @@ nav { display: flex; align-items: center; gap: 2px; }
 .account-button.signed-in[aria-expanded="true"] > svg { transform: rotate(180deg); }
 .profile-avatar { display: grid; place-items: center; width: 26px; height: 26px; color: var(--on-accent); background: var(--amber); border-radius: 4px; font-size: .8rem; font-weight: 700; line-height: 1; }
 
-main { min-height: calc(100vh - 150px); padding: 28px 0 0; }
+main { min-height: calc(100vh / var(--zoom) - 150px); padding: 28px 0 0; }
 .page-view:not([hidden]) { animation: ink-rise 250ms var(--ease) backwards; }
 .page-view[hidden] { display: none; }
 
