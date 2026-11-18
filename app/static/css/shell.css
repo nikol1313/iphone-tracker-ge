@@ -1,75 +1,95 @@
 /* Navigation, page framing, and shared actions. */
+/* A solid panel bar, like a market terminal's header: no blur, a firm bottom rule. */
 .topbar {
   position: sticky;
   z-index: 20;
   top: 0;
-  min-height: 64px;
+  min-height: 58px;
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 24px;
-  padding: 0 max(28px, calc((100vw - 1180px) / 2));
-  background: color-mix(in srgb, var(--bg) 86%, transparent);
-  border-bottom: 1px solid var(--line);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+  gap: 32px;
+  /* % (not vw) so the side padding scales with the page zoom. */
+  padding: 0 max(24px, calc((100% - var(--wide)) / 2));
+  background: var(--surface);
+  border-bottom: 1px solid var(--line-strong);
 }
-.brand { display: inline-flex; align-items: center; gap: 8px; width: fit-content; color: var(--ink); font-size: 1.05rem; font-weight: 600; letter-spacing: -.02em; text-decoration: none; }
+.brand { display: inline-flex; align-items: center; gap: 8px; width: fit-content; color: var(--ink); font-size: 1.02rem; font-weight: 600; letter-spacing: -.015em; text-decoration: none; }
 .brand-name span { color: var(--brand); }
-.brand-logo { width: 32px; height: 32px; }
-nav { display: flex; align-items: center; gap: 4px; }
-.nav-link { position: relative; padding: 8px 14px; color: var(--ink-2); font-size: .9rem; font-weight: 500; text-decoration: none; border-radius: 999px; }
+.brand-logo { width: 30px; height: 30px; }
+nav { display: flex; align-items: center; gap: 2px; }
+/* Tabs: the current page is a filled block, not a decoration. */
+.nav-link { position: relative; padding: 7px 14px; color: var(--muted); font-size: .9rem; font-weight: 500; text-decoration: none; border-radius: var(--r-ctl); }
 .nav-link:hover { color: var(--ink); background: var(--surface-2); }
-.nav-link.active, .nav-link.active:hover { color: var(--ink); background: transparent; }
-/* A small amber ink dot marks the current page. */
-.nav-link.active::after { position: absolute; bottom: 1px; left: 50%; width: 4px; height: 4px; margin-left: -2px; content: ""; background: var(--amber); border-radius: 50%; animation: blot-splat 300ms var(--ease) backwards; }
-.account-actions { position: relative; justify-self: end; display: flex; align-items: center; gap: 8px; }
-.theme-toggle { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; color: var(--ink-2); background: transparent; border: 1px solid var(--line); border-radius: 50%; cursor: pointer; }
+.nav-link.active, .nav-link.active:hover { color: var(--ink); background: var(--surface-2); box-shadow: inset 0 -2px 0 var(--ink); }
+.account-actions { position: relative; justify-self: end; display: flex; align-items: center; gap: 6px; }
+.theme-toggle { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; color: var(--ink-2); background: transparent; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); cursor: pointer; }
 .theme-toggle:hover { color: var(--ink); background: var(--surface-2); }
-.lang-toggle { min-width: 36px; height: 36px; padding: 0 10px; color: var(--ink-2); background: transparent; border: 1px solid var(--line); border-radius: 999px; font-size: .8rem; font-weight: 600; letter-spacing: .02em; cursor: pointer; }
+.lang-toggle { min-width: 34px; height: 34px; padding: 0 10px; color: var(--ink-2); background: transparent; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); font-size: .78rem; font-weight: 600; letter-spacing: .02em; cursor: pointer; }
 .lang-toggle:hover { color: var(--ink); background: var(--surface-2); }
-.theme-toggle svg { width: 17px; height: 17px; }
+.theme-toggle svg { width: 16px; height: 16px; }
 /* Signed out: a plain "Sign in" button. Signed in: initial + chevron that opens the account menu. */
-.account-button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; color: var(--ink); background: transparent; border: 1px solid var(--line-strong); border-radius: 999px; font-size: .88rem; font-weight: 500; cursor: pointer; }
+.account-button { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; color: var(--ink); background: transparent; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); font-size: .86rem; font-weight: 500; cursor: pointer; }
 .account-button:hover, .account-button[aria-expanded="true"] { background: var(--surface-2); }
 .account-button > svg { width: 16px; height: 16px; }
-.account-button.signed-in { gap: 4px; padding: 0 6px 0 3px; border-radius: 999px; }
+.account-button.signed-in { gap: 4px; padding: 0 6px 0 3px; }
 .account-button.signed-in > svg { width: 14px; height: 14px; color: var(--muted); transition: transform 150ms ease; }
 .account-button.signed-in[aria-expanded="true"] > svg { transform: rotate(180deg); }
-.profile-avatar { display: grid; place-items: center; width: 28px; height: 28px; color: var(--on-accent); background: var(--amber); border-radius: 50%; font-size: .82rem; font-weight: 600; line-height: 1; }
+.profile-avatar { display: grid; place-items: center; width: 26px; height: 26px; color: var(--on-accent); background: var(--amber); border-radius: 4px; font-size: .8rem; font-weight: 700; line-height: 1; }
 
-main { min-height: calc(100vh - 150px); padding: clamp(28px, 6vw, 72px) 0 0; }
-/* Each page eases in like ink settling on paper. */
-.page-view:not([hidden]) { animation: ink-rise 400ms var(--ease) backwards; }
+main { min-height: calc(100vh / var(--zoom) - 150px); padding: 28px 0 0; }
+.page-view:not([hidden]) { animation: ink-rise 250ms var(--ease) backwards; }
 .page-view[hidden] { display: none; }
 
-/* Two widths: a narrow reading column, and a wider one for the product grid and compare tables. */
-/* The intro takes the wide column so the live headline fits on one line on a desktop. */
-.intro { width: min(var(--wide), calc(100% - 56px)); margin: 0 auto clamp(40px, 7vw, 72px); }
-/* 2.6rem max fits the longest headline ("… Megatechnica-ში: 2,799 ₾", ~1,100px) on one line. */
-.intro h1 { margin: 0; font-size: clamp(1.75rem, 3.4vw, 2.6rem); font-weight: 500; line-height: 1.02; letter-spacing: -.04em; text-wrap: balance; }
-/* Under the headline, the proof: every store's price for the phone, and its 30-day chart. */
-.intro-proof { display: grid; grid-template-columns: minmax(260px, 380px) minmax(0, 1fr); gap: 24px 40px; align-items: start; margin: 28px 0 20px; }
-.intro-stores { width: 100%; min-width: 0; border-collapse: collapse; font-size: .95rem; }
-.intro-stores[hidden] { display: none; }
-.intro-stores caption { padding-bottom: 8px; color: var(--muted); font-size: .8rem; text-align: left; }
-.intro-stores th, .intro-stores td { padding: 7px 0; border-bottom: 1px solid var(--line); }
-.intro-stores tbody tr:last-child > * { border-bottom: 0; }
-.intro-stores th { font-weight: 500; text-align: left; }
-.intro-stores tr:first-child th, .intro-stores tr:first-child .intro-store-price { font-weight: 700; }
-.intro-store-price, .intro-store-gap { padding-left: 16px; text-align: right; white-space: nowrap; }
-.intro-store-gap { color: var(--muted); font-size: .85rem; }
-.intro-store-gap.best { color: var(--amber); font-weight: 600; }
-.intro-trend { margin: 0; color: var(--muted); font-size: .8rem; }
-.intro-trend[hidden] { display: none; }
-.intro-chart { display: block; width: 100%; height: 240px; overflow: visible; }
-/* Things only the price history knows: "Lowest price in 30 days", "Alta usually cuts on Fridays". */
-.intro-insights { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; padding: 0; list-style: none; }
-.intro-insights[hidden] { display: none; }
-.intro-insights li { padding: 5px 12px; border: 1px solid var(--line-strong); border-radius: 999px; color: var(--ink-2); font-size: .85rem; }
+/* Today's quote header: the sentence, then the price as the one big figure, then the counts. */
+.intro { width: min(var(--wide), calc(100% - 48px)); margin: 0 auto 28px; }
+.intro h1 { max-width: 60ch; margin: 0; color: var(--ink-2); font-size: 1.1rem; font-weight: 500; line-height: 1.35; letter-spacing: 0; text-wrap: balance; }
+.intro-price { display: block; margin-top: 6px; color: var(--ink); font-size: 4rem; font-weight: 700; line-height: 1; letter-spacing: -.035em; white-space: nowrap; }
+/* Signed move since the series began: the market's "change" figure. */
+.intro-change { display: inline-block; margin: 10px 0 0; padding: 3px 8px; font-size: .9rem; font-weight: 600; border-radius: 4px; }
+.intro-change[hidden] { display: none; }
+.intro-change.drop { color: var(--good); background: var(--good-soft); }
+.intro-change.rise { color: var(--rise); background: color-mix(in srgb, var(--rise) 12%, transparent); }
 /* "24 models · 11 stores · checked 3 hours ago", or the load error. */
-.intro-stats { margin: 0; color: var(--ink-2); font-size: .95rem; }
+.intro-stats { margin: 12px 0 0; color: var(--muted); font-size: .85rem; }
 .intro-stats:empty { display: none; }
+/* The work area: every store's quote on the left, the 30-day line filling the right. */
+.intro-proof { display: grid; grid-template-columns: minmax(0, 600px) minmax(0, 1fr); gap: 24px; align-items: stretch; margin: 22px 0 14px; padding-top: 20px; border-top: 1px solid var(--line); }
+.intro-stores { width: 100%; min-width: 0; border-collapse: collapse; font-size: .9rem; }
+.intro-stores[hidden] { display: none; }
+.intro-stores caption { padding-bottom: 10px; color: var(--ink); font-size: .9rem; font-weight: 600; text-align: left; }
+.intro-stores th, .intro-stores td { height: 36px; padding: 0 10px; border-bottom: 1px solid var(--line); }
+.intro-stores tbody tr:last-child > * { border-bottom: 0; }
+.intro-stores tbody tr:hover > * { background: var(--surface); }
+.intro-stores th { font-weight: 500; text-align: left; }
+.intro-stores tr:has(.best) > * { background: var(--good-soft); }
+.intro-stores tr:has(.best) .intro-store-price { color: var(--good); }
+.intro-store-price { font-weight: 700; text-align: right; white-space: nowrap; }
+.intro-store-gap { color: var(--muted); font-size: .85rem; text-align: right; white-space: nowrap; }
+.intro-store-gap.best { color: var(--good); font-weight: 600; }
+/* Signature: where this store sits between today's cheapest and priciest, one shared scale. */
+.intro-store-range { width: 34%; }
+.spread { position: relative; display: block; height: 6px; background: var(--line-strong); border-radius: 3px; }
+.spread i { position: absolute; top: -4px; left: var(--pos); width: 3px; height: 14px; margin-left: -1.5px; background: var(--ink); border-radius: 1px; animation: spread-in 700ms var(--ease) backwards; }
+.best .spread i, tr:has(.best) .spread i { background: var(--good); }
+@keyframes spread-in { from { left: 0; opacity: 0; } }
+.intro-trend { display: grid; grid-template-rows: 1fr auto; min-width: 0; margin: 0; padding: 14px 16px 12px; color: var(--muted); font-size: .8rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-panel); }
+.intro-trend[hidden] { display: none; }
+.intro-chart { display: block; width: 100%; height: 100%; min-height: 240px; overflow: visible; }
+/* Things only the price history knows: "Lowest price in 30 days", "Alta usually cuts on Fridays". */
+.intro-insights { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.intro-insights[hidden] { display: none; }
+.intro-insights li { padding: 4px 10px; color: var(--ink-2); font-size: .82rem; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; }
+
+/* Today's lists: three working columns side by side instead of one narrow strip. */
+.overview-cols { width: min(var(--wide), calc(100% - 48px)); display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0 28px; margin: 0 auto 64px; padding-top: 8px; border-top: 1px solid var(--line); }
+.overview-cols > .section { width: auto; min-width: 0; margin: 0; }
+.overview-cols .section-heading { margin: 14px 0 10px; }
+.overview-cols .section-heading h2 { font-size: .95rem; font-weight: 600; letter-spacing: 0; }
+.overview-cols .section-heading .text-button { flex: none; font-size: .82rem; white-space: nowrap; }
+.overview-cols .section-heading { align-items: baseline; }
+.overview-cols .model-price { padding: 10px 2px; }
+.overview-cols .model-price-value { font-size: .98rem; }
 
 .model-prices { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
 .model-price { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 16px; padding: 15px 2px; border-bottom: 1px solid var(--line); cursor: pointer; }
@@ -79,30 +99,28 @@ main { min-height: calc(100vh - 150px); padding: clamp(28px, 6vw, 72px) 0 0; }
 .model-price-name small { margin-left: 8px; color: var(--muted); font-size: .8rem; font-weight: 400; }
 .model-price-value { font-size: 1.1rem; font-weight: 600; letter-spacing: -.01em; text-align: right; }
 /* One chip per color that moved alike, instead of a row each. */
-.color-chip { display: inline-block; margin-left: 6px; padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: .75rem; font-weight: 400; vertical-align: 1px; }
+.color-chip { display: inline-block; margin-left: 6px; padding: 1px 8px; border: 1px solid var(--line); border-radius: var(--r-ctl); color: var(--muted); font-size: .75rem; font-weight: 400; vertical-align: 1px; }
 .model-price-meta { grid-column: 1 / -1; color: var(--muted); font-size: .8rem; }
-.model-price-store { color: var(--ink-2); font-weight: 600; }
-.fold-toggle { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 44px; margin-top: 16px; color: var(--ink-2); background: transparent; border: 1px solid var(--line); border-radius: 999px; font-size: .9rem; font-weight: 500; cursor: pointer; }
+.fold-toggle { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 44px; margin-top: 16px; color: var(--ink-2); background: transparent; border: 1px solid var(--line); border-radius: var(--r-ctl); font-size: .9rem; font-weight: 500; cursor: pointer; }
 .fold-toggle:hover { color: var(--ink); border-color: var(--line-strong); }
 .fold-toggle[hidden] { display: none; }
 .fold-toggle svg { width: 16px; height: 16px; transition: transform 150ms ease; }
 .fold-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
 
-.primary-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 0 22px; color: var(--on-accent); background: var(--accent); border: 1px solid var(--accent); border-radius: 999px; font-weight: 500; text-decoration: none; cursor: pointer; }
+.primary-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 0 22px; color: var(--on-accent); background: var(--accent); border: 1px solid var(--accent); border-radius: var(--r-ctl); font-weight: 500; text-decoration: none; cursor: pointer; }
 .primary-button:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 .primary-button:disabled, .small-button:disabled { cursor: not-allowed; opacity: .5; }
-.small-button { min-height: 36px; padding: 0 16px; white-space: nowrap; color: var(--ink); background: transparent; border: 1px solid var(--line-strong); border-radius: 999px; font-size: .85rem; font-weight: 500; cursor: pointer; }
+.small-button { min-height: 36px; padding: 0 16px; white-space: nowrap; color: var(--ink); background: transparent; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); font-size: .85rem; font-weight: 500; cursor: pointer; }
 .small-button:hover { background: var(--surface-2); }
 .small-button.tracked { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
 .text-button { padding: 0; color: var(--ink-2); font-size: .88rem; font-weight: 500; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 4px; background: transparent; border: 0; cursor: pointer; }
 .text-button:hover { color: var(--ink); text-decoration-color: var(--amber); }
 
-.search-band, .section { width: min(var(--wide), calc(100% - 56px)); margin: 0 auto clamp(48px, 8vw, 88px); }
+.search-band, .section { width: min(var(--wide), calc(100% - 48px)); margin: 0 auto 56px; }
 .search-band { margin-bottom: 32px; }
 [data-page-view="alerts"] .section, [data-page-view="about"] .section { width: min(var(--column), calc(100% - 56px)); }
-/* Overview lists start on the hero's left edge instead of floating centered under it. */
-[data-page-view="overview"] .section > * { max-width: var(--column); }
-.search-form { position: relative; display: flex; align-items: center; min-height: 52px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 999px; }
+
+.search-form { position: relative; display: flex; align-items: center; min-height: 52px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-ctl); }
 .search-form:focus-within { border-color: var(--ink-2); }
 .search-form > svg { flex: 0 0 auto; width: 18px; height: 18px; margin-left: 18px; color: var(--muted); }
 .search-form input { min-width: 0; flex: 1; padding: 0 12px; color: var(--ink); background: transparent; border: 0; outline: 0; }
@@ -112,27 +130,26 @@ main { min-height: calc(100vh - 150px); padding: clamp(28px, 6vw, 72px) 0 0; }
 /* Sections are open space, not boxes: whitespace and a heading do the separating. */
 .section { padding: 0; scroll-margin-top: 96px; }
 .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 22px; }
-.section-heading h1 { margin: 0; font-size: clamp(2.2rem, 5vw, 3.4rem); font-weight: 500; line-height: 1.05; letter-spacing: -.035em; }
-.section-heading h2 { margin: 0; font-size: clamp(1.35rem, 2.4vw, 1.65rem); font-weight: 500; line-height: 1.2; letter-spacing: -.02em; }
+.section-heading h1 { margin: 0; font-size: 2rem; font-weight: 700; line-height: 1.1; letter-spacing: -.03em; }
+.section-heading h2 { margin: 0; font-size: 1.25rem; font-weight: 600; line-height: 1.25; letter-spacing: -.015em; }
 .section-description { margin: 8px 0 0; color: var(--ink-2); font-size: .95rem; }
 .section-heading.compact { align-items: start; }
 .count-label, .muted { margin-bottom: 2px; color: var(--muted); font-size: .82rem; }
 
-footer { width: min(var(--wide), calc(100% - 56px)); display: flex; justify-content: flex-end; gap: 20px; margin: 0 auto; padding: 28px 2px 40px; border-top: 1px solid var(--line); color: var(--muted); font-size: .8rem; }
+footer { width: min(var(--wide), calc(100% - 48px)); display: flex; justify-content: flex-end; gap: 20px; margin: 0 auto; padding: 28px 2px 40px; border-top: 1px solid var(--line); color: var(--muted); font-size: .8rem; }
 .footer-links { display: flex; flex-wrap: wrap; gap: 6px 16px; }
 footer a { color: inherit; text-decoration-color: var(--line-strong); text-underline-offset: 3px; }
 footer a:hover { color: var(--ink); text-decoration-color: var(--amber); }
 .prose { max-width: 720px; }
-.prose h1 { margin: 0 0 20px; font-size: clamp(2.2rem, 5vw, 3.4rem); line-height: 1.05; letter-spacing: -.035em; }
-.prose h2 { margin: 0 0 16px; font-size: 1.65rem; }
+.prose h1 { margin: 0 0 20px; font-size: 2rem; line-height: 1.1; letter-spacing: -.03em; }
+.prose h2 { margin: 0 0 16px; font-size: 1.25rem; }
 .prose h3 { margin: 28px 0 6px; font-size: 1rem; font-weight: 600; letter-spacing: 0; }
-/* Long-form text is set in the serif, like a written note. */
-.prose p { margin: 0 0 12px; color: var(--ink-2); font-family: var(--serif); font-size: 1.12rem; line-height: 1.6; }
+.prose p { max-width: 68ch; margin: 0 0 12px; color: var(--ink-2); font-size: 1rem; line-height: 1.65; }
 .prose a { color: var(--ink); text-decoration-color: var(--amber); text-underline-offset: 3px; }
 
 /* Suggestion list under a combobox input (search, compare pickers). */
-.suggestions { position: absolute; z-index: 30; top: calc(100% + 6px); right: 0; left: 0; max-height: 320px; margin: 0; padding: 6px; overflow-y: auto; list-style: none; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 16px; box-shadow: var(--shadow); animation: ink-drip 150ms var(--ease) backwards; }
+.suggestions { position: absolute; z-index: 30; top: calc(100% + 6px); right: 0; left: 0; max-height: 320px; margin: 0; padding: 6px; overflow-y: auto; list-style: none; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-panel); box-shadow: var(--shadow); animation: ink-drip 150ms var(--ease) backwards; }
 .suggestions[hidden] { display: none; }
-.suggestions li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 9px 12px; border-radius: 10px; cursor: pointer; }
+.suggestions li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 9px 12px; border-radius: var(--r-ctl); cursor: pointer; }
 .suggestions li:hover, .suggestions li[aria-selected="true"] { background: var(--surface-2); }
 .suggestions small { flex: 0 0 auto; color: var(--muted); font-size: .8rem; }
