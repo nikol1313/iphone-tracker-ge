@@ -189,16 +189,33 @@ function weeklyDropAmount(product) {
 
 const WEEKLY_DROPS_SHOWN = 6;
 
+// Colors of one phone whose price moved alike share a row: [{ product, colors }], first one kept.
+function groupColors(products, move) {
+  const groups = new Map();
+  for (const product of products) {
+    const key = [product.model, product.storage, product.lowest_price, product.lowest_price_store, move(product)].join("|");
+    if (!groups.has(key)) groups.set(key, { product, colors: [] });
+    if (product.color) groups.get(key).colors.push(product.color);
+  }
+  return [...groups.values()];
+}
+
+// "iPhone 17 256GB [Black] [White]": the storage, then one chip per color.
+const groupedName = ({ product, colors }) => `<span class="model-price-name">${escapeHtml(productName(product))}`
+  + `<small>${escapeHtml(product.storage || "")}</small>`
+  + colors.map(color => `<span class="color-chip">${escapeHtml(color)}</span>`).join("")
+  + "</span>";
+
 // Today page: the phones whose best price fell the most this week.
 function renderWeeklyDrops() {
-  const drops = state.products
+  const drops = groupColors(state.products
     .filter(product => weeklyDropAmount(product) > 0)
-    .sort((a, b) => weeklyDropAmount(b) - weeklyDropAmount(a) || byModel(a, b))
+    .sort((a, b) => weeklyDropAmount(b) - weeklyDropAmount(a) || byModel(a, b)), weeklyDropAmount)
     .slice(0, WEEKLY_DROPS_SHOWN);
   $("#weeklyDropsSection").hidden = !drops.length;
-  $("#weeklyDrops").innerHTML = drops.map(product => `
+  $("#weeklyDrops").innerHTML = drops.map(({ product, colors }) => `
     <li class="model-price" data-model="${escapeHtml(product.model)}" data-product-id="${product.id}" tabindex="0">
-      <span class="model-price-name">${escapeHtml(productName(product))}<small>${escapeHtml(variant(product))}</small></span>
+      ${groupedName({ product, colors })}
       <span class="model-price-value">${escapeHtml(money(product.lowest_price, product.currency || "GEL"))}</span>
       <span class="model-price-meta">${storePrefix(product)}${weekDrop(product)} · ${escapeHtml(t("drops.was", { price: money(product.price_week_ago, product.currency || "GEL") }))}</span>
     </li>`).join("");
@@ -215,21 +232,22 @@ const DAY_CHANGES_SHOWN = 6;
 
 // Today page: what changed since yesterday, drops first since that's what people come for.
 function renderDayChanges() {
-  const changes = state.products
+  const changes = groupColors(state.products
     .filter(product => dayChangeAmount(product) !== 0)
     .sort((a, b) => (dayChangeAmount(a) > 0) - (dayChangeAmount(b) > 0)
       || Math.abs(dayChangeAmount(b)) - Math.abs(dayChangeAmount(a))
-      || byModel(a, b))
+      || byModel(a, b)), dayChangeAmount)
     .slice(0, DAY_CHANGES_SHOWN);
   $("#dayChangesSection").hidden = false;
   $("#dayChanges").innerHTML = changes.length
-    ? changes.map(product => {
+    ? changes.map(group => {
+      const { product } = group;
       const change = dayChangeAmount(product);
       const currency = product.currency || "GEL";
       const label = t(change < 0 ? "day.down" : "day.up", { amount: money(Math.abs(change), currency), percent: percent(change, product.price_day_ago) });
       return `
     <li class="model-price" data-model="${escapeHtml(product.model)}" data-product-id="${product.id}" tabindex="0">
-      <span class="model-price-name">${escapeHtml(productName(product))}<small>${escapeHtml(variant(product))}</small></span>
+      ${groupedName(group)}
       <span class="model-price-value">${escapeHtml(money(product.lowest_price, currency))}</span>
       <span class="model-price-meta">${storePrefix(product)}<span class="card-change ${change < 0 ? "drop" : "rise"}">${escapeHtml(label)}</span> · ${escapeHtml(t("day.was", { price: money(product.price_day_ago, currency) }))}</span>
     </li>`;
@@ -237,20 +255,28 @@ function renderDayChanges() {
     : `<li class="empty-state">${t("day.none")}</li>`;
 }
 
-// The amber underline runs as far as the headline's widest line. CSS can't size it: a wrapped
-// heading's box is as wide as the column, not as its text.
-function fitIntroUnderline() {
-  const title = $("#overviewTitle");
-  const underline = $(".intro .ink-underline");
-  const range = document.createRange();
-  range.selectNodeContents(title);
-  const rects = [...range.getClientRects()];
-  if (!rects.length) return;
-  const width = Math.max(...rects.map(rect => rect.right)) - Math.min(...rects.map(rect => rect.left));
-  if (width > 0) underline.style.width = `${Math.round(width)}px`;
+// The headline model's 30-day best price, drawn like the phone page's chart at the svg's own width.
+function renderIntroChart() {
+  const svg = $("#introChart");
+  if (!svg) return;
+  let series;
+  try {
+    series = JSON.parse($("#introTrend").dataset.series || "[]").map(point => ({ ...point, price: Number(point.price), currency: "GEL" }));
+  } catch {
+    return;
+  }
+  if (series.length) renderTrend(svg, series);
 }
-new ResizeObserver(fitIntroUnderline).observe($("#overviewTitle"));
-document.fonts?.ready.then(fitIntroUnderline);
+let introChartWidth = 0;
+if ($("#introChart")) {
+  new ResizeObserver(() => {
+    const { W } = chartSize($("#introChart"));
+    if (W !== introChartWidth) {
+      introChartWidth = W;
+      renderIntroChart();
+    }
+  }).observe($("#introChart"));
+}
 
 // Today headline: the server picks the phone and counts; this writes them in the page language.
 function renderIntro() {
@@ -258,7 +284,13 @@ function renderIntro() {
   const { model, price, store } = title.dataset;
   // Non-breaking space keeps "2,799 ₾" together when the headline wraps.
   if (model) title.textContent = t("intro.headline", { model, price: money(price).replace(" ", "\u00a0"), store });
-  fitIntroUnderline();
+  // Written by the server in Georgian; the data attributes say which sentence and its numbers.
+  $$("#introInsights li").forEach(item => {
+    const { insight, store: shop, ...numbers } = item.dataset;
+    const vars = Object.fromEntries(Object.entries(numbers).map(([key, value]) => [key, Number(value)]));
+    item.textContent = t(`intro.${insight}`, { ...vars, store: shop });
+  });
+  renderIntroChart();
   const stats = $("#overviewStats");
   if (!stats.dataset.models) return;
   const parts = [
@@ -641,15 +673,14 @@ function renderTrend(svg, series) {
     const anchor = px < left + 90 ? "start" : px > W - right - 90 ? "end" : "middle";
     const priceY = isLow ? py + 24 : py - 26;
     return `
-      <circle class="chart-snapshot" cx="${px}" cy="${py}" r="5"><title>${escapeHtml(point.store_name)} — ${escapeHtml(money(point.price, point.currency))} — ${escapeHtml(dateTime(point.recorded_at))}</title></circle>
+      <circle class="chart-snapshot" cx="${px}" cy="${py}" r="5"><title>${point.store_name ? `${escapeHtml(point.store_name)} — ` : ""}${escapeHtml(money(point.price, point.currency))} — ${escapeHtml(dateTime(point.recorded_at))}</title></circle>
       <text class="chart-point-price" text-anchor="${anchor}" x="${px}" y="${priceY}">${escapeHtml(money(point.price, point.currency))}</text>
-      <text class="chart-point-date" text-anchor="${anchor}" x="${px}" y="${priceY + 16}">${escapeHtml(shortDate(point.recorded_at))} · ${escapeHtml(point.store_name)}</text>`;
+      <text class="chart-point-date" text-anchor="${anchor}" x="${px}" y="${priceY + 16}">${escapeHtml(shortDate(point.recorded_at))}${point.store_name ? ` · ${escapeHtml(point.store_name)}` : ""}</text>`;
   }).join("");
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   svg.innerHTML = `
     <path class="chart-line" d="${path}"/>
     ${labels}
-    <text class="chart-label" x="${left}" y="${H - 8}">${escapeHtml(shortDate(start))}</text>
     <text class="chart-label" text-anchor="end" x="${W - right}" y="${H - 8}">${t("chart.today")}</text>`;
 }
 
