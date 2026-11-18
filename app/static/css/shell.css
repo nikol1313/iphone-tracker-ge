@@ -48,25 +48,18 @@ main { min-height: calc(100vh - 150px); padding: clamp(28px, 6vw, 72px) 0 0; }
 .intro { width: min(var(--wide), calc(100% - 56px)); margin: 0 auto clamp(40px, 7vw, 72px); }
 /* 2.6rem max fits the longest headline ("… Megatechnica-ში: 2,799 ₾", ~1,100px) on one line. */
 .intro h1 { margin: 0; font-size: clamp(1.75rem, 3.4vw, 2.6rem); font-weight: 500; line-height: 1.02; letter-spacing: -.04em; text-wrap: balance; }
-/* Under the headline, the proof: every store's price for the phone, and its 30-day chart. */
-.intro-proof { display: grid; grid-template-columns: minmax(260px, 380px) minmax(0, 1fr); gap: 24px 40px; align-items: start; margin: 28px 0 20px; }
-.intro-stores { width: 100%; min-width: 0; border-collapse: collapse; font-size: .95rem; }
-.intro-stores[hidden] { display: none; }
-.intro-stores caption { padding-bottom: 8px; color: var(--muted); font-size: .8rem; text-align: left; }
-.intro-stores th, .intro-stores td { padding: 7px 0; border-bottom: 1px solid var(--line); }
-.intro-stores tbody tr:last-child > * { border-bottom: 0; }
-.intro-stores th { font-weight: 500; text-align: left; }
-.intro-stores tr:first-child th, .intro-stores tr:first-child .intro-store-price { font-weight: 700; }
-.intro-store-price, .intro-store-gap { padding-left: 16px; text-align: right; white-space: nowrap; }
-.intro-store-gap { color: var(--muted); font-size: .85rem; }
-.intro-store-gap.best { color: var(--amber); font-weight: 600; }
-.intro-trend { margin: 0; color: var(--muted); font-size: .8rem; }
+/* Under the headline: the counts on the left, the model's 30-day price line on the right. */
+.intro-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 32px; flex-wrap: wrap; }
+.intro-trend { flex: none; margin: 0; color: var(--muted); font-size: .8rem; }
 .intro-trend[hidden] { display: none; }
-.intro-chart { display: block; width: 100%; height: 240px; overflow: visible; }
-/* Things only the price history knows: "Lowest price in 30 days", "Alta usually cuts on Fridays". */
-.intro-insights { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; padding: 0; list-style: none; }
-.intro-insights[hidden] { display: none; }
-.intro-insights li { padding: 5px 12px; border: 1px solid var(--line-strong); border-radius: 999px; color: var(--ink-2); font-size: .85rem; }
+.intro-trend svg { display: block; width: 140px; height: 44px; margin-bottom: 4px; overflow: visible; }
+.intro-trend polyline { fill: none; stroke: var(--ink-2); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+.intro-trend circle { fill: var(--amber); }
+/* Hand-drawn amber stroke under the headline, drawn once on load. */
+/* Width until catalog.js measures the headline's widest line. */
+.ink-underline { display: block; width: min(394px, 90%); max-width: 100%; height: 14px; margin: 16px 0 18px; overflow: visible; color: var(--amber); stroke-width: 2.2; }
+.ink-underline path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: pencil-stroke 1100ms 250ms var(--ease) forwards; }
+@keyframes pencil-stroke { to { stroke-dashoffset: 0; } }
 /* "24 models · 11 stores · checked 3 hours ago", or the load error. */
 .intro-stats { margin: 0; color: var(--ink-2); font-size: .95rem; }
 .intro-stats:empty { display: none; }
@@ -78,8 +71,6 @@ main { min-height: calc(100vh - 150px); padding: clamp(28px, 6vw, 72px) 0 0; }
 .model-price-name { font-weight: 500; }
 .model-price-name small { margin-left: 8px; color: var(--muted); font-size: .8rem; font-weight: 400; }
 .model-price-value { font-size: 1.1rem; font-weight: 600; letter-spacing: -.01em; text-align: right; }
-/* One chip per color that moved alike, instead of a row each. */
-.color-chip { display: inline-block; margin-left: 6px; padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: .75rem; font-weight: 400; vertical-align: 1px; }
 .model-price-meta { grid-column: 1 / -1; color: var(--muted); font-size: .8rem; }
 .model-price-store { color: var(--ink-2); font-weight: 600; }
 .fold-toggle { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 44px; margin-top: 16px; color: var(--ink-2); background: transparent; border: 1px solid var(--line); border-radius: 999px; font-size: .9rem; font-weight: 500; cursor: pointer; }
@@ -99,9 +90,7 @@ main { min-height: calc(100vh - 150px); padding: clamp(28px, 6vw, 72px) 0 0; }
 
 .search-band, .section { width: min(var(--wide), calc(100% - 56px)); margin: 0 auto clamp(48px, 8vw, 88px); }
 .search-band { margin-bottom: 32px; }
-[data-page-view="alerts"] .section, [data-page-view="about"] .section { width: min(var(--column), calc(100% - 56px)); }
-/* Overview lists start on the hero's left edge instead of floating centered under it. */
-[data-page-view="overview"] .section > * { max-width: var(--column); }
+[data-page-view="overview"] .section, [data-page-view="alerts"] .section, [data-page-view="about"] .section { width: min(var(--column), calc(100% - 56px)); }
 .search-form { position: relative; display: flex; align-items: center; min-height: 52px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 999px; }
 .search-form:focus-within { border-color: var(--ink-2); }
 .search-form > svg { flex: 0 0 auto; width: 18px; height: 18px; margin-left: 18px; color: var(--muted); }

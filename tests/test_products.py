@@ -421,19 +421,3 @@ async def test_new_listing_has_no_day_old_price(
     assert item["lowest_price"] == "2700.00"
     assert item["price_day_ago"] is None
     assert item["price_week_ago"] is None
-
-
-def test_usual_drop_weekday_needs_most_drop_days_on_one_weekday() -> None:
-    # 2026-11-06, 13, 20 are Fridays; 10:00 UTC is 14:00 in Tbilisi, still the same day.
-    fridays = [datetime(2026, 11, day, 10, tzinfo=UTC) for day in (6, 13, 20)]
-    tuesday = datetime(2026, 11, 10, 10, tzinfo=UTC)
-    # Two cuts on one Friday count once.
-    drops = [("Alta", at) for at in fridays] + [("Alta", fridays[0]), ("Alta", tuesday)]
-    assert product_service.usual_drop_weekday(drops) == ("Alta", 4)
-    # Too few drop days, or no weekday holding the majority: no pattern.
-    assert product_service.usual_drop_weekday(drops[:3]) is None
-    spread = [("Zoommer", datetime(2026, 11, day, 10, tzinfo=UTC)) for day in (2, 3, 4, 5, 6, 9)]
-    assert product_service.usual_drop_weekday(spread) is None
-    # 23:00 UTC on Thursday is already Friday in Tbilisi.
-    late = [("iSpace", datetime(2026, 11, day, 23, tzinfo=UTC)) for day in (5, 12, 19, 26)]
-    assert product_service.usual_drop_weekday(late) == ("iSpace", 4)
