@@ -1,7 +1,8 @@
-from collections import defaultdict
-from datetime import UTC, datetime, timedelta
+from collections import Counter, defaultdict
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from statistics import median
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import Select, and_, func, or_, select
 from sqlalchemy.exc import IntegrityError
@@ -37,6 +38,12 @@ NEAR_LOW = Decimal("1.02")
 GOOD_BELOW_TYPICAL = Decimal("0.95")
 WAIT_ABOVE_TYPICAL = Decimal("1.05")
 CENT = Decimal("0.01")
+# "Alta usually drops prices on Fridays": price drops over this window, on Tbilisi calendar days...
+DROP_PATTERN_WINDOW = timedelta(days=90)
+TBILISI = ZoneInfo("Asia/Tbilisi")
+# ...from a store with at least this many drop days, most of them (and at least 3) on one weekday.
+DROP_PATTERN_MIN_DAYS = 4
+DROP_PATTERN_MIN_WEEKDAY = 3
 
 # (listing_id, price, is_available, recorded_at), oldest first.
 PriceEvent = tuple[int, Decimal, bool, datetime]
@@ -45,7 +52,14 @@ PriceEvent = tuple[int, Decimal, bool, datetime]
 def daily_best_prices(
     events: list[PriceEvent], now: datetime, window: timedelta = VERDICT_WINDOW
 ) -> list[Decimal]:
-    """Cheapest in-stock price at the end of each day in the window, and now.
+    """Cheapest in-stock price at the end of each day in the window, and now."""
+    return [price for _, price in dated_daily_best_prices(events, now, window)]
+
+
+def dated_daily_best_prices(
+    events: list[PriceEvent], now: datetime, window: timedelta = VERDICT_WINDOW
+) -> list[tuple[datetime, Decimal]]:
+    """(day end, cheapest in-stock price) for each day in the window, and now.
 
     A listing keeps its last recorded price and stock until its next record.
     """
@@ -55,7 +69,7 @@ def daily_best_prices(
     days = (now - start).days
     checkpoints = [start + timedelta(days=day) for day in range(1, days + 1)] + [now]
     latest: dict[int, tuple[Decimal, bool]] = {}
-    best: list[Decimal] = []
+    best: list[tuple[datetime, Decimal]] = []
     index = 0
     for checkpoint in checkpoints:
         while index < len(events) and events[index][3] <= checkpoint:
@@ -64,8 +78,30 @@ def daily_best_prices(
             index += 1
         in_stock = [price for price, available in latest.values() if available]
         if in_stock:
-            best.append(min(in_stock))
+            best.append((checkpoint, min(in_stock)))
     return best
+
+
+def usual_drop_weekday(drops: list[tuple[str, datetime]]) -> tuple[str, int] | None:
+    """(store, weekday with Monday = 0) for the store whose price drops mostly land on one weekday.
+
+    `drops` are (store, when) for each price cut; several cuts on one day count as one drop day.
+    """
+    days: dict[str, set[date]] = defaultdict(set)
+    for store, at in drops:
+        days[store].add((at if at.tzinfo else at.replace(tzinfo=UTC)).astimezone(TBILISI).date())
+    best: tuple[tuple[int, int], str, int] | None = None
+    for store, dates in days.items():
+        if len(dates) < DROP_PATTERN_MIN_DAYS:
+            continue
+        ranked = Counter(day.weekday() for day in dates).most_common(2)
+        weekday, count = ranked[0]
+        # A tie for the top weekday is no pattern.
+        if count < DROP_PATTERN_MIN_WEEKDAY or count * 2 < len(dates) or (len(ranked) > 1 and ranked[1][1] == count):
+            continue
+        if best is None or (count, len(dates)) > best[0]:
+            best = ((count, len(dates)), store, weekday)
+    return (best[1], best[2]) if best else None
 
 
 def price_verdict(
@@ -426,7 +462,7 @@ async def cheapest_in_stock_per_model(session: AsyncSession) -> list[ProductSumm
 
 async def model_daily_best_prices(
     session: AsyncSession, model: str, currency: str, window: timedelta
-) -> list[Decimal]:
+) -> list[tuple[datetime, Decimal]]:
     """Cheapest in-stock price of any variant of a model at the end of each day in the window."""
     rows = (
         await session.execute(
@@ -448,7 +484,61 @@ async def model_daily_best_prices(
         (listing_id, price, available, at if at.tzinfo else at.replace(tzinfo=UTC))
         for listing_id, price, available, at in rows
     ]
-    return daily_best_prices(events, datetime.now(UTC), window)
+    return dated_daily_best_prices(events, datetime.now(UTC), window)
+
+
+async def model_store_prices(
+    session: AsyncSession, model: str, storage: str | None, currency: str
+) -> list[tuple[str, Decimal]]:
+    """Each store's cheapest in-stock price for a model and storage (any color), cheapest first."""
+    lowest = func.min(ProductListing.current_price)
+    rows = await session.execute(
+        select(Store.title, lowest)
+        .join(ProductListing, ProductListing.store_id == Store.id)
+        .join(Product, Product.id == ProductListing.product_id)
+        .where(
+            Product.model == model,
+            Product.storage.is_(None) if storage is None else Product.storage == storage,
+            Product.is_active.is_(True),
+            ProductListing.is_active.is_(True),
+            ProductListing.is_available.is_(True),
+            ProductListing.currency == currency,
+        )
+        .group_by(Store.title)
+        .order_by(lowest, Store.title)
+    )
+    return [(title, price) for title, price in rows.all()]
+
+
+async def store_drop_weekday(session: AsyncSession) -> tuple[str, int] | None:
+    """The store that usually cuts prices on one weekday, from in-stock price cuts lately."""
+    order = (PriceHist.recorded_at, PriceHist.id)
+    history = (
+        select(
+            Store.title.label("store"),
+            PriceHist.price,
+            PriceHist.is_available,
+            PriceHist.recorded_at,
+            func.lag(PriceHist.price).over(partition_by=PriceHist.listing_id, order_by=order).label("previous"),
+            func.lag(PriceHist.is_available)
+            .over(partition_by=PriceHist.listing_id, order_by=order)
+            .label("previous_available"),
+        )
+        .join(ProductListing, ProductListing.id == PriceHist.listing_id)
+        .join(Store, Store.id == ProductListing.store_id)
+        .join(Product, Product.id == ProductListing.product_id)
+        .where(Product.is_active.is_(True), ProductListing.is_active.is_(True), PriceHist.currency == "GEL")
+        .subquery()
+    )
+    rows = await session.execute(
+        select(history.c.store, history.c.recorded_at).where(
+            history.c.recorded_at >= datetime.now(UTC) - DROP_PATTERN_WINDOW,
+            history.c.price < history.c.previous,
+            history.c.is_available.is_(True),
+            history.c.previous_available.is_(True),
+        )
+    )
+    return usual_drop_weekday([(store, at) for store, at in rows.all()])
 
 
 async def count_stores_in_stock(session: AsyncSession) -> int:

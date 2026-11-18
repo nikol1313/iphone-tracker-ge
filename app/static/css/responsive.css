@@ -6,6 +6,8 @@
   nav { grid-column: 1 / -1; }
   .nav-link { flex: 1; text-align: center; }
   .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .intro-proof { grid-template-columns: minmax(0, 1fr); }
+  .intro-chart { height: 200px; }
 }
 @media (max-width: 700px) {
   .topbar { min-height: 56px; padding: 10px 14px 4px; gap: 6px 8px; }
@@ -58,5 +60,4 @@
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { transition-duration: .01ms !important; animation: none !important; }
-  .ink-underline path { stroke-dashoffset: 0; }
 }
