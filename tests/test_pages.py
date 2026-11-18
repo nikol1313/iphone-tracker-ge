@@ -143,7 +143,8 @@ async def test_index_lists_cheapest_price_per_model(
     assert '<span class="model-price-name">iPhone 17 Pro<small>256GB · Natural Titanium</small></span>' in html
     assert '<span class="model-price-value">3,199 ₾</span>' in html
     # Each row names the store with the price.
-    assert '<span class="model-price-store">Store A</span> · მარაგშია 1 მაღაზიაში' in html
+    assert '<span class="model-price-meta">მარაგშია 1 მაღაზიაში</span>' in html
+    assert "model-price-store" not in html
     # The only model in stock leads the headline, with its cheapest store.
     assert (
         '<h1 id="overviewTitle" data-model="iPhone 17 Pro" data-price="3199.00" data-store="Store A">'
@@ -259,6 +260,9 @@ async def test_headline_lists_every_stores_price_with_its_gap(
     assert table.index("Store A") < table.index("Store B")
     assert '<td class="intro-store-gap best" data-i18n="intro.cheapest">ყველაზე იაფი</td>' in table
     assert '<td class="intro-store-price">3,349 ₾</td><td class="intro-store-gap">+150 ₾</td>' in table
+    # Cheapest sits at the left of today's spread, priciest at the right.
+    assert table.count('style="--pos:0%"') == 1
+    assert table.count('style="--pos:100%"') == 1
 
 
 @pytest.mark.asyncio
@@ -297,7 +301,8 @@ def test_prices_are_whole_lari_and_drops_show_a_percentage() -> None:
 
     row = _model_row(product, hidden=False)
 
-    assert '<span class="model-price-store">Zoommer</span> · მარაგშია 2 მაღაზიაში' in row
+    assert "Zoommer" not in row
+    assert "მარაგშია 2 მაღაზიაში" in row
     assert "−630 ₾ (−9%) ამ კვირაში" in row
 
 

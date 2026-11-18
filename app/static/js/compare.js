@@ -133,7 +133,6 @@ function recommend(details, use) {
     return {
       side: pricier,
       headline: t("pick.betterAtAll", { name: fullName(details[pricier].product), use: useFor, ...extra }),
-      tradeoff: t("pick.cheaperFallback", { name: fullName(details[cheaper].product), use: useFor, ...extra }),
     };
   }
   // Worth paying more only for a clear step up that costs no more extra than this use allows.
@@ -146,7 +145,6 @@ function recommend(details, use) {
   return {
     side: cheaper,
     headline: t("pick.bestValue", { name: fullName(details[cheaper].product), use: useFor, ...extra }),
-    tradeoff: t("pick.tradeoff", { name: fullName(details[pricier].product), use: useFor, ...extra }),
   };
 }
 
@@ -309,22 +307,15 @@ function historyChart(details) {
     </svg></div>`;
 }
 
-// The recommended phone, with links to it in All iPhones and at its cheapest store.
-function pickedPhone(detail) {
+// The recommended phone's two next steps: its page in All iPhones, and its cheapest store.
+function pickActions(detail) {
   const { product } = detail;
   // Listings come in-stock first, cheapest first.
   const offer = detail.listings.find(listing => listing.is_available);
-  // Buy now or wait: the same verdict as the phone's card, next to the decision. Skipped
-  // while there's too little price history for one; the card says so already.
-  const verdict = product.price_verdict ? buyVerdict(product) : "";
   return `
-    <div class="compare-pick-phone">
-      <p><strong>${escapeHtml(productName(product))}</strong> <span>${escapeHtml(variant(product))}</span></p>
-      <div class="compare-pick-actions">
-        <button class="primary-button" type="button" data-open-product="${product.id}">${escapeHtml(t("pick.viewInCatalog"))}</button>
-        ${offer ? `<a class="small-button compare-pick-store" href="${escapeHtml(safeUrl(offer.product_url))}" target="_blank" rel="noopener noreferrer">${escapeHtml(t("pick.openAtStore", { store: offer.store_name, price: money(offer.current_price, offer.currency) }))} <svg aria-hidden="true"><use href="#i-external"/></svg></a>` : ""}
-      </div>
-      ${verdict ? `<div class="compare-pick-timing"><p class="pick-label">${escapeHtml(t("pick.priceTiming"))}</p>${verdict}</div>` : ""}
+    <div class="compare-pick-actions">
+      <button class="primary-button" type="button" data-open-product="${product.id}">${escapeHtml(t("pick.viewInCatalog"))}</button>
+      ${offer ? `<a class="small-button compare-pick-store" href="${escapeHtml(safeUrl(offer.product_url))}" target="_blank" rel="noopener noreferrer">${escapeHtml(t("pick.openAtStore", { store: offer.store_name, price: money(offer.current_price, offer.currency) }))} <svg aria-hidden="true"><use href="#i-external"/></svg></a>` : ""}
     </div>`;
 }
 
@@ -334,47 +325,21 @@ function usePicker(chosen) {
     <fieldset class="use-picker">
       <legend>${escapeHtml(t("use.question"))}</legend>
       <div class="use-options">${USES.map(use => `
-        <button class="use-option${use === chosen ? " selected" : ""}" type="button" data-use="${use.key}" aria-pressed="${use === chosen}">
-          <strong>${escapeHtml(t(`use.${use.key}`))}</strong>
-          <small>${escapeHtml(t(`use.${use.key}.hint`))}</small>
-        </button>`).join("")}
+        <button class="use-option${use === chosen ? " selected" : ""}" type="button" data-use="${use.key}" aria-pressed="${use === chosen}" title="${escapeHtml(t(`use.${use.key}.hint`))}">${escapeHtml(t(`use.${use.key}`))}</button>`).join("")}
       </div>
     </fieldset>`;
 }
 
-// How the spec wins for this use split between the two phones: one bar, a share each.
-function scoreMeter(details, use) {
-  const scores = SIDES.map((_, side) => total(advantages(details, side, use)));
-  const sum = scores[0] + scores[1];
-  if (!sum) return "";
-  const firstShare = Math.round(scores[0] * 100 / sum);
-  const shares = [firstShare, 100 - firstShare];
-  const labels = details.map((detail, side) => `${fullName(detail.product)}: ${shares[side]}%`);
-  return `
-    <div class="score-meter">
-      <p class="pick-label">${escapeHtml(t("pick.score", { use: t(`use.${use.key}.for`) }))}</p>
-      <div class="score-bar" role="img" aria-label="${escapeHtml(labels.join(", "))}">${shares.map((share, side) => (share
-        ? `<span class="score-${SIDES[side]}" style="--share: ${share}%"></span>` : "")).join("")}
-      </div>
-      <ul class="score-labels">${labels.map((label, side) => `<li class="score-key-${SIDES[side]}">${escapeHtml(label)}</li>`).join("")}</ul>
-      <p class="muted score-note">${escapeHtml(t("pick.scoreNote"))}</p>
-    </div>`;
-}
-
-// Where each phone is better than the other, side by side.
+// Where each phone is better, side by side: its top three wins that count for this use.
+const EDGES_SHOWN = 3;
 function edgeLists(details, use) {
-  const useFor = t(`use.${use.key}.for`);
-  const item = (edge, index) => `
-    <li class="${edge.weight ? "" : "edge-minor"}" style="--i: ${index}">${escapeHtml(edge.text)}${edge.key
-      ? ` <span class="edge-tag">${escapeHtml(t("pick.keyFor", { use: useFor }))}</span>`
-      : edge.weight ? "" : ` <span class="edge-note">(${escapeHtml(t("pick.minorFor", { use: useFor }))})</span>`}</li>`;
   return `
     <div class="compare-edges">${details.map((detail, side) => {
-      const list = edges(details, side, use);
+      const list = advantages(details, side, use).slice(0, EDGES_SHOWN);
       return `
       <div class="compare-edge">
-        <h3>${escapeHtml(t("pick.betterAt", { name: fullName(detail.product) }))}</h3>
-        ${list.length ? `<ul>${list.map(item).join("")}</ul>` : `<p class="muted">${escapeHtml(t("pick.noEdge"))}</p>`}
+        <h3>${escapeHtml(t("pick.betterAt", { name: productName(detail.product) }))}</h3>
+        ${list.length ? `<ul>${list.map(edge => `<li>${escapeHtml(edge.text)}</li>`).join("")}</ul>` : `<p class="muted">${escapeHtml(t("pick.noEdge"))}</p>`}
       </div>`;
     }).join("")}
     </div>`;
@@ -386,10 +351,8 @@ function pickBox(details) {
   const pick = use && recommend(details, use);
   const result = pick ? `
     <div>
-      ${pick.side != null ? pickedPhone(details[pick.side]) : ""}
       <p class="compare-pick-headline">${escapeHtml(pick.headline)}</p>
-      ${pick.tradeoff ? `<p class="muted">${escapeHtml(pick.tradeoff)}</p>` : ""}
-      ${scoreMeter(details, use)}
+      ${pick.side != null ? pickActions(details[pick.side]) : ""}
       ${edgeLists(details, use)}
       ${details.some(detail => !Object.keys(detail.specs).length) ? `<p class="muted">${escapeHtml(t("pick.missingSpecs"))}</p>` : ""}
     </div>`

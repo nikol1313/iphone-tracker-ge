@@ -91,8 +91,6 @@ def _model_row(product: ProductSummary, *, hidden: bool) -> str:
     # The same markup catalog.js renderOverview writes, in Georgian.
     variant = " · ".join(part for part in (product.storage, product.color) if part)
     meta = f"მარაგშია {product.available_listing_count} მაღაზიაში"
-    if product.lowest_price_store:
-        meta = f'<span class="model-price-store">{escape(product.lowest_price_store)}</span> · {meta}'
     week_ago = product.price_week_ago
     if week_ago is not None and week_ago - product.lowest_price >= week_ago * Decimal("0.01"):
         change = week_ago - product.lowest_price
@@ -153,6 +151,13 @@ class Intro:
 def _store_table(intro: Intro) -> str:
     """Every store's price for the headline phone, with each one's gap to the cheapest."""
     cheapest = intro.store_prices[0][1]
+    spread = max(price for _, price in intro.store_prices) - cheapest
+
+    def place(price: Decimal) -> str:
+        # Where this store sits between today's cheapest (0%) and priciest (100%).
+        pos = (price - cheapest) / spread * 100 if spread else 0
+        return f'<td class="intro-store-range"><span class="spread"><i style="--pos:{pos:.0f}%"></i></span></td>'
+
     rows = "".join(
         f'<tr><th scope="row">{escape(store)}</th>'
         f'<td class="intro-store-price">{escape(_price(price))}</td>'
@@ -161,6 +166,7 @@ def _store_table(intro: Intro) -> str:
             if price > cheapest
             else '<td class="intro-store-gap best" data-i18n="intro.cheapest">ყველაზე იაფი</td>'
         )
+        + place(price)
         + "</tr>"
         # The headline's store leads a tie for cheapest, as the headline names it.
         for store, price in sorted(intro.store_prices, key=lambda row: (row[1], row[0] != intro.store))
