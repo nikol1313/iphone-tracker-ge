@@ -22,8 +22,8 @@ _RAM_BEFORE_STORAGE = re.compile(r"\b\d{1,2}\s*GB\s+(?=\d+\s*(?:GB|TB)\b)", re.I
 # Feature words and non-Latin text (e.g. Georgian "mobile phone") are not colors.
 _NOISE = re.compile(r"\bNFC\b|\bsmartphone\b|[^\x00-\x7F]+", re.IGNORECASE)
 _STORAGE = re.compile(r"\b(\d+)\s*(GB|TB)\b", re.IGNORECASE)
-# Apple part numbers such as "MK2D4" or "MFYP4ZD/A".
-_PART_NUMBER = re.compile(r"\bM[A-Z0-9]{3}\d(?:[A-Z]{2})?(?:/A)?(?=\s|$)")
+# Apple part numbers such as "MK2D4", "MFYP4ZD/A" or "(MG6J4AF/A)".
+_PART_NUMBER = re.compile(r"\bM[A-Z0-9]{3}\d(?:[A-Z]{2})?(?:/A)?(?![A-Za-z0-9/])")
 _SEPARATORS = re.compile(r"[|,()/]|(?:^|\s)-(?=\s|$)")
 # Models sold only as eSIM everywhere; the flag would split identical phones.
 _ESIM_ONLY_MODELS = frozenset({"iPhone Air", "iPhone Duo"})
