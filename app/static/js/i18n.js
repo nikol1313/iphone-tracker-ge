@@ -612,7 +612,7 @@ const ka = {
   "reset.mismatch": "პაროლები ერთმანეთს არ ემთხვევა.",
   "reset.done": "პაროლი შეიცვალა. შედით ახალი პაროლით.",
 
-  "verdict.good": "ყიდვის კარგი დროა",
+  "verdict.good": "ყიდვისთვის კარგი დროა",
   "verdict.goodLow": "ეს მისი ყველაზე დაბალი ფასია {period}.",
   "verdict.goodBelow": "{amount}-ით იაფია ჩვეულ ფასზე ({typical}).",
   "verdict.goodNearLow": "ახლოსაა ყველაზე დაბალ ფასთან {period} ({low}).",
