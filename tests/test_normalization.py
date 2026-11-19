@@ -46,6 +46,11 @@ from app.services.normalization import ParsedIphone, parse_iphone_title
             "სმარტფონები Apple iPhone 17 Pro Max 256GB Deep Blue MFYP4ZD/A",
             ParsedIphone("iPhone 17 Pro Max", "256GB", "Deep Blue"),
         ),
+        # Metromart puts the part number in brackets.
+        (
+            "Apple iPhone 17 8GB/256GB (MG6J4AF/A) - Black",
+            ParsedIphone("iPhone 17", "256GB", "Black"),
+        ),
         ("iPhone 17 Pro Max, 2 TB, Cosmic Orange", ParsedIphone("iPhone 17 Pro Max", "2TB", "Cosmic Orange")),
         ("Apple iPhone 15 | 128GB blue", ParsedIphone("iPhone 15", "128GB", "Blue")),
         (
