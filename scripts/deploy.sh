@@ -19,10 +19,11 @@ main() {
 	docker compose up -d --build --remove-orphans --wait
 
 	# nginx.conf and the Caddyfile are mounted files, so a change to them alone
-	# doesn't recreate the containers; reload them so the new config is live.
-	docker compose exec -T nginx nginx -s reload
+	# doesn't recreate the containers. git pull writes them as new files, which a
+	# running container's mount doesn't see (a reload keeps the old config), so restart.
+	docker compose restart nginx
 	if docker compose ps --services --status running | grep -qx caddy; then
-		docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile
+		docker compose restart caddy
 	fi
 
 	docker image prune -f >/dev/null
