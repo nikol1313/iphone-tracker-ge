@@ -291,6 +291,17 @@ def _product_url(slug: str) -> str:
     return f"{settings.public_base_url}/{slug}"
 
 
+def _preview_image(url: str) -> str:
+    """The store photo at a size link previews show sharply (they want about 1200px)."""
+    # shortcut: only the two stores whose photos are too small (Asbis CDN 512px webp,
+    # Megatechnica 200px); add a store here when its previews look blurry.
+    if url.startswith("https://prod-cdn.prod.asbis.io/"):
+        return url.replace("/f:webp/", "/f:jpg/", 1).replace("/w:512/", "/w:1200/", 1)
+    if url.startswith("https://www.megatechnica.ge/"):
+        return re.sub(r"_200(\.\w+)$", r"\1", url)
+    return url
+
+
 def _not_found() -> HTMLResponse:
     return HTMLResponse(NOT_FOUND_PATH.read_text(encoding="utf-8"), status_code=404)
 
@@ -374,7 +385,7 @@ def render_index(
         title=title,
         description=description,
         url=_product_url(product.slug),
-        image=product.image_url or f"{base}/static/logo.png",
+        image=_preview_image(product.image_url) if product.image_url else f"{base}/static/logo.png",
     )
     return html.replace(META_MARKER, meta, 1)
 

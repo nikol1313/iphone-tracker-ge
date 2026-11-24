@@ -143,6 +143,15 @@ def test_preview_tags_escape_product_text() -> None:
     assert 'content="https://img.example/a.jpg?x=&quot;1&quot;"' in html
 
 
+def test_preview_uses_the_larger_store_photo() -> None:
+    from app.api.pages import _preview_image
+
+    asbis = "https://prod-cdn.prod.asbis.io/s3size/el:t/f:webp/rt:fill/w:512/plain/s3://cms/a.webp"
+    assert _preview_image(asbis) == "https://prod-cdn.prod.asbis.io/s3size/el:t/f:jpg/rt:fill/w:1200/plain/s3://cms/a.webp"
+    assert _preview_image("https://www.megatechnica.ge/storage/x/abc_200.jpg") == "https://www.megatechnica.ge/storage/x/abc.jpg"
+    assert _preview_image("https://s3.zoommer.ge/site/a_Thumb.jpeg") == "https://s3.zoommer.ge/site/a_Thumb.jpeg"
+
+
 @pytest.mark.asyncio
 async def test_index_lists_cheapest_price_per_model(
     client: httpx.AsyncClient,
