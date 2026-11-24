@@ -92,13 +92,19 @@ export const variant = product => product
   ? [product.storage, product.color].filter(Boolean).join(" · ") || t("variant.unknown")
   : t("variant.unknown");
 
+// A phone's own address, e.g. /iphone-17-pro-256gb-silver; pages.py matches the same shape.
+const PRODUCT_PATH = /^\/iphone-[a-z0-9-]+$/;
+
 export function pageFromLocation() {
+  if (PRODUCT_PATH.test(window.location.pathname)) return "products";
   const requestedPage = new URLSearchParams(window.location.search).get("page");
   return pages.has(requestedPage) ? requestedPage : "overview";
 }
 
-// The phone a shared link points at: /?page=products&id=9
+// The phone the address points at: /iphone-17-pro-256gb-silver, or an older /?page=products&id=9 in history.
 export function productIdFromLocation() {
+  const path = window.location.pathname;
+  if (PRODUCT_PATH.test(path)) return state.products.find(item => `/${item.slug}` === path)?.id ?? null;
   const id = Number(new URLSearchParams(window.location.search).get("id"));
   return Number.isInteger(id) && id > 0 ? id : null;
 }
@@ -106,9 +112,10 @@ export function productIdFromLocation() {
 // Keep the address bar on the phone being looked at, so it can be shared or bookmarked.
 // A pushed entry marks a phone opened from the grid, so going back returns to the grid.
 export function setProductInLocation(productId, { push = false } = {}) {
-  const url = new URL(window.location.href);
-  if (url.searchParams.get("id") === String(productId)) return;
-  url.searchParams.set("id", productId);
+  const product = state.products.find(item => item.id === productId);
+  if (!product) return;
+  const url = new URL(`/${product.slug}`, window.location.origin);
+  if (url.pathname === window.location.pathname) return;
   if (push) window.history.pushState({ page: "products", detail: true }, "", url);
   else window.history.replaceState(window.history.state, "", url);
 }
@@ -131,6 +138,7 @@ export function showPage(page, updateHistory = false) {
   setPageTitle();
   if (updateHistory) {
     const url = new URL(window.location.href);
+    url.pathname = "/";
     url.searchParams.set("page", nextPage);
     url.searchParams.delete("id");
     url.hash = "";

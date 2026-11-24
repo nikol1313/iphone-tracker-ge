@@ -31,7 +31,7 @@ https://github.com/user-attachments/assets/c69a6fb6-965b-44cf-97c7-aaf3850a00cb
 - Filter by model, storage, and stock; sort by price, store savings, or store count.
 - See the cheapest in-stock price per model on the Today page, the price changes of the last 24 hours,
   weekly drops, and lowest-recorded tags on catalog cards.
-- Share or bookmark a phone: each one has its own link (`/?page=products&id=9`), and the server
+- Share or bookmark a phone: each one has its own link (`/iphone-17-pro-256gb-silver`; old `/?page=products&id=9` links redirect), and the server
   fills in its title, price, and photo for Facebook and Messenger previews.
 - View price history for tracked products, with a "buy now or wait?" verdict that compares
   today's best price to its typical and lowest price over the last 90 days (after 14 days of history).

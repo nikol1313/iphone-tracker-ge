@@ -146,12 +146,27 @@ def test_tapping_a_phone_shows_only_its_page(page: Page):
     expect(page.locator("#historySection")).to_be_visible()
     expect(page.locator("#storesSection")).to_be_visible()
     expect(page.locator("#productGrid")).to_be_hidden()
-    expect(page).to_have_url(re.compile(r"[?&]id=\d+"))
+    expect(page).to_have_url(re.compile(r"/iphone-[a-z0-9-]+$"))
 
     page.click("#backToGrid")
     expect(page.locator("#productGrid")).to_be_visible()
     expect(page.locator("#historySection")).to_be_hidden()
-    expect(page).not_to_have_url(re.compile(r"[?&]id="))
+    expect(page).to_have_url(re.compile(r"/\?page=products$"))
+
+
+def test_a_phone_link_opens_that_phone(page: Page):
+    open_first_iphone(page)
+    phone_url = page.url
+    page.goto(phone_url)
+    expect(page.locator("#historySection")).to_be_visible()
+    expect(page.locator("#productGrid")).to_be_hidden()
+
+    # Leaving the phone for another page drops its address.
+    page.click('.nav-link[data-page-link="compare"]')
+    expect(page).to_have_url(re.compile(r"/\?page=compare$"))
+    page.go_back()
+    expect(page).to_have_url(phone_url)
+    expect(page.locator("#historySection")).to_be_visible()
 
 
 def test_search_waits_for_the_search_button(page: Page):

@@ -51,6 +51,15 @@ def normalize_color(value: str | None) -> str | None:
     return normalize_optional_text(value)
 
 
+_SLUG_SEPARATOR = re.compile(r"[^a-z0-9]+")
+
+
+def product_slug(model: str, storage: str | None, color: str | None) -> str:
+    """A phone page's path, e.g. "iphone-17-pro-256gb-silver". Names are Latin, so ASCII is enough."""
+    text = " ".join(part for part in (model, storage, color) if part)
+    return _SLUG_SEPARATOR.sub("-", text.casefold()).strip("-")
+
+
 def product_identity_key(
     brand: str,
     model: str,

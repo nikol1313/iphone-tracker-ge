@@ -7,6 +7,7 @@ from pydantic import (
     ConfigDict,
     EmailStr,
     Field,
+    computed_field,
     field_validator,
     model_validator,
 )
@@ -17,6 +18,7 @@ from app.services.normalization import (
     normalize_optional_text,
     normalize_storage,
     normalize_text,
+    product_slug,
 )
 
 T = TypeVar("T")
@@ -183,6 +185,11 @@ class ProductResponse(ProductBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
     image_url: str | None = None
+
+    @computed_field
+    @property
+    def slug(self) -> str:
+        return product_slug(self.model, self.storage, self.color)
 
 
 class ProductSummary(ProductResponse):

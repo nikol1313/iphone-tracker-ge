@@ -193,7 +193,7 @@ bindDialogs();
 bindRefresh();
 bindCompare();
 showPage(pageFromLocation());
-// A shared phone link (/?page=products&id=9) opens that phone.
+// A shared phone link (/iphone-17-pro-256gb-silver) opens that phone.
 function openLinkedProduct() {
   const productId = productIdFromLocation();
   if (state.currentPage === "products" && productId) openProductInCatalog(productId, { updateHistory: false });

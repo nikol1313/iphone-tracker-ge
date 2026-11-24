@@ -17,7 +17,7 @@ from pathlib import Path
 from xml.sax.saxutils import escape as xml_escape
 
 from fastapi import APIRouter, Response
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,10 +27,14 @@ from app.db.models import Product
 from app.dependencies import SessionDep
 from app.services import product_service, scraper_service
 from app.services.errors import NotFoundError
+from app.services.normalization import product_slug
 
 router = APIRouter(include_in_schema=False)
 
 INDEX_PATH = Path(__file__).resolve().parent.parent / "static" / "index.html"
+NOT_FOUND_PATH = INDEX_PATH.with_name("404.html")
+# A phone's own address, e.g. /iphone-17-pro-256gb-silver; core.js matches the same shape.
+PRODUCT_SLUG = re.compile(r"iphone-[a-z0-9-]+")
 META_MARKER = "<!--server-meta-->"
 MODELS_MARKER = '<ul id="modelPrices" class="model-prices" aria-live="polite"><!--server-models--></ul>'
 MODELS_TOGGLE = (
@@ -283,8 +287,28 @@ async def _load_intro(session: AsyncSession, models: Sequence[ProductSummary]) -
     )
 
 
-def _product_url(product_id: int) -> str:
-    return f"{settings.public_base_url}/?page=products&id={product_id}"
+def _product_url(slug: str) -> str:
+    return f"{settings.public_base_url}/{slug}"
+
+
+def _not_found() -> HTMLResponse:
+    return HTMLResponse(NOT_FOUND_PATH.read_text(encoding="utf-8"), status_code=404)
+
+
+async def _product_or_none(session: AsyncSession, product_id: int) -> ProductSummary | None:
+    try:
+        return await product_service.get_product_summary(session, product_id)
+    except NotFoundError:
+        return None
+
+
+async def _product_id_for_slug(session: AsyncSession, slug: str) -> int | None:
+    # shortcut: scans every phone's name (a few hundred rows); add a stored, indexed slug
+    # column if the catalog grows to many thousands.
+    rows = await session.execute(
+        select(Product.id, Product.model, Product.storage, Product.color).order_by(Product.id)
+    )
+    return next((row.id for row in rows if product_slug(row.model, row.storage, row.color) == slug), None)
 
 
 def _product_preview(product: ProductSummary) -> tuple[str, str]:
@@ -349,35 +373,42 @@ def render_index(
     meta = _meta_tags(
         title=title,
         description=description,
-        url=_product_url(product.id),
+        url=_product_url(product.slug),
         image=product.image_url or f"{base}/static/logo.png",
     )
     return html.replace(META_MARKER, meta, 1)
 
 
-@router.get("/", response_class=HTMLResponse)
-async def index(session: SessionDep, page: str | None = None, id: str | None = None) -> HTMLResponse:
-    product = None
-    if page == "products" and id and id.isdigit():
-        try:
-            product = await product_service.get_product_summary(session, int(id))
-        except NotFoundError:
-            product = None
+async def _page(session: AsyncSession, product: ProductSummary | None) -> HTMLResponse:
     models = await product_service.cheapest_in_stock_per_model(session)
     intro = await _load_intro(session, models)
     return HTMLResponse(render_index(product, models, intro), headers=NO_CACHE)
 
 
+@router.get("/", response_class=HTMLResponse)
+async def index(
+    session: SessionDep, page: str | None = None, id: str | None = None
+) -> Response:
+    # Old phone links (/?page=products&id=9) move to the phone's own address.
+    if page == "products" and id is not None:
+        product = await _product_or_none(session, int(id)) if id.isdigit() else None
+        if product is None:
+            return _not_found()
+        return RedirectResponse(_product_url(product.slug), status_code=301)
+    return await _page(session, None)
+
+
 @router.get("/sitemap.xml")
 async def sitemap(session: SessionDep) -> Response:
     base = settings.public_base_url
-    product_ids = (
-        await session.scalars(
-            select(Product.id).where(Product.is_active.is_(True)).order_by(Product.id)
-        )
-    ).all()
+    rows = await session.execute(
+        select(Product.model, Product.storage, Product.color)
+        .where(Product.is_active.is_(True))
+        .order_by(Product.id)
+    )
+    slugs = dict.fromkeys(product_slug(row.model, row.storage, row.color) for row in rows)
     urls = [f"{base}/", f"{base}/?page=products", f"{base}/?page=compare"]
-    urls += [_product_url(product_id) for product_id in product_ids]
+    urls += [_product_url(slug) for slug in slugs]
     body = "\n".join(f"  <url><loc>{xml_escape(url)}</loc></url>" for url in urls)
     xml = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -390,3 +421,13 @@ async def sitemap(session: SessionDep) -> Response:
 @router.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+# Last route: it catches every other one-segment path, and anything that isn't a phone is a 404.
+@router.get("/{slug}", response_class=HTMLResponse)
+async def product_page(session: SessionDep, slug: str) -> HTMLResponse:
+    product_id = await _product_id_for_slug(session, slug) if PRODUCT_SLUG.fullmatch(slug) else None
+    product = await _product_or_none(session, product_id) if product_id is not None else None
+    if product is None:
+        return _not_found()
+    return await _page(session, product)

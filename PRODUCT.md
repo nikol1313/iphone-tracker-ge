@@ -20,7 +20,7 @@ It keeps the price history. Store sites show today's price; this site shows ever
 
 ## Operating Context
 
-- Entry points: the Today page, a shared product link (`/?page=products&id=…`) with server-filled social previews, search.
+- Entry points: the Today page, a shared product link (`/iphone-17-pro-256gb-silver`) with server-filled social previews, search.
 - Pages: Today (overview), All iPhones (catalog + product detail with history chart and per-store table), Compare (two phones spec by spec with a weighted pick), Watchlist (tracked products and price alerts by email), About.
 
 ## Capabilities and Constraints

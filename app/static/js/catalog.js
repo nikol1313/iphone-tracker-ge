@@ -431,7 +431,7 @@ export function openProductInCatalog(productId, { updateHistory = true } = {}) {
   openProductDetail(product.id, { fromGrid: false });
 }
 
-/* All iPhones shows either the grid or one phone's page (history and stores); ?id= says which. */
+/* All iPhones shows either the grid or one phone's page (history and stores); the address says which. */
 const productsView = () => $('[data-page-view="products"]');
 const showingDetail = () => productsView().hasAttribute("data-detail");
 
@@ -456,8 +456,7 @@ export function closeProductDetail() {
     window.history.back();
     return;
   }
-  const url = new URL(window.location.href);
-  url.searchParams.delete("id");
+  const url = new URL("/?page=products", window.location.origin);
   window.history.replaceState({ page: "products" }, "", url);
   syncProductsView();
 }
