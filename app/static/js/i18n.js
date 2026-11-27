@@ -225,6 +225,7 @@ const en = {
 
   "stores.title": "Prices by store",
   "stores.description": "Always confirm the price on the store's site.",
+  "stores.store": "Store",
   "stores.summaryCheapest": "Cheapest: {price} · {store}",
   "stores.summaryStock": ({ count }) => `In stock at ${plural(count, "store", "stores")}`,
   "stores.summarySave": "Save up to {amount}",
@@ -571,6 +572,7 @@ const ka = {
 
   "stores.title": "ფასები მაღაზიების მიხედვით",
   "stores.description": "ყიდვამდე ფასი გადაამოწმეთ მაღაზიის საიტზე.",
+  "stores.store": "მაღაზია",
   "stores.summaryCheapest": "ყველაზე იაფი: {price} · {store}",
   "stores.summaryStock": "მარაგშია {count} მაღაზიაში",
   "stores.summarySave": "დაზოგე მაქს. {amount}",
