@@ -841,31 +841,63 @@ function renderListings(items) {
   $("#storesEmpty").hidden = Boolean(items?.length);
   if (!items?.length) {
     body.innerHTML = "";
+    $("#storesSummary").innerHTML = "";
     return;
   }
   // Listings arrive available-first, cheapest-first.
-  const best = items.find(item => item.is_available);
-  body.innerHTML = items.map(item => {
+  const inStock = items.filter(item => item.is_available);
+  const out = items.filter(item => !item.is_available);
+  const best = inStock[0];
+  const gap = item => best && item.currency === best.currency ? Number(item.current_price) - Number(best.current_price) : null;
+  const widest = Math.max(0, ...inStock.map(item => gap(item) || 0));
+  const row = item => {
     const isBest = item === best;
-    const difference = best && item.is_available && item.currency === best.currency
-      ? Number(item.current_price) - Number(best.current_price)
-      : null;
+    const difference = item.is_available ? gap(item) : null;
+    const stale = Date.now() - new Date(item.last_checked_at) > STALE_LISTING_MS;
+    const installment = item.installment_monthly != null ? (item.installment_months
+      ? t("stores.installmentTerm", { amount: money(item.installment_monthly), months: item.installment_months })
+      : t("stores.installment", { amount: money(item.installment_monthly) })) : "";
+    const priceNote = !item.is_available ? t("stores.lastKnown") : [
+      isBest && inStock.length > 1 ? t("stores.cheapest") : "",
+      difference ? `+${money(difference, item.currency)}` : "",
+      installment,
+    ].filter(Boolean).join(" · ");
     return `
-    <tr class="${isBest ? "best-offer" : ""}${item.is_available ? "" : " unavailable-offer"}">
-      <td>
+    <div class="store-offer${isBest ? " best" : ""}${item.is_available ? "" : " out"}">
+      <span class="store-offer-logo"><img src="/static/img/stores/${storeSlug(item.store_name)}.png" alt=""></span>
+      <div class="store-offer-name">
         <strong>${escapeHtml(item.store_name)}</strong>
-        ${item.variant_name ? `<small class="listing-title">${escapeHtml(item.variant_name)}</small>` : ""}
-      </td>
-      <td class="listing-price">${escapeHtml(money(item.current_price, item.currency))}${isBest && items.length > 1 ? `<span class="best-tag">${t("stores.cheapest")}</span>` : ""}${item.installment_monthly != null ? `<small class="listing-installment">${escapeHtml(item.installment_months
-          ? t("stores.installmentTerm", { amount: money(item.installment_monthly), months: item.installment_months })
-          : t("stores.installment", { amount: money(item.installment_monthly) }))}</small>` : ""}</td>
-      <td class="listing-diff">${difference ? `+${escapeHtml(money(difference, item.currency))}` : isBest ? "—" : ""}</td>
-      <td><span class="status ${item.is_available ? "" : "unavailable"}">${item.is_available ? t("stores.inStock") : t("stores.outOfStock")}</span></td>
-      <td title="${escapeHtml(dateTime(item.last_checked_at))}">${escapeHtml(relativeTime(item.last_checked_at))}</td>
-      <td><a class="store-link" href="${escapeHtml(safeUrl(item.product_url))}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(t("stores.openAt", { store: item.store_name }))}"><svg><use href="#i-external"/></svg></a></td>
-    </tr>`;
-  }).join("");
+        <small class="store-offer-stock${item.is_available ? " in" : ""}">${item.is_available ? t("stores.inStock") : t("stores.outOfStock")}</small>
+      </div>
+      <div class="store-offer-price">
+        <strong>${escapeHtml(money(item.current_price, item.currency))}</strong>
+        ${priceNote ? `<small>${escapeHtml(priceNote)}</small>` : ""}
+      </div>
+      <div class="store-offer-gap">${isBest ? '<i class="gap-dot"></i>' : difference > 0 && widest ? `<i class="gap-bar" style="width:${Math.max(4, difference * 100 / widest).toFixed(0)}%"></i>` : ""}</div>
+      <div class="store-offer-checked" title="${escapeHtml(dateTime(item.last_checked_at))}">
+        ${escapeHtml(t("stores.checkedAgo", { time: relativeTime(item.last_checked_at) }))}
+        ${stale && item.is_available ? `<span class="stale-tag">${escapeHtml(t("stores.stale"))}</span>` : ""}
+      </div>
+      <a class="store-offer-go${isBest ? " primary" : ""}" href="${escapeHtml(safeUrl(item.product_url))}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(t("stores.openAt", { store: item.store_name }))}">${escapeHtml(t(isBest ? "stores.go" : "stores.goShort"))}</a>
+    </div>`;
+  };
+  $("#storesSummary").innerHTML = best ? [
+    `<span class="summary-chip good">${escapeHtml(t("stores.summaryCheapest", { price: money(best.current_price, best.currency), store: best.store_name }))}</span>`,
+    `<span class="summary-chip">${escapeHtml(t("stores.summaryStock", { count: inStock.length }))}</span>`,
+    widest >= 1 ? `<span class="summary-chip">${escapeHtml(t("stores.summarySave", { amount: money(widest, best.currency) }))}</span>` : "",
+  ].join("") : "";
+  body.innerHTML = `
+    <div class="store-offers">${inStock.map(row).join("")}</div>
+    ${out.length ? `<details class="store-offers-out"${inStock.length ? "" : " open"}>
+      <summary>${escapeHtml(t("stores.outGroup", { count: out.length }))}<svg aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+      <div class="store-offers">${out.map(row).join("")}</div>
+    </details>` : ""}`;
 }
+
+// A listing the scraper hasn't seen for this long may no longer have this price (crawls run twice a day).
+const STALE_LISTING_MS = 2 * 24 * 60 * 60 * 1000;
+// "Extra.ge" -> "extra-ge", the name of its icon in static/img/stores, as pages.py names it.
+const storeSlug = name => String(name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 // Redraw everything this module renders, keeping filters, scroll and the open phone.
 renderIntro();
