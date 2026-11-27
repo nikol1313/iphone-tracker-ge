@@ -118,6 +118,15 @@ main { min-height: calc(100vh / var(--zoom) - 150px); padding: 28px 0 0; }
 .change-pill { grid-area: pill; padding: 3px 9px; border-radius: 999px; font-size: .78rem; font-weight: 600; white-space: nowrap; }
 .change-pill.drop { color: var(--good); background: var(--good-soft); }
 .change-pill.rise { color: var(--rise); background: color-mix(in srgb, var(--rise) 14%, transparent); }
+/* A model with several changed configs: one summary row that opens to them. */
+.change-group { border-bottom: 1px solid var(--line); }
+.change-summary { list-style: none; border-bottom: 0; }
+.change-summary::-webkit-details-marker { display: none; }
+.change-summary svg { width: 14px; height: 14px; margin-left: 6px; vertical-align: -2px; fill: none; stroke: var(--muted); stroke-width: 2; transition: transform 150ms ease; }
+details[open] > .change-summary svg { transform: rotate(180deg); }
+.change-configs { margin: 0 0 12px; padding: 0 12px; list-style: none; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-ctl); }
+.change-configs .model-price { padding: 10px 0; }
+.change-configs .model-price:last-child { border-bottom: 0; }
 .fold-toggle { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 44px; margin-top: 16px; color: var(--ink-2); background: transparent; border: 1px solid var(--line); border-radius: var(--r-ctl); font-size: .9rem; font-weight: 500; cursor: pointer; }
 .fold-toggle:hover { color: var(--ink); border-color: var(--line-strong); }
 .fold-toggle[hidden] { display: none; }
