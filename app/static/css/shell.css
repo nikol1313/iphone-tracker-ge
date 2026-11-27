@@ -69,11 +69,11 @@ main { min-height: calc(100vh / var(--zoom) - 150px); padding: 28px 0 0; }
 .intro-store-gap.best { color: var(--good); font-weight: 600; }
 /* Signature: where this store sits between today's cheapest and priciest, one shared scale. */
 .intro-store-range { width: 34%; }
-.spread { position: relative; display: block; height: 6px; background: var(--line-strong); border-radius: 3px; }
-.spread i { position: absolute; top: -4px; left: var(--pos); width: 3px; height: 14px; margin-left: -1.5px; background: var(--ink); border-radius: 1px; animation: spread-in 700ms var(--ease) backwards; }
+/* A bar as long as the extra this store charges over the cheapest; the cheapest is a green dot. */
+.spread { display: block; height: 8px; }
+.spread i { display: block; width: max(var(--pos), 8px); height: 100%; background: color-mix(in srgb, var(--rise) 60%, var(--line-strong)); border-radius: 4px; animation: spread-in 700ms var(--ease) backwards; }
 .best .spread i, tr:has(.best) .spread i { background: var(--good); }
-@keyframes spread-in { from { left: 0; opacity: 0; } }
-.intro-trend { display: grid; grid-template-rows: 1fr auto; min-width: 0; margin: 0; padding: 14px 16px 12px; color: var(--muted); font-size: .8rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-panel); }
+@keyframes spread-in { from { width: 8px; opacity: 0; } }
 .intro-trend[hidden] { display: none; }
 .intro-chart { display: block; width: 100%; height: 100%; min-height: 240px; overflow: visible; }
 /* Things only the price history knows: "Lowest price in 30 days", "Alta usually cuts on Fridays". */
