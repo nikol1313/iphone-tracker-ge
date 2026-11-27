@@ -489,11 +489,11 @@ async def model_daily_best_prices(
 
 async def model_store_prices(
     session: AsyncSession, model: str, storage: str | None, currency: str
-) -> list[tuple[str, Decimal]]:
-    """Each store's cheapest in-stock price for a model and storage (any color), cheapest first."""
-    lowest = func.min(ProductListing.current_price)
+) -> list[tuple[str, Decimal, str]]:
+    """Each store's cheapest in-stock price for a model and storage (any color), with that
+    listing's page, cheapest first."""
     rows = await session.execute(
-        select(Store.title, lowest)
+        select(Store.title, ProductListing.current_price, ProductListing.product_url)
         .join(ProductListing, ProductListing.store_id == Store.id)
         .join(Product, Product.id == ProductListing.product_id)
         .where(
@@ -504,10 +504,12 @@ async def model_store_prices(
             ProductListing.is_available.is_(True),
             ProductListing.currency == currency,
         )
-        .group_by(Store.title)
-        .order_by(lowest, Store.title)
+        .order_by(ProductListing.current_price, Store.title, ProductListing.id)
     )
-    return [(title, price) for title, price in rows.all()]
+    cheapest: dict[str, tuple[str, Decimal, str]] = {}
+    for title, price, url in rows.all():
+        cheapest.setdefault(title, (title, price, url))
+    return list(cheapest.values())
 
 
 async def store_drop_weekday(session: AsyncSession) -> tuple[str, int] | None:
