@@ -725,42 +725,112 @@ function trendNote(compact, x) {
   return `<tspan x="${x}">${escapeHtml(words.slice(0, half).join(" "))}</tspan><tspan x="${x}" dy="1.3em">${escapeHtml(words.slice(half).join(" "))}</tspan>`;
 }
 
+const plainNumber = value => new Intl.NumberFormat("en", { maximumFractionDigits: 0 }).format(Math.round(value));
+
+// Round price steps for the gridlines: the smallest that leaves at most four lines.
+function priceTicks(low, high) {
+  const step = [10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000].find(s => (high - low) / s <= 3) || 10000;
+  const ticks = [];
+  for (let v = Math.ceil(low / step) * step; v <= high; v += step) ticks.push(v);
+  return ticks;
+}
+
+// The best price over time as a stepped line with gridlines, dates, the period's high and today's
+// price marked, and a crosshair box on hover or tap. Drawn in the SVG's own pixels.
 function renderTrend(svg, series) {
   const { W, H } = chartSize(svg);
-  const left = 40, right = 40, top = 56, bottom = 56;
+  const compact = W < 480;
+  const left = 8, right = 56, top = 40, bottom = 30;
   const plotW = W - left - right, plotH = H - top - bottom;
   const values = series.map(point => point.price);
   const min = Math.min(...values);
   const max = Math.max(...values);
-  const padding = Math.max((max - min) * .08, 1);
+  const padding = Math.max((max - min) * .15, 10);
+  const low = min - padding, high = max + padding;
   const start = new Date(series[0].recorded_at).getTime();
   const end = Math.max(Date.now(), new Date(series.at(-1).recorded_at).getTime());
   const x = time => left + (time - start) * plotW / (end - start || 1);
-  const y = price => top + (max + padding - price) * plotH / (max - min + 2 * padding);
+  const y = price => top + (high - price) * plotH / (high - low);
   const times = series.map(point => new Date(point.recorded_at).getTime());
   // Stepped: the best price holds until the next change, then to today.
-  const path = series.map((point, i) => {
-    const px = x(times[i]);
-    const py = y(point.price);
-    return i === 0 ? `M ${px} ${py}` : `H ${px} V ${py}`;
-  }).join(" ") + ` H ${x(end)}`;
-  const labels = turningPoints(series).map(i => {
-    const point = series[i];
-    const px = x(times[i]);
-    const py = y(point.price);
-    const isLow = i > 0 ? point.price < series[i - 1].price : point.price < series[i + 1].price;
-    const anchor = px < left + 90 ? "start" : px > W - right - 90 ? "end" : "middle";
-    const priceY = isLow ? py + 24 : py - 26;
-    return `
-      <circle class="chart-snapshot" cx="${px}" cy="${py}" r="5"><title>${point.store_name ? `${escapeHtml(point.store_name)} — ` : ""}${escapeHtml(money(point.price, point.currency))} — ${escapeHtml(dateTime(point.recorded_at))}</title></circle>
-      <text class="chart-point-price" text-anchor="${anchor}" x="${px}" y="${priceY}">${escapeHtml(money(point.price, point.currency))}</text>
-      <text class="chart-point-date" text-anchor="${anchor}" x="${px}" y="${priceY + 16}">${escapeHtml(shortDate(point.recorded_at))}${point.store_name ? ` · ${escapeHtml(point.store_name)}` : ""}</text>`;
-  }).join("");
+  const line = series.map((point, i) => i === 0 ? `M ${x(times[i])} ${y(point.price)}` : `H ${x(times[i])} V ${y(point.price)}`).join(" ") + ` H ${x(end)}`;
+  const floor = top + plotH;
+  const grid = priceTicks(low, high).map(v => `
+    <line class="chart-grid" x1="${left}" x2="${W - right}" y1="${y(v)}" y2="${y(v)}"/>
+    <text class="chart-tick" x="${W - right + 8}" y="${y(v) + 4}">${plainNumber(v)}</text>`).join("");
+  const dateCount = compact ? 3 : 5;
+  const dates = Array.from({ length: dateCount }, (_, i) => start + (end - start) * i / (dateCount - 1)).map((time, i) => `
+    <text class="chart-tick" text-anchor="${i === 0 ? "start" : i === dateCount - 1 ? "end" : "middle"}" x="${x(time)}" y="${H - 8}">${i === dateCount - 1 ? escapeHtml(t("chart.today")) : escapeHtml(shortDate(time))}</text>`).join("");
+  const last = series.at(-1);
+  const todayY = y(last.price);
+  const peak = values.indexOf(max);
+  // The high gets a label unless today is the high; today's label sits above the dot unless that's off the top.
+  const highMark = max > last.price ? `
+    <circle class="chart-high" cx="${x(times[peak])}" cy="${y(max)}" r="4"/>
+    <text class="chart-flag chart-flag-high" text-anchor="${x(times[peak]) < left + 60 ? "start" : "middle"}" x="${x(times[peak])}" y="${y(max) - 12}">${escapeHtml(t("chart.high", { price: plainNumber(max) }))}</text>` : "";
+  const todayLabelY = todayY - top > 28 ? todayY - 14 : todayY + 22;
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   svg.innerHTML = `
-    <path class="chart-line" d="${path}"/>
-    ${labels}
-    <text class="chart-label" text-anchor="end" x="${W - right}" y="${H - 8}">${t("chart.today")}</text>`;
+    ${grid}
+    <line class="chart-axis" x1="${left}" x2="${W - right}" y1="${floor}" y2="${floor}"/>
+    <path class="chart-area" d="${line} V ${floor} H ${left} Z"/>
+    <path class="chart-line chart-trend" d="${line}"/>
+    ${highMark}
+    <circle class="chart-today-halo" cx="${x(end)}" cy="${todayY}" r="10"/>
+    <circle class="chart-today" cx="${x(end)}" cy="${todayY}" r="5"/>
+    <text class="chart-flag chart-flag-today" text-anchor="end" x="${x(end) - 4}" y="${todayLabelY}">${escapeHtml(t("chart.todayPrice", { price: plainNumber(last.price) }))}</text>
+    ${dates}
+    <g class="chart-hover" hidden>
+      <line class="chart-crosshair" y1="${top - 8}" y2="${floor}"/>
+      <circle class="chart-hover-dot" r="5"/>
+      <rect class="chart-hover-box" height="46" rx="8"/>
+      <text class="chart-hover-date"></text>
+      <text class="chart-hover-price"></text>
+    </g>`;
+  svg.trend = { series, times, x, y, left, right: W - right, start, end, W };
+  if (svg.dataset.hover) return;
+  // Bound once per svg; each redraw swaps svg.trend.
+  svg.dataset.hover = "1";
+  const show = event => {
+    const { series: points, times: at, x: px, y: py, left: from, right: to, start: first, end: last, W: width } = svg.trend;
+    const box = svg.getBoundingClientRect();
+    const cx = Math.min(to, Math.max(from, (event.clientX - box.left) * width / box.width));
+    const time = first + (cx - from) * (last - first) / (to - from || 1);
+    let index = 0;
+    while (index + 1 < at.length && at[index + 1] <= time) index++;
+    const point = points[index];
+    const hover = svg.querySelector(".chart-hover");
+    const cy = py(point.price);
+    // SVG elements have no .hidden property; the attribute is what the CSS reads.
+    hover.removeAttribute("hidden");
+    hover.querySelector(".chart-crosshair").setAttribute("x1", cx);
+    hover.querySelector(".chart-crosshair").setAttribute("x2", cx);
+    const dot = hover.querySelector(".chart-hover-dot");
+    dot.setAttribute("cx", cx);
+    dot.setAttribute("cy", cy);
+    const label = [shortDate(time), point.store_name].filter(Boolean).join(" · ");
+    const boxWidth = Math.max(110, label.length * 7 + 24);
+    const bx = Math.min(to - boxWidth, Math.max(from, cx - boxWidth / 2));
+    const by = Math.max(0, cy - 64);
+    const rect = hover.querySelector(".chart-hover-box");
+    rect.setAttribute("x", bx);
+    rect.setAttribute("y", by);
+    rect.setAttribute("width", boxWidth);
+    const date = hover.querySelector(".chart-hover-date");
+    date.setAttribute("x", bx + 12);
+    date.setAttribute("y", by + 18);
+    date.textContent = label;
+    const price = hover.querySelector(".chart-hover-price");
+    price.setAttribute("x", bx + 12);
+    price.setAttribute("y", by + 37);
+    price.textContent = money(point.price, point.currency);
+  };
+  svg.addEventListener("pointermove", show);
+  svg.addEventListener("pointerdown", show);
+  svg.addEventListener("pointerleave", () => {
+    const hover = svg.querySelector(".chart-hover");
+    hover?.setAttribute("hidden", "");
+  });
 }
 
 function renderCurrentSnapshot(svg, product) {

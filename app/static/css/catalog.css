@@ -80,9 +80,12 @@
 .chart-annotation { fill: var(--muted); font: 24px var(--font); }
 .chart-note { fill: var(--ink); font: 500 17px var(--font); }
 .chart-label { fill: var(--muted); font: 14px var(--font); }
-.chart-point-price { fill: var(--ink); font: 500 15px var(--font); }
-.chart-point-price, .chart-point-date { animation: ink-bleed 400ms 800ms ease backwards; }
-.chart-point-date { fill: var(--muted); font: 12px var(--font); }
+/* Price trend: gridlines and dates, an amber stepped line over a flat tint, the high in red, today in green. */
+.chart-grid { stroke: var(--line); stroke-width: 1; }
+.chart-axis { stroke: var(--line-strong); stroke-width: 1; }
+.chart-tick { fill: var(--muted); font: 12px var(--font); }
+.chart-trend { stroke: var(--amber); stroke-width: 2.5; stroke-linejoin: round; }
+.chart-area { fill: var(--amber); fill-opacity: .08; stroke: none; }
 .chart-empty { position: absolute; inset: 0; display: grid; place-items: center; padding: 20px; color: var(--muted); font-size: .88rem; text-align: center; }
 .chart-empty[hidden] { display: none; }
 /* "Buy now or wait?": the tint and its hairline say which. */
