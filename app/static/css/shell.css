@@ -89,7 +89,11 @@ main { min-height: calc(100vh / var(--zoom) - 150px); padding: 28px 0 0; }
 /* Things only the price history knows: "Lowest price in 30 days", "Alta usually cuts on Fridays". */
 .intro-insights { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .intro-insights[hidden] { display: none; }
-.intro-insights li { padding: 4px 10px; color: var(--ink-2); font-size: .82rem; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; }
+/* Status tags, not buttons: a colored dot, readable ink, no border. */
+.intro-insights li { display: inline-flex; align-items: center; gap: 8px; padding: 5px 11px 5px 9px; color: var(--ink); font-size: .82rem; font-weight: 500; background: var(--surface-2); border-radius: 999px; }
+.intro-insights li::before { content: ""; flex: none; width: 8px; height: 8px; background: var(--amber); border-radius: 50%; }
+.intro-insights li[data-insight="low"] { color: var(--good); background: var(--good-soft); }
+.intro-insights li[data-insight="low"]::before { background: var(--good); }
 
 /* Today's lists: three working columns side by side instead of one narrow strip. */
 .overview-cols { width: min(var(--wide), calc(100% - 48px)); display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0 28px; margin: 0 auto 64px; padding-top: 8px; border-top: 1px solid var(--line); }
