@@ -146,6 +146,7 @@ tbody tr:hover { background: var(--surface); }
 .gap-bar { display: block; height: 8px; background: color-mix(in srgb, var(--rise) 60%, var(--line-strong)); border-radius: 4px; }
 .gap-dot { display: block; width: 8px; height: 8px; background: var(--good); border-radius: 50%; }
 .store-offer-checked { color: var(--muted); font-size: .82rem; }
+.stale-tag { display: inline-block; margin-top: 4px; padding: 2px 8px; color: var(--amber); background: var(--warn-soft); border-radius: 999px; font-size: .75rem; font-weight: 600; }
 .store-offer-go { justify-self: end; padding: 7px 14px; color: var(--ink-2); border: 1px solid var(--line-strong); border-radius: 999px; font-size: .85rem; font-weight: 600; white-space: nowrap; text-decoration: none; }
 .store-offer-go::after { content: "\00a0↗"; }
 .store-offer-go:hover { color: var(--ink); background: var(--surface-2); }

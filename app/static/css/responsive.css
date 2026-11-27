@@ -31,6 +31,15 @@
   .model-price, .change-summary { grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: "photo name price" "photo meta pill"; }
   .change-configs .model-price { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name price" "meta pill"; }
   .change-pill { justify-self: end; }
+  /* Store rows: logo, name, price on top; when it was checked and the button underneath. */
+  .store-offer { grid-template-columns: 36px minmax(0, 1fr) minmax(0, 45%); grid-template-areas: "logo name price" "logo checked go"; gap: 6px 12px; padding: 12px 14px; }
+  .store-offer-logo { grid-area: logo; align-self: start; }
+  .store-offer-name { grid-area: name; }
+  .store-offer-price { grid-area: price; text-align: right; }
+  .store-offer-gap { display: none; }
+  .store-offer-checked { grid-area: checked; }
+  .stale-tag { display: block; padding: 0; background: none; }
+  .store-offer-go { grid-area: go; }
   .section-heading { align-items: flex-start; flex-direction: column; gap: 8px; margin-bottom: 16px; }
   .catalog-meta { align-items: flex-start; }
   .catalog-filters { display: grid; grid-template-columns: 1fr 1fr; }
