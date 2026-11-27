@@ -86,6 +86,12 @@
 .chart-tick { fill: var(--muted); font: 12px var(--font); }
 .chart-trend { stroke: var(--amber); stroke-width: 2.5; stroke-linejoin: round; }
 .chart-area { fill: var(--amber); fill-opacity: .08; stroke: none; }
+.chart-high { fill: var(--rise); }
+.chart-today { fill: var(--good); }
+.chart-today-halo { fill: var(--good); fill-opacity: .2; }
+.chart-flag { font: 600 12px var(--font); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+.chart-flag-high { fill: var(--rise); }
+.chart-flag-today { fill: var(--good); }
 .chart-empty { position: absolute; inset: 0; display: grid; place-items: center; padding: 20px; color: var(--muted); font-size: .88rem; text-align: center; }
 .chart-empty[hidden] { display: none; }
 /* "Buy now or wait?": the tint and its hairline say which. */
