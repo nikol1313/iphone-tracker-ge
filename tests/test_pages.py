@@ -288,6 +288,8 @@ async def test_headline_lists_every_stores_price_with_its_gap(
     # Cheapest sits at the left of today's spread, priciest at the right.
     assert table.count('style="--pos:0%"') == 1
     assert table.count('style="--pos:100%"') == 1
+    # Each row opens that store's own page for the phone.
+    assert '<a class="store-go" href="https://b.example/phone" target="_blank"' in table
 
 
 @pytest.mark.asyncio

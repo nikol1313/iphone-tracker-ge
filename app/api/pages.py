@@ -149,8 +149,8 @@ class Intro:
     # (day end, the model's best price), for each of the last TREND_WINDOW days, oldest first.
     history: Sequence[tuple[datetime, Decimal]] = ()
     storage: str | None = None
-    # (store, cheapest in-stock price) for the headline's model and storage, cheapest first.
-    store_prices: Sequence[tuple[str, Decimal]] = ()
+    # (store, cheapest in-stock price, its page) for the headline's model and storage, cheapest first.
+    store_prices: Sequence[tuple[str, Decimal, str]] = ()
     # (store, weekday with Monday = 0) when one store's price cuts cluster on a weekday.
     drop_weekday: tuple[str, int] | None = None
 
@@ -165,12 +165,22 @@ def _store_logo(store: str) -> str:
 def _store_table(intro: Intro) -> str:
     """Every store's price for the headline phone, with each one's gap to the cheapest."""
     cheapest = intro.store_prices[0][1]
-    spread = max(price for _, price in intro.store_prices) - cheapest
+    spread = max(price for _, price, _ in intro.store_prices) - cheapest
 
-    def place(price: Decimal) -> str:
-        # Where this store sits between today's cheapest (0%) and priciest (100%).
+    def place(price: Decimal, url: str) -> str:
+        # Where this store sits between today's cheapest (0%) and priciest (100%),
+        # and, on hover, a box that opens the phone on the store's site.
         pos = (price - cheapest) / spread * 100 if spread else 0
-        return f'<td class="intro-store-range"><span class="spread"><i style="--pos:{pos:.0f}%"></i></span></td>'
+        link = (
+            f'<a class="store-go" href="{escape(url)}" target="_blank" rel="noopener noreferrer nofollow" '
+            '><span data-i18n="intro.openStore">საიტზე გადასვლა</span></a>'
+            if url.startswith(("https://", "http://"))
+            else ""
+        )
+        return (
+            f'<td class="intro-store-range"><span class="spread"><i style="--pos:{pos:.0f}%"></i></span>'
+            f"{link}</td>"
+        )
 
     rows = "".join(
         f'<tr tabindex="0"><th scope="row">{_store_logo(store)}{escape(store)}</th>'
@@ -180,10 +190,10 @@ def _store_table(intro: Intro) -> str:
             if price > cheapest
             else '<td class="intro-store-gap best" data-i18n="intro.cheapest">ყველაზე იაფი</td>'
         )
-        + place(price)
+        + place(price, url)
         + "</tr>"
         # The headline's store leads a tie for cheapest, as the headline names it.
-        for store, price in sorted(intro.store_prices, key=lambda row: (row[1], row[0] != intro.store))
+        for store, price, url in sorted(intro.store_prices, key=lambda row: (row[1], row[0] != intro.store))
     )
     caption = " ".join(part for part in (intro.model, intro.storage) if part)
     return f'<table class="intro-stores" id="introStores"><caption>{escape(caption)}</caption><tbody>{rows}</tbody></table>'
