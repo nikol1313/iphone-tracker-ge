@@ -76,3 +76,21 @@
   src: url(/static/fonts/notoserifgeorgian-normal-georgian.woff2) format('woff2');
   unicode-range: U+0589, U+10A0-10FF, U+1C90-1CBA, U+1CBD-1CBF, U+205A, U+2D00-2D2F, U+2E31;
 }
+/* ₾ alone: Instrument Sans and the Georgian subset above lack it, so browsers borrowed a system font
+   that drew or clipped it differently on each device. Cut from Noto Sans Georgian (same licence). */
+@font-face {
+  font-family: 'Noto Sans Georgian';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/static/fonts/lari-regular.woff2) format('woff2');
+  unicode-range: U+20BE;
+}
+@font-face {
+  font-family: 'Noto Sans Georgian';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(/static/fonts/lari-bold.woff2) format('woff2');
+  unicode-range: U+20BE;
+}
