@@ -126,6 +126,10 @@ main { min-height: calc(100vh / var(--zoom) - 150px); padding: 28px 0 0; }
 details[open] > .change-summary svg { transform: rotate(180deg); }
 .change-configs { margin: 0 0 12px; padding: 0 12px; list-style: none; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-ctl); }
 .change-configs .model-price { padding: 10px 0; }
+/* Configs inside a group share the group's photo. */
+.change-configs .model-price { grid-template-columns: minmax(0, 1fr) auto minmax(5.5rem, auto); grid-template-areas: "name pill price" "meta pill price"; }
+.row-photo { grid-area: photo; display: grid; place-items: center; width: 40px; height: 40px; overflow: hidden; background: var(--photo); border-radius: var(--r-ctl); }
+.row-photo img { width: 100%; height: 100%; object-fit: contain; }
 .change-configs .model-price:last-child { border-bottom: 0; }
 .color-name { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 /* Swatch colors by the names stores use; an unknown name shows an empty ring. */

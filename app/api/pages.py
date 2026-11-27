@@ -94,6 +94,16 @@ def _percent(change: Decimal, base: Decimal) -> str:
     return f"{share}%" if share else "<1%"
 
 
+def _row_photo(image_url: str | None) -> str:
+    # Same as catalog.js rowPhoto: the store's photo, or an empty frame to keep rows aligned.
+    if not image_url or not image_url.startswith(("https://", "http://")):
+        return '<span class="row-photo"></span>'
+    return (
+        f'<span class="row-photo"><img src="{escape(image_url)}" alt="" loading="lazy" '
+        'referrerpolicy="no-referrer"></span>'
+    )
+
+
 def _model_row(product: ProductSummary, *, hidden: bool) -> str:
     # The same markup catalog.js renderOverview writes, in Georgian.
     color = (

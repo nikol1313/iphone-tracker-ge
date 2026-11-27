@@ -359,3 +359,18 @@ async def test_headline_names_the_store_that_cuts_prices_on_one_weekday(
     html = (await client.get("/")).text
 
     assert '<li data-insight="weekday" data-store="Store A" data-day="4">Store A ფასებს ჩვეულებრივ პარასკევობით აკლებს</li>' in html
+
+
+def test_store_logos_and_row_photos() -> None:
+    from app.api.pages import _row_photo, _store_logo
+
+    # Every tracked store's saved icon is found by its name; an unknown store gets none.
+    for store in ("Zoommer", "Alta", "iSpace", "Elit Electronics", "Megatechnica", "Extra.ge",
+                  "PCShop", "Metromart", "Gstore", "Kontakt", "iCity"):
+        assert "/static/img/stores/" in _store_logo(store), store
+    assert _store_logo("Store B") == ""
+    assert '<img class="store-logo" src="/static/img/stores/extra-ge.png"' in _store_logo("Extra.ge")
+
+    assert _row_photo(None) == '<span class="row-photo"></span>'
+    assert _row_photo("javascript:alert(1)") == '<span class="row-photo"></span>'
+    assert 'src="https://cdn.example/a.webp?x=1&amp;y=2"' in _row_photo("https://cdn.example/a.webp?x=1&y=2")
