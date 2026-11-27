@@ -96,20 +96,30 @@ def _percent(change: Decimal, base: Decimal) -> str:
 
 def _model_row(product: ProductSummary, *, hidden: bool) -> str:
     # The same markup catalog.js renderOverview writes, in Georgian.
-    variant = " · ".join(part for part in (product.storage, product.color) if part)
-    meta = f"მარაგშია {product.available_listing_count} მაღაზიაში"
+    color = (
+        f'<span class="color-name"><span class="swatch" data-color="{escape(product.color)}" '
+        f'aria-hidden="true"></span>{escape(product.color)}</span>'
+        if product.color
+        else ""
+    )
+    variant = " · ".join(part for part in (escape(product.storage or ""), color) if part)
+    meta = (
+        f"{variant or 'მეხსიერება და ფერი მითითებული არ არის'}"
+        f" · {product.available_listing_count} მაღაზია"
+    )
+    pill = ""
     week_ago = product.price_week_ago
     if week_ago is not None and week_ago - product.lowest_price >= week_ago * Decimal("0.01"):
         change = week_ago - product.lowest_price
-        drop = f"−{_price(change, product.currency)} (−{_percent(change, week_ago)}) ამ კვირაში"
-        meta += f' · <span class="card-change drop">{escape(drop)}</span>'
+        drop = f"−{_price(change, product.currency)} · −{_percent(change, week_ago)}"
+        pill = f'<span class="change-pill drop">{escape(drop)}</span>'
     return (
         f'<li class="model-price" data-model="{escape(product.model)}" '
         f'data-product-id="{product.id}" tabindex="0"{" hidden" if hidden else ""}>'
-        f'<span class="model-price-name">{escape(_phone_name(product))}'
-        f"<small>{escape(variant or 'მეხსიერება და ფერი მითითებული არ არის')}</small></span>"
-        f'<span class="model-price-value">{escape(_price(product.lowest_price, product.currency))}</span>'
-        f'<span class="model-price-meta">{meta}</span></li>'
+        f"{_row_photo(product.image_url)}"
+        f'<span class="model-price-name">{escape(_phone_name(product))}</span>'
+        f'<span class="model-price-meta">{meta}</span>{pill}'
+        f'<span class="model-price-value">{escape(_price(product.lowest_price, product.currency))}</span></li>'
     )
 
 

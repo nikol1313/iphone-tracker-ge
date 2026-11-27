@@ -408,9 +408,11 @@ export function renderOverview() {
   list.innerHTML = models.length
     ? shown.map(product => `
       <li class="model-price" data-model="${escapeHtml(product.model)}" data-product-id="${product.id}" tabindex="0">
-        <span class="model-price-name">${escapeHtml(productName(product))}<small>${escapeHtml(variant(product))}</small></span>
+        ${rowPhoto(product)}
+        <span class="model-price-name">${escapeHtml(productName(product))}</span>
+        <span class="model-price-meta">${variantMeta(product.storage, product.color ? [product.color] : [])} · ${escapeHtml(t("card.stores", { count: product.available_listing_count }))}</span>
+        ${weeklyDropAmount(product) ? changePill(-weeklyDropAmount(product), product.price_week_ago, product.currency || "GEL") : ""}
         <span class="model-price-value">${escapeHtml(money(product.lowest_price, product.currency || "GEL"))}</span>
-        <span class="model-price-meta">${t("card.inStockAt", { count: product.available_listing_count })}${weekDrop(product) ? ` · ${weekDrop(product)}` : ""}</span>
       </li>`).join("")
     : `<li class="empty-state">${t("models.empty")}</li>`;
   list.removeAttribute("data-server-rendered");

@@ -165,10 +165,13 @@ async def test_index_lists_cheapest_price_per_model(
     assert "<!--server-models-->" not in html
     assert 'data-server-rendered' in html
     assert f'data-product-id="{product["id"]}" tabindex="0">' in html
-    assert '<span class="model-price-name">iPhone 17 Pro<small>256GB · Natural Titanium</small></span>' in html
+    assert '<span class="model-price-name">iPhone 17 Pro</span>' in html
     assert '<span class="model-price-value">3,199 ₾</span>' in html
-    # Each row names the store with the price.
-    assert '<span class="model-price-meta">მარაგშია 1 მაღაზიაში</span>' in html
+    assert (
+        '<span class="model-price-meta">256GB · <span class="color-name">'
+        '<span class="swatch" data-color="Natural Titanium" aria-hidden="true"></span>'
+        "Natural Titanium</span> · 1 მაღაზია</span>"
+    ) in html
     assert "model-price-store" not in html
     # The only model in stock leads the headline, with its cheapest store.
     assert (
@@ -226,7 +229,7 @@ def test_index_folds_the_model_list_like_the_page() -> None:
     html = render_index(None, models)
 
     # Newest first, with 17 before 9 (natural order), and three rows past the fold hidden.
-    assert html.index("iPhone 17<small>") < html.index("iPhone 9<small>")
+    assert html.index("iPhone 17</span>") < html.index("iPhone 9</span>")
     assert html.count('tabindex="0" hidden>') == 3
     assert "<span>ყველა 9 მოდელის ჩვენება</span>" in html
     assert 'aria-expanded="false"><span>' in html
@@ -329,8 +332,8 @@ def test_prices_are_whole_lari_and_drops_show_a_percentage() -> None:
     row = _model_row(product, hidden=False)
 
     assert "Zoommer" not in row
-    assert "მარაგშია 2 მაღაზიაში" in row
-    assert "−630 ₾ (−9%) ამ კვირაში" in row
+    assert "2 მაღაზია" in row
+    assert '<span class="change-pill drop">−630 ₾ · −9%</span>' in row
 
 
 @pytest.mark.asyncio
