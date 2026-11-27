@@ -127,6 +127,26 @@ details[open] > .change-summary svg { transform: rotate(180deg); }
 .change-configs { margin: 0 0 12px; padding: 0 12px; list-style: none; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-ctl); }
 .change-configs .model-price { padding: 10px 0; }
 .change-configs .model-price:last-child { border-bottom: 0; }
+.color-name { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+/* Swatch colors by the names stores use; an unknown name shows an empty ring. */
+.swatch { width: 9px; height: 9px; border-radius: 50%; background: var(--swatch, transparent); box-shadow: 0 0 0 1px var(--line-strong); }
+.swatch:is([data-color="Black" i], [data-color="Space Black" i], [data-color="Black Titanium" i]) { --swatch: #2b2b2b; }
+.swatch:is([data-color="White" i], [data-color="Star White" i], [data-color="Cloud White" i]) { --swatch: #f2efe8; }
+.swatch:is([data-color="Silver" i], [data-color="Natural Titanium" i]) { --swatch: #d8d8d6; }
+.swatch[data-color="Burgundy" i] { --swatch: #7a2e36; }
+.swatch[data-color="Glacier" i] { --swatch: #cfe0e8; }
+.swatch[data-color="Night Sky" i] { --swatch: #2c3550; }
+.swatch[data-color="Deep Blue" i] { --swatch: #2f3e5c; }
+.swatch:is([data-color="Blue" i], [data-color="Ultramarine" i]) { --swatch: #5b6fd6; }
+.swatch:is([data-color="Sky Blue" i], [data-color="Mist Blue" i]) { --swatch: #a9c4dc; }
+.swatch[data-color="Cosmic Orange" i] { --swatch: #e0773a; }
+.swatch[data-color="Light Gold" i] { --swatch: #e6d3a8; }
+.swatch[data-color="Sage" i] { --swatch: #b5bfa1; }
+.swatch[data-color="Green" i] { --swatch: #9fc29a; }
+.swatch[data-color="Teal" i] { --swatch: #6fa8a6; }
+.swatch:is([data-color="Pink" i], [data-color="Soft Pink" i]) { --swatch: #efc3c9; }
+.swatch[data-color="Lavender" i] { --swatch: #c3b7e0; }
+.swatch[data-color="Yellow" i] { --swatch: #f1de8a; }
 .fold-toggle { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 44px; margin-top: 16px; color: var(--ink-2); background: transparent; border: 1px solid var(--line); border-radius: var(--r-ctl); font-size: .9rem; font-weight: 500; cursor: pointer; }
 .fold-toggle:hover { color: var(--ink); border-color: var(--line-strong); }
 .fold-toggle[hidden] { display: none; }
