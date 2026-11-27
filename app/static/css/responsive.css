@@ -27,6 +27,10 @@
   .intro-stores th, .intro-stores td { padding: 0 6px; }
   .intro-stores th { white-space: nowrap; }
   .store-logo { margin-right: 6px; }
+  /* Rows: the change pill moves under the price so the name keeps its width. */
+  .model-price, .change-summary { grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: "photo name price" "photo meta pill"; }
+  .change-configs .model-price { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name price" "meta pill"; }
+  .change-pill { justify-self: end; }
   .section-heading { align-items: flex-start; flex-direction: column; gap: 8px; margin-bottom: 16px; }
   .catalog-meta { align-items: flex-start; }
   .catalog-filters { display: grid; grid-template-columns: 1fr 1fr; }
