@@ -92,6 +92,13 @@
 .chart-flag { font: 600 12px var(--font); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
 .chart-flag-high { fill: var(--rise); }
 .chart-flag-today { fill: var(--good); }
+.chart-hover[hidden] { display: none; }
+.chart-crosshair { stroke: var(--ink-2); stroke-dasharray: 3 4; }
+.chart-hover-dot { fill: var(--bg); stroke: var(--ink); stroke-width: 2; }
+.chart-hover-box { fill: var(--surface-2); stroke: var(--line-strong); }
+.chart-hover-date { fill: var(--muted); font: 12px var(--font); }
+.chart-hover-price { fill: var(--ink); font: 700 15px var(--font); }
+#priceChart, .intro-chart { touch-action: pan-y; }
 .chart-empty { position: absolute; inset: 0; display: grid; place-items: center; padding: 20px; color: var(--muted); font-size: .88rem; text-align: center; }
 .chart-empty[hidden] { display: none; }
 /* "Buy now or wait?": the tint and its hairline say which. */
