@@ -66,6 +66,36 @@ function bindSearchAndCatalog() {
   });
   // Today page: a model row opens the catalog filtered to that model, on its cheapest variant.
   const openModel = row => openProductInCatalog(row.dataset.productId);
+  // Store table: a tap on a row opens a small row under it with a "go to site" button,
+  // so nothing in the row is covered. Any other tap, or Escape, closes it.
+  const closeStoreRow = () => {
+    $$("#introStores tr.open").forEach(row => row.classList.remove("open"));
+    $$("#introStores .store-go-row").forEach(row => row.remove());
+  };
+  const toggleStoreRow = row => {
+    const wasOpen = row.classList.contains("open");
+    closeStoreRow();
+    const link = row.querySelector(".store-go");
+    if (wasOpen || !link) return;
+    row.classList.add("open");
+    const extra = document.createElement("tr");
+    extra.className = "store-go-row";
+    extra.innerHTML = `<td colspan="${row.cells.length}"></td>`;
+    extra.firstChild.append(link.cloneNode(true));
+    row.after(extra);
+  };
+  document.addEventListener("click", event => {
+    const row = event.target.closest("#introStores tbody tr:not(.store-go-row)");
+    if (row) toggleStoreRow(row);
+    else if (!event.target.closest(".store-go-row .store-go")) closeStoreRow();
+  });
+  $("#introStores").addEventListener("keydown", event => {
+    if ((event.key === "Enter" || event.key === " ") && event.target.matches("tbody tr:not(.store-go-row)")) {
+      event.preventDefault();
+      toggleStoreRow(event.target);
+    }
+  });
+  document.addEventListener("keydown", event => event.key === "Escape" && closeStoreRow());
   $("#modelPricesToggle").addEventListener("click", () => {
     state.modelsExpanded = !state.modelsExpanded;
     renderOverview();
