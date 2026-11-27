@@ -12,16 +12,24 @@ Collects prices from 10+ retailers, records every price change, and tells you wh
 
 ---
 
-
-
-
-https://github.com/user-attachments/assets/c69a6fb6-965b-44cf-97c7-aaf3850a00cb
-
-
-
-
-
-
+<table>
+  <tr>
+    <td><img src="docs/screenshots/1-today.webp" alt="Today page: cheapest iPhone 17 price at each store with a 30-day chart"></td>
+    <td><img src="docs/screenshots/2-all-iphones.webp" alt="All iPhones: search, filters and store price gaps"></td>
+  </tr>
+  <tr>
+    <td align="center">Today: the cheapest price at each store and its 30-day history</td>
+    <td align="center">All iPhones: search, filters and price drops</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/3-product-detail.webp" alt="Phone page: good-time-to-buy note and price history"></td>
+    <td><img src="docs/screenshots/4-compare.webp" alt="Compare: iPhone 17 vs iPhone 17 Pro, prices and spec table"></td>
+  </tr>
+  <tr>
+    <td align="center">Phone page: buy now or wait, with price history</td>
+    <td align="center">Compare two phones spec by spec</td>
+  </tr>
+</table>
 
 ## Features
 
@@ -29,8 +37,8 @@ https://github.com/user-attachments/assets/c69a6fb6-965b-44cf-97c7-aaf3850a00cb
 - Compare one phone across retailers: titles like "Apple iPhone 17 (8GB/256GB) - Sage" and
   "iPhone 17, 256 GB, Sage" are parsed into the same model, storage, and color.
 - Filter by model, storage, and stock; sort by price, store savings, or store count.
-- See the cheapest in-stock price per model on the Today page, the price changes of the last 24 hours,
-  weekly drops, and lowest-recorded tags on catalog cards.
+- See the cheapest in-stock price per model on the Today page, price changes over the last 24 hours
+  or the week, and lowest-recorded tags on catalog cards.
 - Share or bookmark a phone: each one has its own link (`/iphone-17-pro-256gb-silver`; old `/?page=products&id=9` links redirect), and the server
   fills in its title, price, and photo for Facebook and Messenger previews.
 - View price history for tracked products, with a "buy now or wait?" verdict that compares
