@@ -25,6 +25,8 @@
   .intro-price { font-size: 3rem; }
   .intro-store-range { width: 22%; }
   .intro-stores th, .intro-stores td { padding: 0 6px; }
+  .intro-stores th { white-space: nowrap; }
+  .store-logo { margin-right: 6px; }
   .section-heading { align-items: flex-start; flex-direction: column; gap: 8px; margin-bottom: 16px; }
   .catalog-meta { align-items: flex-start; }
   .catalog-filters { display: grid; grid-template-columns: 1fr 1fr; }

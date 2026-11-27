@@ -32,6 +32,9 @@ from app.services.normalization import product_slug
 router = APIRouter(include_in_schema=False)
 
 INDEX_PATH = Path(__file__).resolve().parent.parent / "static" / "index.html"
+# Store icons saved as static/img/stores/<slug>.png, e.g. "Extra.ge" -> extra-ge.png.
+STORE_LOGOS_DIR = INDEX_PATH.parent / "img" / "stores"
+STORE_LOGOS = frozenset(path.stem for path in STORE_LOGOS_DIR.glob("*.png"))
 NOT_FOUND_PATH = INDEX_PATH.with_name("404.html")
 # A phone's own address, e.g. /iphone-17-pro-256gb-silver; core.js matches the same shape.
 PRODUCT_SLUG = re.compile(r"iphone-[a-z0-9-]+")
@@ -152,6 +155,13 @@ class Intro:
     drop_weekday: tuple[str, int] | None = None
 
 
+def _store_logo(store: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", store.casefold()).strip("-")
+    if slug not in STORE_LOGOS:
+        return ""
+    return f'<img class="store-logo" src="/static/img/stores/{slug}.png" alt="" width="18" height="18">'
+
+
 def _store_table(intro: Intro) -> str:
     """Every store's price for the headline phone, with each one's gap to the cheapest."""
     cheapest = intro.store_prices[0][1]
@@ -163,7 +173,7 @@ def _store_table(intro: Intro) -> str:
         return f'<td class="intro-store-range"><span class="spread"><i style="--pos:{pos:.0f}%"></i></span></td>'
 
     rows = "".join(
-        f'<tr><th scope="row">{escape(store)}</th>'
+        f'<tr tabindex="0"><th scope="row">{_store_logo(store)}{escape(store)}</th>'
         f'<td class="intro-store-price">{escape(_price(price))}</td>'
         + (
             f'<td class="intro-store-gap">+{escape(_price(price - cheapest))}</td>'

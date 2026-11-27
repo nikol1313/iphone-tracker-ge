@@ -62,6 +62,7 @@ main { min-height: calc(100vh / var(--zoom) - 150px); padding: 28px 0 0; }
 .intro-stores tbody tr:last-child > * { border-bottom: 0; }
 .intro-stores tbody tr:hover > * { background: var(--surface); }
 .intro-stores th { font-weight: 500; text-align: left; }
+.store-logo { width: 18px; height: 18px; margin-right: 8px; vertical-align: -4px; border-radius: 4px; }
 .intro-stores tr:has(.best) > * { background: var(--good-soft); }
 .intro-stores tr:has(.best) .intro-store-price { color: var(--good); }
 .intro-store-price { font-weight: 700; text-align: right; white-space: nowrap; }
