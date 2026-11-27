@@ -276,15 +276,20 @@ def _render_intro(html: str, intro: Intro | None) -> str:
     if intro.store_prices:
         html = html.replace(INTRO_STORES, _store_table(intro), 1)
     insights = _insights(intro)
-    if insights:
-        items = "".join(
+    insights_html = (
+        '<ul class="intro-insights" id="introInsights">'
+        + "".join(
             "<li"
             + "".join(f' data-{key}="{escape(str(value))}"' for key, value in data.items())
             + f">{escape(text)}</li>"
             for data, text in insights
         )
-        html = html.replace(INTRO_INSIGHTS, f'<ul class="intro-insights" id="introInsights">{items}</ul>', 1)
+        + "</ul>"
+        if insights
+        else ""
+    )
     if len(intro.history) >= 2:
+        # The insights read as the chart's footer, so they move inside its card.
         prices = [price for _, price in intro.history]
         low, high = min(prices), max(prices)
         html = html.replace(
@@ -292,9 +297,13 @@ def _render_intro(html: str, intro: Intro | None) -> str:
             f'<figure class="intro-trend" id="introTrend" data-low="{low}" data-high="{high}" '
             f'data-series="{escape(_chart_series(intro.history))}">'
             '<svg id="introChart" class="intro-chart" role="img" aria-labelledby="introTrendCaption"></svg>'
-            f'<figcaption id="introTrendCaption">ბოლო 30 დღე: {escape(_price(low))} – {escape(_price(high))}</figcaption></figure>',
+            f'<figcaption id="introTrendCaption">ბოლო 30 დღე · მინ. {escape(_price(low))} · '
+            f"მაქს. {escape(_price(high))}</figcaption>{insights_html}</figure>",
             1,
         )
+        html = html.replace(INTRO_INSIGHTS, "", 1)
+    elif insights_html:
+        html = html.replace(INTRO_INSIGHTS, insights_html, 1)
     checked = f' data-checked="{intro.checked_at.isoformat()}"' if intro.checked_at else ""
     return html.replace(
         INTRO_STATS,

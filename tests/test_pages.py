@@ -255,7 +255,7 @@ async def test_headline_has_the_models_30_day_price_line(
 
     assert '<figure class="intro-trend" id="introTrend" data-low="3199.00" data-high="3399.00" data-series=' in html
     assert '<svg id="introChart"' in html
-    assert "ბოლო 30 დღე: 3,199 ₾ – 3,399 ₾</figcaption>" in html
+    assert "ბოლო 30 დღე · მინ. 3,199 ₾ · მაქს. 3,399 ₾</figcaption>" in html
     # Only the price changes go to the chart: 3,399 then 3,199.
     assert html.count("&quot;price&quot;") == 2
     # The history speaks: a 10-day low, reached by one cut.
