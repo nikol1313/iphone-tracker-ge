@@ -25,6 +25,15 @@ _STORAGE = re.compile(r"\b(\d+)\s*(GB|TB)\b", re.IGNORECASE)
 # Apple part numbers such as "MK2D4", "MFYP4ZD/A" or "(MG6J4AF/A)".
 _PART_NUMBER = re.compile(r"\bM[A-Z0-9]{3}\d(?:[A-Z]{2})?(?:/A)?(?![A-Za-z0-9/])")
 _SEPARATORS = re.compile(r"[|,()/]|(?:^|\s)-(?=\s|$)")
+# iSpace titles in Georgian: "iPhone 18 Pro, 2 ტბ, ვერცხლისფერი". Translated before the noise filter drops them.
+_GEORGIAN_WORDS = {
+    "გბ": "GB",
+    "ტბ": "TB",
+    "შავი": "Black",
+    "თეთრი": "White",
+    "ვერცხლისფერი": "Silver",
+}
+_GEORGIAN = re.compile("|".join(_GEORGIAN_WORDS))
 # Models sold only as eSIM everywhere; the flag would split identical phones.
 _ESIM_ONLY_MODELS = frozenset({"iPhone Air", "iPhone Duo"})
 
@@ -110,6 +119,7 @@ def parse_iphone_title(title: str) -> ParsedIphone | None:
     if _ESIM.search(rest) and model not in _ESIM_ONLY_MODELS:
         model = f"{model} eSIM"
     rest = _ESIM.sub(" ", rest)
+    rest = _GEORGIAN.sub(lambda match: _GEORGIAN_WORDS[match.group()], rest)
     rest = _PART_NUMBER.sub(" ", rest)
     rest = _RAM_AND_STORAGE.sub(r" \1 ", rest)
     rest = _RAM_BEFORE_STORAGE.sub(" ", rest)

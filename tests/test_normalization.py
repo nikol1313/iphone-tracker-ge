@@ -70,6 +70,12 @@ from app.services.normalization import ParsedIphone, parse_iphone_title
             "Apple iPhone 18 Pro  256GB Burgundy მობილური ტელეფონი",
             ParsedIphone("iPhone 18 Pro", "256GB", "Burgundy"),
         ),
+        ("iPhone 18 Pro, 2 ტბ, Burgundy", ParsedIphone("iPhone 18 Pro", "2TB", "Burgundy")),
+        ("iPhone 17, 512 გბ, თეთრი", ParsedIphone("iPhone 17", "512GB", "White")),
+        (
+            "iPhone 18 Pro Max, 1 ტბ, ვერცხლისფერი",
+            ParsedIphone("iPhone 18 Pro Max", "1TB", "Silver"),
+        ),
     ],
 )
 def test_parse_iphone_title(title: str, expected: ParsedIphone) -> None:
