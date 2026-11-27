@@ -123,18 +123,38 @@ th, td { padding: 12px 14px; border-bottom: 1px solid var(--line); text-align: l
 th { color: var(--muted); font-size: .78rem; font-weight: 500; }
 tbody tr:last-child td { border-bottom: 0; }
 tbody tr:hover { background: var(--surface); }
-tbody tr.best-offer, tbody tr.best-offer:hover { background: var(--good-soft); }
-.listing-title { display: block; max-width: 280px; margin-top: 2px; overflow: hidden; color: var(--muted); font-size: .78rem; text-overflow: ellipsis; white-space: nowrap; }
-.listing-price { font-weight: 600; white-space: nowrap; }
-.listing-installment { display: block; margin-top: 2px; color: var(--muted); font-size: .78rem; font-weight: 400; }
-.listing-diff { color: var(--muted); white-space: nowrap; }
-.best-tag { margin-left: 8px; color: var(--good); font-size: .78rem; font-weight: 600; }
-.status { color: var(--good); font-weight: 600; }
-.status.unavailable { color: var(--muted); font-weight: 400; }
-/* A store without stock keeps its row for reference, greyed so its price isn't read as an offer. */
-tbody tr.unavailable-offer td { color: var(--muted); }
-.store-link { display: grid; place-items: center; width: 32px; height: 32px; color: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r-ctl); }
-.store-link:hover { color: var(--ink); background: var(--surface-2); }
+/* Phone page, prices by store: a summary, then one card row per store, out-of-stock folded below. */
+.store-summary { display: flex; flex-wrap: wrap; gap: 8px; margin: -6px 0 14px; }
+.store-summary:empty { display: none; }
+.summary-chip { padding: 5px 12px; color: var(--ink); background: var(--surface-2); border-radius: 999px; font-size: .85rem; }
+.summary-chip.good { color: var(--good); background: var(--good-soft); }
+.store-offers { overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-panel); }
+.store-offer { display: grid; grid-template-columns: 36px minmax(0, 1.2fr) minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1.2fr) 150px; align-items: center; gap: 16px; padding: 14px 18px; border-top: 1px solid var(--line); }
+.store-offer:first-child { border-top: 0; }
+.store-offer.best { background: var(--good-soft); }
+.store-offer.out { color: var(--muted); }
+.store-offer.out :is(.store-offer-logo, strong) { opacity: .6; }
+.store-offer-logo { display: block; width: 36px; height: 36px; overflow: hidden; background: var(--surface-2); border-radius: 8px; }
+.store-offer-logo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.store-offer strong { display: block; font-weight: 600; }
+.store-offer small { display: block; margin-top: 2px; color: var(--muted); font-size: .8rem; }
+.store-offer-stock::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; background: var(--muted); border-radius: 50%; vertical-align: 1px; }
+.store-offer-stock.in::before { background: var(--good); }
+.store-offer-price strong { font-size: 1.1rem; font-weight: 700; white-space: nowrap; }
+.store-offer.best .store-offer-price strong { color: var(--good); }
+.store-offer-gap { display: flex; align-items: center; }
+.gap-bar { display: block; height: 8px; background: color-mix(in srgb, var(--rise) 60%, var(--line-strong)); border-radius: 4px; }
+.gap-dot { display: block; width: 8px; height: 8px; background: var(--good); border-radius: 50%; }
+.store-offer-checked { color: var(--muted); font-size: .82rem; }
+.store-offer-go { justify-self: end; padding: 7px 14px; color: var(--ink-2); border: 1px solid var(--line-strong); border-radius: 999px; font-size: .85rem; font-weight: 600; white-space: nowrap; text-decoration: none; }
+.store-offer-go::after { content: "\00a0↗"; }
+.store-offer-go:hover { color: var(--ink); background: var(--surface-2); }
+.store-offer-go.primary { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
+.store-offers-out { margin-top: 12px; }
+.store-offers-out > summary { display: flex; align-items: center; justify-content: space-between; padding: 10px 4px; color: var(--muted); font-size: .88rem; cursor: pointer; list-style: none; }
+.store-offers-out > summary::-webkit-details-marker { display: none; }
+.store-offers-out > summary svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; transition: transform 150ms ease; }
+.store-offers-out[open] > summary svg { transform: rotate(180deg); }
 .empty-inline { padding: 24px; color: var(--muted); border: 1px dashed var(--line-strong); border-radius: var(--r-panel); text-align: center; }
 
 .account-panel { min-height: 120px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 22px 24px; border: 1px solid var(--line); border-radius: var(--r-panel); }
