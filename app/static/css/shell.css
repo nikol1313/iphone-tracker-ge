@@ -106,15 +106,18 @@ main { min-height: calc(100vh / var(--zoom) - 150px); padding: 28px 0 0; }
 .overview-cols .model-price-value { font-size: .98rem; }
 
 .model-prices { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
-.model-price { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 16px; padding: 15px 2px; border-bottom: 1px solid var(--line); cursor: pointer; }
-.model-price:hover { background: var(--surface); }
+/* Name and meta on the left, the change pill, then the price, so every number reads down one column. */
+.model-price, .change-summary { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto minmax(5.5rem, auto); grid-template-areas: "photo name pill price" "photo meta pill price"; align-items: center; gap: 3px 14px; padding: 15px 2px; border-bottom: 1px solid var(--line); cursor: pointer; }
+.model-price:hover, .change-summary:hover { background: var(--surface); }
 .model-price[hidden] { display: none; }
-.model-price-name { font-weight: 500; }
-.model-price-name small { margin-left: 8px; color: var(--muted); font-size: .8rem; font-weight: 400; }
-.model-price-value { font-size: 1.1rem; font-weight: 600; letter-spacing: -.01em; text-align: right; }
-/* One chip per color that moved alike, instead of a row each. */
-.color-chip { display: inline-block; margin-left: 6px; padding: 1px 8px; border: 1px solid var(--line); border-radius: var(--r-ctl); color: var(--muted); font-size: .75rem; font-weight: 400; vertical-align: 1px; }
-.model-price-meta { grid-column: 1 / -1; color: var(--muted); font-size: .8rem; }
+.model-price-name { grid-area: name; font-weight: 500; }
+.model-price-meta { grid-area: meta; color: var(--muted); font-size: .8rem; }
+.model-price-value { grid-area: price; font-size: 1.1rem; font-weight: 600; letter-spacing: -.01em; text-align: right; white-space: nowrap; }
+.price-cell { grid-area: price; display: flex; flex-direction: column; align-items: flex-end; }
+.price-was { color: var(--muted); font-size: .75rem; text-decoration: line-through; white-space: nowrap; }
+.change-pill { grid-area: pill; padding: 3px 9px; border-radius: 999px; font-size: .78rem; font-weight: 600; white-space: nowrap; }
+.change-pill.drop { color: var(--good); background: var(--good-soft); }
+.change-pill.rise { color: var(--rise); background: color-mix(in srgb, var(--rise) 14%, transparent); }
 .fold-toggle { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 44px; margin-top: 16px; color: var(--ink-2); background: transparent; border: 1px solid var(--line); border-radius: var(--r-ctl); font-size: .9rem; font-weight: 500; cursor: pointer; }
 .fold-toggle:hover { color: var(--ink); border-color: var(--line-strong); }
 .fold-toggle[hidden] { display: none; }
