@@ -628,15 +628,6 @@ export function bestPriceSeries(items, currency) {
   return series;
 }
 
-// Indexes of the first and last points plus every peak and low in between.
-function turningPoints(series) {
-  return series.map((_, i) => i).filter(i => {
-    if (i === 0 || i === series.length - 1) return true;
-    const [before, here, after] = [series[i - 1].price, series[i].price, series[i + 1].price];
-    return (here > before && here > after) || (here < before && here < after);
-  });
-}
-
 // The chart is drawn in the SVG's own pixels, so lines and labels keep their size on a phone
 // instead of a fixed 1000-wide drawing being shrunk to a third. Redrawn when its width changes.
 let chartData = null;
