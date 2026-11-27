@@ -102,7 +102,15 @@ function bindSearchAndCatalog() {
     // Folding up from the bottom of a long list: bring its top back into view.
     if (!state.modelsExpanded) $("#modelPrices").closest(".section").scrollIntoView({ behavior: "smooth", block: "start" });
   });
-  ["#modelPrices", "#weeklyDrops", "#dayChanges"].forEach(selector => {
+  $("#priceChangesSection").addEventListener("click", event => {
+    const button = event.target.closest("[data-period]");
+    if (!button) return;
+    state.changesPeriod = button.dataset.period;
+    renderOverview();
+  });
+  // A photo or store icon can fail to load; drop it and leave the empty frame.
+  document.addEventListener("error", event => event.target.matches?.(".row-photo img, .store-offer-logo img") && event.target.remove(), true);
+  ["#modelPrices", "#priceChanges"].forEach(selector => {
     $(selector).addEventListener("click", event => {
       const row = event.target.closest(".model-price");
       if (row) openModel(row);

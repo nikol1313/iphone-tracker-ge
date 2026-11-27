@@ -182,8 +182,6 @@ function weeklyDropAmount(product) {
   return drop >= Number(product.price_week_ago) * 0.01 ? drop : 0;
 }
 
-const WEEKLY_DROPS_SHOWN = 6;
-
 // Colors of one phone whose price moved alike share a row: [{ product, colors }], first one kept.
 function groupColors(products, move) {
   const groups = new Map();
@@ -195,59 +193,103 @@ function groupColors(products, move) {
   return [...groups.values()];
 }
 
-// "iPhone 17 256GB [Black] [White]": the storage, then one chip per color.
-const groupedName = ({ product, colors }) => `<span class="model-price-name">${escapeHtml(productName(product))}`
-  + `<small>${escapeHtml(product.storage || "")}</small>`
-  + colors.map(color => `<span class="color-chip">${escapeHtml(color)}</span>`).join("")
-  + "</span>";
+// A color's name after a small swatch; shell.css knows the swatch colors by name.
+// A small photo of the phone before its name; an empty frame keeps rows aligned when there is none.
+const rowPhoto = product => `<span class="row-photo">${product.image_url ? `<img src="${escapeHtml(safeUrl(product.image_url))}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ""}</span>`;
 
-// Today page: the phones whose best price fell the most this week.
-function renderWeeklyDrops() {
-  const drops = groupColors(state.products
-    .filter(product => weeklyDropAmount(product) > 0)
-    .sort((a, b) => weeklyDropAmount(b) - weeklyDropAmount(a) || byModel(a, b)), weeklyDropAmount)
-    .slice(0, WEEKLY_DROPS_SHOWN);
-  $("#weeklyDropsSection").hidden = !drops.length;
-  $("#weeklyDrops").innerHTML = drops.map(({ product, colors }) => `
-    <li class="model-price" data-model="${escapeHtml(product.model)}" data-product-id="${product.id}" tabindex="0">
-      ${groupedName({ product, colors })}
-      <span class="model-price-value">${escapeHtml(money(product.lowest_price, product.currency || "GEL"))}</span>
-      <span class="model-price-meta">${weekDrop(product)} · ${escapeHtml(t("drops.was", { price: money(product.price_week_ago, product.currency || "GEL") }))}</span>
-    </li>`).join("");
+const colorLabel = color => `<span class="color-name"><span class="swatch" data-color="${escapeHtml(color)}" aria-hidden="true"></span>${escapeHtml(color)}</span>`;
+
+// "256GB · ● Black ● Silver": storage, then each color.
+const variantMeta = (storage, colors) => [storage ? escapeHtml(storage) : "", colors.map(colorLabel).join(" ")]
+  .filter(Boolean).join(" · ") || escapeHtml(t("variant.unknown"));
+
+const changePill = (change, base, currency) => `<span class="change-pill ${change < 0 ? "drop" : "rise"}">${escapeHtml(t(change < 0 ? "changes.down" : "changes.up", { amount: money(Math.abs(change), currency), percent: percent(change, base) }))}</span>`;
+
+const CHANGE_BASE = { day: "price_day_ago", week: "price_week_ago" };
+
+// How much the best in-stock price moved over the period (negative = cheaper):
+// at least 1 ₾ since yesterday, or 1% over the week, else 0.
+function priceChange(product, period) {
+  const base = product[CHANGE_BASE[period]];
+  if (!inStock(product) || base == null) return 0;
+  const change = Number(product.lowest_price) - Number(base);
+  const least = period === "week" ? Number(base) * 0.01 : 1;
+  return Math.abs(change) >= least ? change : 0;
 }
 
-// How much the best in-stock price moved over the last 24 hours (negative = cheaper).
-function dayChangeAmount(product) {
-  if (!inStock(product) || product.price_day_ago == null) return 0;
-  const change = Number(product.lowest_price) - Number(product.price_day_ago);
-  return Math.abs(change) >= 1 ? change : 0;
-}
+const CHANGES_SHOWN = 6;
 
-const DAY_CHANGES_SHOWN = 6;
-
-// Today page: what changed since yesterday, drops first since that's what people come for.
-function renderDayChanges() {
-  const changes = groupColors(state.products
-    .filter(product => dayChangeAmount(product) !== 0)
-    .sort((a, b) => (dayChangeAmount(a) > 0) - (dayChangeAmount(b) > 0)
-      || Math.abs(dayChangeAmount(b)) - Math.abs(dayChangeAmount(a))
-      || byModel(a, b)), dayChangeAmount)
-    .slice(0, DAY_CHANGES_SHOWN);
-  $("#dayChangesSection").hidden = false;
-  $("#dayChanges").innerHTML = changes.length
-    ? changes.map(group => {
-      const { product } = group;
-      const change = dayChangeAmount(product);
-      const currency = product.currency || "GEL";
-      const label = t(change < 0 ? "day.down" : "day.up", { amount: money(Math.abs(change), currency), percent: percent(change, product.price_day_ago) });
-      return `
+// One storage-and-colors row; inside a model group it is named by its storage alone.
+function changeRow({ product, colors }, period, { inGroup = false } = {}) {
+  const change = priceChange(product, period);
+  const base = product[CHANGE_BASE[period]];
+  const currency = product.currency || "GEL";
+  const name = inGroup ? product.storage || productName(product) : productName(product);
+  const meta = inGroup ? colors.map(colorLabel).join(" ") : variantMeta(product.storage, colors);
+  return `
     <li class="model-price" data-model="${escapeHtml(product.model)}" data-product-id="${product.id}" tabindex="0">
-      ${groupedName(group)}
-      <span class="model-price-value">${escapeHtml(money(product.lowest_price, currency))}</span>
-      <span class="model-price-meta"><span class="card-change ${change < 0 ? "drop" : "rise"}">${escapeHtml(label)}</span> · ${escapeHtml(t("day.was", { price: money(product.price_day_ago, currency) }))}</span>
+      ${inGroup ? "" : rowPhoto(product)}
+      <span class="model-price-name">${escapeHtml(name)}</span>
+      <span class="model-price-meta">${meta}</span>
+      ${changePill(change, base, currency)}
+      <span class="price-cell"><span class="model-price-value">${escapeHtml(money(product.lowest_price, currency))}</span><span class="price-was"><span class="sr-only">${escapeHtml(t("changes.was"))} </span>${escapeHtml(money(base, currency))}</span></span>
     </li>`;
-    }).join("")
-    : `<li class="empty-state">${t("day.none")}</li>`;
+}
+
+// A model with several changed configs folds into one row: "5 configs · 512GB – 2TB · up to −7% · from 4,679 ₾".
+function changeGroup(rows, period) {
+  const { product } = rows[0];
+  const products = rows.map(row => row.product);
+  const share = p => Math.abs(priceChange(p, period)) / Number(p[CHANGE_BASE[period]]);
+  const biggest = products.reduce((a, b) => share(b) > share(a) ? b : a);
+  const change = priceChange(biggest, period);
+  const sign = change < 0 ? "−" : "+";
+  const cheapest = products.reduce((a, b) => priceOf(b) < priceOf(a) ? b : a);
+  const storages = [...new Set(products.map(p => p.storage).filter(Boolean))].sort((a, b) => storageSize(a) - storageSize(b));
+  const range = storages.length > 1 ? `${storages[0]} – ${storages.at(-1)}` : storages[0] || "";
+  const meta = [t("changes.configs", { count: rows.length }), range].filter(Boolean).map(escapeHtml).join(" · ");
+  return `
+    <li class="change-group">
+      <details>
+        <summary class="change-summary">
+          ${rowPhoto(product)}
+          <span class="model-price-name">${escapeHtml(productName(product))}<svg aria-hidden="true"><use href="#i-chevron"/></svg></span>
+          <span class="model-price-meta">${meta}</span>
+          <span class="change-pill ${change < 0 ? "drop" : "rise"}">${escapeHtml(t("changes.upTo", { change: sign + percent(change, biggest[CHANGE_BASE[period]]) }))}</span>
+          <span class="model-price-value">${escapeHtml(t("search.from", { price: money(cheapest.lowest_price, cheapest.currency || "GEL") }))}</span>
+        </summary>
+        <ul class="change-configs">${rows.map(row => changeRow(row, period, { inGroup: true })).join("")}</ul>
+      </details>
+    </li>`;
+}
+
+// Today page: what changed over the chosen period, drops first since that's what people come for.
+function renderPriceChanges() {
+  const changedIn = period => state.products.filter(product => priceChange(product, period) !== 0);
+  state.changesPeriod ||= changedIn("day").length ? "day" : "week";
+  const period = state.changesPeriod;
+  const rows = groupColors(changedIn(period)
+    .sort((a, b) => (priceChange(a, period) > 0) - (priceChange(b, period) > 0)
+      || Math.abs(priceChange(b, period)) - Math.abs(priceChange(a, period))
+      || byModel(a, b)), product => priceChange(product, period));
+  // Same model, same direction: one entry, in the order of its biggest move.
+  const entries = new Map();
+  for (const row of rows) {
+    const key = `${row.product.model}|${priceChange(row.product, period) < 0}`;
+    if (!entries.has(key)) entries.set(key, []);
+    entries.get(key).push(row);
+  }
+  $("#priceChangesSection").hidden = false;
+  $("#priceChangesNote").textContent = t(period === "day" ? "changes.vsDay" : "changes.vsWeek");
+  $$("#priceChangesSection [data-period]").forEach(button => {
+    const on = button.dataset.period === period;
+    button.classList.toggle("selected", on);
+    button.setAttribute("aria-pressed", String(on));
+  });
+  const shown = [...entries.values()].slice(0, CHANGES_SHOWN);
+  $("#priceChanges").innerHTML = shown.length
+    ? shown.map(group => group.length > 1 ? changeGroup(group, period) : changeRow(group[0], period)).join("")
+    : `<li class="empty-state">${t(period === "day" ? "changes.noneDay" : "changes.noneWeek")}</li>`;
 }
 
 // The headline model's 30-day best price, drawn like the phone page's chart at the svg's own width.
@@ -349,8 +391,7 @@ const MODELS_FOLDED = 6;
 export function renderOverview() {
   const list = $("#modelPrices");
   if (!state.products.length) return;
-  renderDayChanges();
-  renderWeeklyDrops();
+  renderPriceChanges();
   const cheapest = new Map();
   for (const product of state.products.filter(inStock)) {
     const best = cheapest.get(product.model);

@@ -86,21 +86,18 @@
         <ul class="intro-insights" id="introInsights" hidden></ul>
       </section>
       <div class="overview-cols">
-      <section class="section" id="dayChangesSection" hidden>
+      <section class="section" id="priceChangesSection" hidden>
         <div class="section-heading">
           <div>
-            <h2 data-i18n="day.title">ბოლო 24 საათის ცვლილებები</h2>
+            <h2 data-i18n="changes.title">ფასების ცვლილებები</h2>
+            <p class="section-description" id="priceChangesNote"></p>
+          </div>
+          <div class="chip-row" role="group" data-i18n-attr="aria-label:changes.period" aria-label="პერიოდი">
+            <button class="chip" type="button" data-period="day" aria-pressed="false" data-i18n="changes.day">24 საათი</button>
+            <button class="chip" type="button" data-period="week" aria-pressed="false" data-i18n="changes.week">ეს კვირა</button>
           </div>
         </div>
-        <ul id="dayChanges" class="model-prices"></ul>
-      </section>
-      <section class="section" id="weeklyDropsSection" hidden>
-        <div class="section-heading">
-          <div>
-            <h2 data-i18n="drops.title">ყველაზე დიდი დაკლებები ამ კვირაში</h2>
-          </div>
-        </div>
-        <ul id="weeklyDrops" class="model-prices"></ul>
+        <ul id="priceChanges" class="model-prices"></ul>
       </section>
       <section class="section">
         <div class="section-heading">
