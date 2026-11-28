@@ -64,6 +64,7 @@ Collects prices from 11 retailers, records every price change, and tells you whe
 - Responsive HTML, CSS, and vanilla JavaScript frontend
 - Docker Compose and Nginx
 - pytest with HTTPX and SQLite test fixtures
+- Postman collection for the API in `postman/`
 
 ## Scraping from a server
 
