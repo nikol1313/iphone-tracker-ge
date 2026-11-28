@@ -6,7 +6,7 @@
 
 **iPhone price comparison and tracking for Georgian stores**
 
-Collects prices from 10+ retailers, records every price change, and tells you when it's the right time to buy.
+Collects prices from 11 retailers, records every price change, and tells you when it's the right time to buy.
 
 </div>
 
